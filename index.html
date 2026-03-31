@@ -25,14 +25,12 @@
             const [streak, setStreak] = useState(128); 
             const [userName, setUserName] = useState('Чемпион');
             
-            // Геймификация: Уровень зависит от ударного режима (1 уровень за каждые 10 дней)
             const userLevel = Math.floor(streak / 10) + 1;
             
             const [soundTheme, setSoundTheme] = useState('standard');
             const [weekendsEnabled, setWeekendsEnabled] = useState(true);
             const [currentDate, setCurrentDate] = useState(new Date());
 
-            // Состояния для облачной синхронизации
             const [isCloudLoaded, setIsCloudLoaded] = useState(false);
             const [tasks, setTasks] = useState([]);
 
@@ -40,47 +38,64 @@
             const [timeLeft, setTimeLeft] = useState(25 * 60);
             const [isTimerRunning, setIsTimerRunning] = useState(false);
 
-            // 1. ЗАГРУЗКА ДАННЫХ ИЗ TELEGRAM CLOUD
+            // БРОНЕБОЙНАЯ ЗАГРУЗКА ДАННЫХ
             useEffect(() => {
+                const loadLocalFallback = () => {
+                    try {
+                        const savedTasks = localStorage.getItem('motivateMe_tasks');
+                        if (savedTasks) {
+                            setTasks(JSON.parse(savedTasks));
+                        } else {
+                            setTasks([
+                                { id: 1, text: 'Чтение (30 мин)', completed: false, isAnimating: false, date: new Date().toDateString() },
+                                { id: 2, text: 'Спорт', completed: false, isAnimating: false, date: new Date().toDateString() }
+                            ]);
+                        }
+                    } catch (e) {
+                        setTasks([]);
+                    }
+                    setIsCloudLoaded(true);
+                };
+
                 const tg = window.Telegram.WebApp;
                 if (tg) {
                     tg.ready();
                     tg.expand();
                     if (tg.initDataUnsafe && tg.initDataUnsafe.user) setUserName(tg.initDataUnsafe.user.first_name);
                     
-                    // Магия: запрашиваем задачи из облака Telegram
-                    tg.CloudStorage.getItem('motivateMe_tasks', (err, value) => {
-                        if (!err && value) {
-                            try {
-                                setTasks(JSON.parse(value));
-                            } catch (e) { console.error('Ошибка парсинга облака'); }
-                        } else {
-                            // Если облако пустое (первый вход) - даем базовые задачи
-                            setTasks([
-                                { id: 1, text: 'Чтение (30 мин)', completed: false, isAnimating: false, date: new Date().toDateString() },
-                                { id: 2, text: 'Спорт', completed: false, isAnimating: false, date: new Date().toDateString() }
-                            ]);
-                        }
-                        setIsCloudLoaded(true);
-                    });
+                    // ПРОВЕРКА НА ПОДДЕРЖКУ ОБЛАКА ТЕЛЕГРАМ
+                    if (tg.CloudStorage) {
+                        tg.CloudStorage.getItem('motivateMe_tasks', (err, value) => {
+                            if (!err && value) {
+                                try {
+                                    setTasks(JSON.parse(value));
+                                    setIsCloudLoaded(true);
+                                } catch (e) { 
+                                    loadLocalFallback(); 
+                                }
+                            } else {
+                                loadLocalFallback();
+                            }
+                        });
+                    } else {
+                        // Если открыто с ПК или на старом устройстве
+                        loadLocalFallback();
+                    }
                 } else {
-                    // Fallback для браузера
-                    const savedTasks = localStorage.getItem('motivateMe_tasks');
-                    if (savedTasks) setTasks(JSON.parse(savedTasks));
-                    setIsCloudLoaded(true);
+                    loadLocalFallback();
                 }
             }, []);
 
-            // 2. СОХРАНЕНИЕ В TELEGRAM CLOUD ПРИ КАЖДОМ ИЗМЕНЕНИИ
+            // БЕЗОПАСНОЕ СОХРАНЕНИЕ
             useEffect(() => {
-                if (!isCloudLoaded) return; // Не сохраняем, пока не загрузили старые
+                if (!isCloudLoaded) return; 
                 const tasksString = JSON.stringify(tasks);
                 
                 const tg = window.Telegram.WebApp;
-                if (tg) {
+                if (tg && tg.CloudStorage) {
                     tg.CloudStorage.setItem('motivateMe_tasks', tasksString);
                 }
-                localStorage.setItem('motivateMe_tasks', tasksString); // дублируем локально
+                localStorage.setItem('motivateMe_tasks', tasksString); 
             }, [tasks, isCloudLoaded]);
 
             const playMotivationSound = () => {
@@ -296,69 +311,4 @@
                                         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                                             {leaderboard.map(user => (
                                                 <li key={user.rank} style={{ display: 'flex', alignItems: 'center', padding: '12px', borderBottom: '1px solid #eee', background: user.isMe ? '#fff4e5' : 'transparent', borderRadius: user.isMe ? '10px' : '0' }}>
-                                                    <strong style={{ width: '25px', color: user.rank === 1 ? '#FFD700' : '#999', fontSize: '16px' }}>#{user.rank}</strong>
-                                                    <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                                                        <span style={{ fontSize: '15px', fontWeight: user.isMe ? 'bold' : '500' }}>{user.name}</span>
-                                                        <span style={{ fontSize: '11px', color: '#888' }}>Ур. {user.level}</span>
-                                                    </div>
-                                                    <span style={{ fontWeight: 'bold', color: '#FF8C00' }}>{user.streak} 🔥</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        <button onClick={inviteFriend} style={{ width: '100%', marginTop: '15px', padding: '10px', borderRadius: '10px', border: '1px dashed #FF8C00', background: 'transparent', color: '#FF8C00', fontWeight: 'bold', cursor: 'pointer' }}>
-                                            + Пригласить друга
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'settings' && (
-                                <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
-                                    <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '20px', color: '#333', boxSizing: 'border-box' }}>
-                                        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', color: '#FF8C00', textAlign: 'center' }}>Персонализация</h3>
-                                        
-                                        <div style={{ marginBottom: '20px' }}>
-                                            <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>Звук уведомлений:</p>
-                                            <select value={soundTheme} onChange={(e) => setSoundTheme(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #ddd', outline: 'none', fontSize: '14px' }}>
-                                                <option value="standard">Стандартный</option>
-                                                <option value="movie">Из любимого фильма</option>
-                                                <option value="voice">Голос близкого</option>
-                                            </select>
-                                        </div>
-
-                                        <div style={{ marginBottom: '10px' }}>
-                                            <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>Гибкость планирования:</p>
-                                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '14px' }}>
-                                                <input type="checkbox" checked={weekendsEnabled} onChange={() => setWeekendsEnabled(!weekendsEnabled)} style={{ marginRight: '10px', width: '18px', height: '18px', accentColor: '#FF8C00' }} />
-                                                Назначать задачи на выходные
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-
-                    <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'white', display: 'flex', justifyContent: 'space-around', padding: '15px 0', boxShadow: '0 -5px 15px rgba(0,0,0,0.05)', zIndex: 1000 }}>
-                        <div onClick={() => switchTab('home')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: activeTab === 'home' ? '#FF8C00' : '#bbb' }}>
-                            <span style={{ fontSize: '22px', marginBottom: '4px' }}>✓</span><span style={{ fontSize: '11px', fontWeight: 'bold' }}>Задачи</span>
-                        </div>
-                        <div onClick={() => switchTab('progress')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: activeTab === 'progress' ? '#FF8C00' : '#bbb' }}>
-                            <span style={{ fontSize: '22px', marginBottom: '4px' }}>📊</span><span style={{ fontSize: '11px', fontWeight: 'bold' }}>Прогресс</span>
-                        </div>
-                        <div onClick={() => switchTab('social')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: activeTab === 'social' ? '#FF8C00' : '#bbb' }}>
-                            <span style={{ fontSize: '22px', marginBottom: '4px' }}>🏆</span><span style={{ fontSize: '11px', fontWeight: 'bold' }}>Лидеры</span>
-                        </div>
-                        <div onClick={() => switchTab('settings')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: activeTab === 'settings' ? '#FF8C00' : '#bbb' }}>
-                            <span style={{ fontSize: '22px', marginBottom: '4px' }}>⚙️</span><span style={{ fontSize: '11px', fontWeight: 'bold' }}>Настройки</span>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                                                    <strong style={{ width: '25px', color: user.rank === 1

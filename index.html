@@ -3,33 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MotivateMe Ultra</title>
+    <title>MotivateMe Ultra Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         body { margin: 0; padding: 0; background-color: #FF8C00; font-family: -apple-system, system-ui, sans-serif; color: white; -webkit-tap-highlight-color: transparent; }
-        .container { padding: 20px; display: flex; flex-direction: column; align-items: center; padding-bottom: 100px; }
-        .card { background: white; border-radius: 20px; padding: 20px; color: #333; width: 100%; max-width: 340px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); margin-bottom: 15px; box-sizing: border-box; animation: fadeIn 0.3s; }
+        .container { padding: 20px; display: flex; flex-direction: column; align-items: center; padding-bottom: 120px; }
+        .card { background: white; border-radius: 20px; padding: 20px; color: #000; width: 100%; max-width: 360px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); margin-bottom: 15px; box-sizing: border-box; animation: fadeIn 0.3s; position: relative; }
         .goal-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .goal-title { font-weight: bold; font-size: 18px; margin: 0; }
+        .goal-title { font-weight: bold; font-size: 18px; margin: 0; color: #000; }
         .goal-desc { font-size: 13px; color: #777; margin: 5px 0 10px 0; }
         .stats-row { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
         .badge { background: #fff0e0; color: #FF8C00; padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 12px; display: flex; align-items: center; gap: 4px; }
         
         /* Modal Style */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: flex-end; }
-        .modal-content { background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px; color: #333; box-sizing: border-box; animation: slideUp 0.3s; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px; color: #000; box-sizing: border-box; animation: slideUp 0.3s; max-height: 90vh; overflow-y: auto; border-top: 2px solid #000; }
         
         input, textarea, select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
-        .btn-add { background: white; color: #FF8C00; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; margin-top: 10px; width: 100%; max-width: 340px; }
+        input:focus, textarea:focus, select:focus { border-color: #000; }
+        
+        /* Black button with white text as accent */
+        .btn-add { background: #000; color: white; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; margin-top: 10px; width: 100%; max-width: 340px; }
         .btn-save { background: #FF8C00; color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; }
         .btn-cancel { background: #eee; color: #777; border: none; padding: 15px; border-radius: 15px; font-weight: bold; width: 100%; font-size: 16px; margin-top: 10px; cursor: pointer; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .tab-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #eee; z-index: 100; }
+        .tab-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #000; z-index: 100; }
+        
+        /* Header Style */
+        .header { padding: 20px; textAlign: 'center'; width: '100%'; }
+        .title-row { display: flex; align-items: center; justify-content: center; }
+        .main-title { margin: 0; fontSize: '26px'; fontWeight: 'bold'; }
+        .m-logo { height: '32px'; border-radius: '8px'; margin-left: '10px'; }
+        .welcome-text { opacity: 0.8; margin: '5px 0'; fontSize: '14px'; }
+        
+        /* Deadline tag */
+        .deadline-tag { fontSize:'11px'; color:'#333'; fontWeight:'bold'; marginLeft:'auto'; display: 'flex'; alignItems: 'center'; gap: '4px'; }
     </style>
 </head>
 <body>
@@ -53,7 +66,7 @@
 
             // Цели
             const [goals, setGoals] = useState(() => {
-                const saved = localStorage.getItem('motivateMe_v4_goals');
+                const saved = localStorage.getItem('motivateMe_v5_goals');
                 return saved ? JSON.parse(saved) : [];
             });
 
@@ -72,7 +85,7 @@
             }, []);
 
             useEffect(() => {
-                localStorage.setItem('motivateMe_v4_goals', JSON.stringify(goals));
+                localStorage.setItem('motivateMe_v5_goals', JSON.stringify(goals));
             }, [goals]);
 
             // Логика таймера
@@ -148,8 +161,14 @@
 
             return (
                 <div className="container">
-                    <h1 style={{ textAlign: 'center', marginBottom: '5px', fontSize: '26px' }}>MotivateMe Pro</h1>
-                    <p style={{ textAlign: 'center', opacity: 0.8, marginBottom: '20px' }}>{userName}, действуй!</p>
+                    {/* Header */}
+                    <div className="header">
+                        <div className="title-row">
+                            <h1 className="main-title">MotivateMe</h1>
+                            <img src="image_0.png" alt="M logo" className="m-logo" />
+                        </div>
+                        <p className="welcome-text">{userName}, действуй!</p>
+                    </div>
 
                     {activeTab === 'home' && (
                         <React.Fragment>
@@ -157,7 +176,7 @@
                             <div className="card" style={{ padding: '15px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <button onClick={() => changeDate(-1)} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '22px' }}>◀</button>
-                                    <span style={{ fontSize: '15px', fontWeight: 'bold' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span>
+                                    <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#000' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span>
                                     <button onClick={() => changeDate(1)} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '22px' }}>▶</button>
                                 </div>
                             </div>
@@ -165,7 +184,7 @@
                             {/* Таймер Фокуса */}
                             <div className="card" style={{ textAlign: 'center' }}>
                                 <h3 style={{ margin: '0 0 10px 0', color: '#FF8C00' }}>Таймер Фокуса</h3>
-                                <div style={{ fontSize: '42px', fontWeight: 'bold', marginBottom: '10px' }}>
+                                <div style={{ fontSize: '42px', fontWeight: 'bold', marginBottom: '10px', color: '#000' }}>
                                     {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
                                 </div>
                                 <button onClick={() => setIsTimerRunning(!isTimerRunning)} style={{ width: '100%', background: '#FF8C00', border: 'none', color: 'white', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>
@@ -190,7 +209,7 @@
                                             {g.type !== 'once' && <span className="badge">🔥 {g.streak}</span>}
                                             {g.type === 'habit' && <span className="badge">∞</span>}
                                             {g.type === 'sprint' && <span className="badge">⏳ Осталось: {Math.max(0, parseInt(g.duration || 0) - g.streak)} дн.</span>}
-                                            <span style={{fontSize:'11px', color:'#ef5350', fontWeight:'bold', marginLeft:'auto'}}>до {g.deadline}</span>
+                                            <span className="deadline-tag">до {g.deadline}</span>
                                         </div>
                                     </div>
                                 );
@@ -222,11 +241,11 @@
                             <h3 style={{ textAlign: 'center', color: '#FF8C00', margin:'0 0 15px 0' }}>Лидеры города</h3>
                             {[ {n:'Алексей М.', s:150}, {n:userName+' (Вы)', s:streak, me:true}, {n:'Мария К.', s:112} ].map((u, i) => (
                                 <div key={i} style={{ padding: '12px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', background: u.me ? '#fff4e5' : 'none', borderRadius: u.me ? '10px' : '0' }}>
-                                    <span>{i+1}. {u.n}</span>
+                                    <span style={{color: '#000'}}>{i+1}. {u.n}</span>
                                     <strong>{u.s} 🔥</strong>
                                 </div>
                             ))}
-                            <button onClick={() => window.Telegram?.WebApp?.openTelegramLink(`https://t.me/share/url?url=https://t.me/MotivateMe_ibot`)} style={{ width: '100%', marginTop: '20px', background: 'none', border: '1px dashed #FF8C00', color: '#FF8C00', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>+ ПОЗВАТЬ ДРУГА</button>
+                            <button onClick={() => window.Telegram?.WebApp?.openTelegramLink(`https://t.me/share/url?url=https://t.me/MotivateMe_ibot`)} style={{ width: '100%', marginTop: '20px', background: 'white', border: '1px dashed #FF8C00', color: '#FF8C00', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>+ ПОЗВАТЬ ДРУГА</button>
                         </div>
                     )}
 
@@ -235,16 +254,16 @@
                             <h3 style={{ textAlign: 'center', color: '#FF8C00', margin:'0 0 20px 0' }}>Опции и Мотивация</h3>
                             
                             <div style={{ marginBottom: '20px' }}>
-                                <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>Тон поддержки от бота:</label>
-                                <select value={motivationTone} onChange={e => setMotivationTone(e.target.value)}>
+                                <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '10px', color: '#000' }}>Тон поддержки от бота:</label>
+                                <select value={motivationTone} onChange={e => setMotivationTone(e.target.value)} style={{color: '#000'}}>
                                     <option value="soft">Мягкий ("У тебя всё получится!")</option>
                                     <option value="hard">Жесткий ("Не будь тряпкой, соберись!")</option>
                                 </select>
                             </div>
 
                             <div style={{ marginBottom: '20px' }}>
-                                <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>Звуки в приложении:</label>
-                                <select value={soundTheme} onChange={e => setSoundTheme(e.target.value)}>
+                                <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '10px', color: '#000' }}>Звуки в приложении:</label>
+                                <select value={soundTheme} onChange={e => setSoundTheme(e.target.value)} style={{color: '#000'}}>
                                     <option value="standard">Стандартные</option>
                                     <option value="movie">Эпичные (Кино)</option>
                                 </select>
@@ -256,29 +275,29 @@
                     {isModalOpen && (
                         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
                             <div className="modal-content" onClick={e => e.stopPropagation()}>
-                                <h2 style={{margin:'0 0 20px 0'}}>Новая цель</h2>
+                                <h2 style={{margin:'0 0 20px 0', color: '#000'}}>Новая цель</h2>
                                 
-                                <input placeholder="Название (например: Пробежка)" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-                                <textarea placeholder="Описание (зачем тебе это?)" rows="2" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                                <input placeholder="Название (например: Пробежка)" value={form.title} onChange={e => setForm({...form, title: e.target.value})} style={{color: '#000'}} />
+                                <textarea placeholder="Описание (зачем тебе это?)" rows="2" value={form.description} onChange={e => setForm({...form, description: e.target.value})} style={{color: '#000'}} />
                                 
-                                <div style={{fontSize:'12px', marginBottom:'5px', fontWeight:'bold'}}>Тип цели:</div>
-                                <select value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
+                                <div style={{fontSize:'12px', marginBottom:'5px', fontWeight:'bold', color: '#000'}}>Тип цели:</div>
+                                <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} style={{color: '#000'}}>
                                     <option value="once">Разовая (один раз)</option>
                                     <option value="habit">Постоянная (навсегда)</option>
                                     <option value="sprint">Спринт (на N дней)</option>
                                 </select>
 
                                 {form.type === 'sprint' && (
-                                    <input type="number" placeholder="Сколько дней?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} />
+                                    <input type="number" placeholder="Сколько дней?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} style={{color: '#000'}} />
                                 )}
 
                                 <div style={{display:'flex', gap:'15px'}}>
                                     <div style={{flex:1}}>
-                                        <div style={{fontSize:'12px', marginBottom:'5px', fontWeight:'bold', color: '#ef5350'}}>Крайний срок (Дедлайн):</div>
-                                        <input type="time" value={form.deadline} onChange={e => setForm({...form, deadline: e.target.value})} />
+                                        <div style={{fontSize:'12px', marginBottom:'5px', fontWeight:'bold', color: '#333'}}>Крайний срок (Дедлайн):</div>
+                                        <input type="time" value={form.deadline} onChange={e => setForm({...form, deadline: e.target.value})} style={{color: '#000'}} />
                                     </div>
                                     <div style={{flex:1, display:'flex', alignItems:'center'}}>
-                                        <label style={{fontSize:'12px', display:'flex', alignItems:'center', gap:'8px', marginTop:'10px', fontWeight: 'bold'}}>
+                                        <label style={{fontSize:'12px', display:'flex', alignItems:'center', gap:'8px', marginTop:'10px', fontWeight: 'bold', color: '#000'}}>
                                             <input type="checkbox" checked={form.ignoreHoliday} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} style={{width:'auto', margin:0}} /> 
                                             Игнорировать выходные
                                         </label>

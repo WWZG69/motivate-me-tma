@@ -9,15 +9,14 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        body { margin: 0; padding: 0; background-color: #FF8C00; font-family: -apple-system, system-ui, sans-serif; color: white; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; padding: 0; background-color: #FF8C00; font-family: -apple-system, system-ui, sans-serif; color: white; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card { background: white; border-radius: 20px; padding: 20px; color: #333; width: 100%; max-width: 320px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); box-sizing: border-box; margin-bottom: 20px; animation: fadeIn 0.3s; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
-        .card { background: white; border-radius: 20px; padding: 20px; color: #333; width: 100%; max-width: 300px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); box-sizing: border-box; margin-bottom: 20px; animation: fadeIn 0.3s; }
     </style>
 </head>
 <body>
     <div id="root"></div>
-    
     <script type="text/babel">
         const { useState, useEffect } = React;
 
@@ -27,18 +26,17 @@
             const [userName, setUserName] = useState('Чемпион');
             const [currentDate, setCurrentDate] = useState(new Date());
             
-            // Настройки
             const [soundTheme, setSoundTheme] = useState('standard');
             const [weekendsEnabled, setWeekendsEnabled] = useState(true);
 
-            // Состояния задач и таймера
             const [tasks, setTasks] = useState(() => {
-                const saved = localStorage.getItem('motivateMe_v10_tasks');
+                const saved = localStorage.getItem('motivateMe_full_tasks');
                 return saved ? JSON.parse(saved) : [
-                    { id: 1, text: 'Чтение (30 мин)', completed: false, date: new Date().toDateString() },
-                    { id: 2, text: 'Спорт', completed: false, date: new Date().toDateString() }
+                    { id: 1, text: 'Чтение (30 мин)', completed: false, date: new Date().toDateString(), isAnimating: false },
+                    { id: 2, text: 'Спорт', completed: false, date: new Date().toDateString(), isAnimating: false }
                 ];
             });
+
             const [newTaskText, setNewTaskText] = useState('');
             const [timeLeft, setTimeLeft] = useState(25 * 60);
             const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -46,15 +44,28 @@
             useEffect(() => {
                 const tg = window.Telegram.WebApp;
                 if (tg) {
-                    tg.ready();
-                    tg.expand();
+                    tg.ready(); tg.expand();
                     if (tg.initDataUnsafe?.user) setUserName(tg.initDataUnsafe.user.first_name);
                 }
             }, []);
 
             useEffect(() => {
-                localStorage.setItem('motivateMe_v10_tasks', JSON.stringify(tasks));
+                localStorage.setItem('motivateMe_full_tasks', JSON.stringify(tasks));
             }, [tasks]);
+
+            // Звуковой движок
+            const playSound = () => {
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.frequency.value = soundTheme === 'movie' ? 440 : (soundTheme === 'voice' ? 880 : 600);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.start(); osc.stop(ctx.currentTime + 0.4);
+                } catch(e) {}
+            };
 
             useEffect(() => {
                 let interval = null;
@@ -62,50 +73,48 @@
                     interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
                 } else if (timeLeft === 0) {
                     setIsTimerRunning(false);
-                    if (window.Telegram?.WebApp) {
-                        window.Telegram.WebApp.showAlert('Время фокуса вышло!');
-                        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                    }
+                    playSound();
+                    window.Telegram?.WebApp?.showAlert('Время фокуса вышло!');
                 }
                 return () => clearInterval(interval);
             }, [isTimerRunning, timeLeft]);
 
             const addTask = () => {
                 if (!newTaskText.trim()) return;
-                const newTask = { id: Date.now(), text: newTaskText, completed: false, date: currentDate.toDateString() };
-                setTasks([newTask, ...tasks]);
+                const newTask = { id: Date.now(), text: newTaskText, completed: false, date: currentDate.toDateString(), isAnimating: false };
+                setTasks(prev => [newTask, ...prev].sort((a,b) => a.completed - b.completed));
                 setNewTaskText('');
                 window.Telegram?.WebApp?.HapticFeedback.impactOccurred('medium');
             };
 
             const toggleTask = (id) => {
-                setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
                 window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');
-            };
-
-            const changeDate = (days) => {
-                const newDate = new Date(currentDate);
-                newDate.setDate(newDate.getDate() + days);
-                setCurrentDate(newDate);
-                window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');
+                setTasks(tasks.map(t => t.id === id ? { ...t, isAnimating: true } : t));
+                
+                setTimeout(() => {
+                    setTasks(prev => {
+                        const updated = prev.map(t => t.id === id ? { ...t, completed: !t.completed, isAnimating: false } : t);
+                        if (!prev.find(t => t.id === id).completed) playSound();
+                        return [...updated].sort((a,b) => a.completed - b.completed);
+                    });
+                }, 400);
             };
 
             const inviteFriend = () => {
                 const text = encodeURIComponent("Присоединяйся ко мне в MotivateMe! 🔥");
-                const url = `https://t.me/MotivateMe_ibot`;
-                window.Telegram?.WebApp?.openTelegramLink(`https://t.me/share/url?url=${url}&text=${text}`);
+                window.Telegram?.WebApp?.openTelegramLink(`https://t.me/share/url?url=https://t.me/MotivateMe_ibot&text=${text}`);
             };
 
             const showMotivation = () => {
-                const quotes = ["Ты сильнее, чем ты думаешь! 💪", "Дисциплина — это свобода. ✨", "Гордимся твоим прогрессом! ❤️"];
-                const q = quotes[Math.floor(Math.random() * quotes.length)];
-                window.Telegram?.WebApp?.showAlert(q);
+                const quotes = ["Ты сильнее, чем ты думаешь! 💪", "Дисциплина — это свобода. ✨", "Гордимся тобой! ❤️"];
+                window.Telegram?.WebApp?.showAlert(quotes[Math.floor(Math.random()*quotes.length)]);
             };
 
             const visibleTasks = tasks.filter(t => t.date === currentDate.toDateString());
+            const weeklyData = [{d:'Пн',v:40},{d:'Вт',v:70},{d:'Ср',v:50},{d:'Чт',v:90},{d:'Пт',v:60},{d:'Сб',v:100},{d:'Вс',v:80}];
 
             return (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', paddingBottom: '80px', boxSizing: 'border-box' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', paddingBottom: '100px', boxSizing: 'border-box' }}>
                     <div style={{ padding: '20px', textAlign: 'center' }}>
                         <h1 style={{ margin: 0, fontSize: '26px' }}>MotivateMe</h1>
                         <p style={{ opacity: 0.8, margin: '5px 0' }}>Привет, {userName}!</p>
@@ -113,11 +122,11 @@
 
                     {activeTab === 'home' && (
                         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 20px', boxSizing: 'border-box' }}>
-                            <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '25px', padding: '20px', width: '100%', maxWidth: '300px', textAlign: 'center', marginBottom: '20px' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '25px', padding: '20px', width: '100%', maxWidth: '320px', textAlign: 'center', marginBottom: '20px' }}>
                                 <div style={{ fontSize: '40px' }}>🔥</div>
                                 <div style={{ fontSize: '40px', fontWeight: 'bold' }}>{streak}</div>
                                 <div style={{ fontSize: '14px', marginBottom: '10px' }}>дней подряд!</div>
-                                <button onClick={showMotivation} style={{ background: 'transparent', border: '1px solid white', color: 'white', borderRadius: '10px', padding: '5px 15px', fontSize: '12px' }}>💌 Поддержка</button>
+                                <button onClick={showMotivation} style={{ background: 'white', color: '#FF8C00', border: 'none', borderRadius: '10px', padding: '8px 15px', fontSize: '12px', fontWeight:'bold' }}>💌 ПОДДЕРЖКА</button>
                             </div>
 
                             <div className="card" style={{ textAlign: 'center' }}>
@@ -132,46 +141,79 @@
 
                             <div className="card">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' }}>
-                                    <button onClick={() => changeDate(-1)} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '20px' }}>◀</button>
-                                    <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
-                                    <button onClick={() => changeDate(1)} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '20px' }}>▶</button>
+                                    <button onClick={() => {setCurrentDate(new Date(currentDate.setDate(currentDate.getDate()-1))); window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');}} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '20px' }}>◀</button>
+                                    <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span>
+                                    <button onClick={() => {setCurrentDate(new Date(currentDate.setDate(currentDate.getDate()+1))); window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');}} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '20px' }}>▶</button>
                                 </div>
                                 <div style={{ display: 'flex', marginBottom: '15px' }}>
-                                    <input type="text" value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="Цель..." style={{ flexGrow: 1, padding: '10px', border: '1px solid #ddd', borderRadius: '10px 0 0 10px', outline: 'none' }} />
-                                    <button onClick={addTask} style={{ background: '#FF8C00', color: 'white', border: 'none', padding: '0 15px', borderRadius: '0 10px 10px 0' }}>+</button>
+                                    <input type="text" value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="Новая цель..." style={{ flexGrow: 1, padding: '10px', border: '1px solid #ddd', borderRadius: '10px 0 0 10px', outline: 'none' }} />
+                                    <button onClick={addTask} style={{ background: '#FF8C00', color: 'white', border: 'none', padding: '0 15px', borderRadius: '0 10px 10px 0', fontWeight:'bold' }}>+</button>
                                 </div>
                                 {visibleTasks.map(t => (
-                                    <div key={t.id} onClick={() => toggleTask(t.id)} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #eee', opacity: t.completed ? 0.5 : 1 }}>
-                                        <div style={{ width: '18px', height: '18px', border: '2px solid #FF8C00', borderRadius: '5px', marginRight: '10px', background: t.completed ? '#FF8C00' : 'none' }}></div>
-                                        <span style={{ textDecoration: t.completed ? 'line-through' : 'none' }}>{t.text}</span>
+                                    <div key={t.id} onClick={() => toggleTask(t.id)} style={{ display: 'flex', alignItems: 'center', padding: t.isAnimating ? '0' : '12px 0', borderBottom: t.isAnimating ? 'none' : '1px solid #eee', opacity: t.isAnimating ? 0 : (t.completed ? 0.5 : 1), maxHeight: t.isAnimating ? '0' : '60px', overflow:'hidden', transition: 'all 0.4s' }}>
+                                        <div style={{ width: '20px', height: '20px', border: '2px solid #FF8C00', borderRadius: '6px', marginRight: '12px', background: t.completed ? '#FF8C00' : 'none', flexShrink:0 }}></div>
+                                        <span style={{ textDecoration: t.completed ? 'line-through' : 'none', fontSize:'15px' }}>{t.text}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
+                    {activeTab === 'progress' && (
+                        <div className="card" style={{ width: '90%', marginTop: '20px' }}>
+                            <h3 style={{ textAlign: 'center', color: '#FF8C00', margin:'0 0 20px 0' }}>Прогресс недели</h3>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '120px', paddingBottom: '10px' }}>
+                                {weeklyData.map((d, i) => (
+                                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                                        <div style={{ width: '15px', height: `${d.v}%`, background: d.v === 100 ? '#FF8C00' : '#ffd1a1', borderRadius: '4px 4px 0 0' }}></div>
+                                        <span style={{ fontSize: '10px', marginTop: '5px', color: '#999' }}>{d.d}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{ background: '#fff4e5', padding: '15px', borderRadius: '12px', marginTop: '20px', textAlign: 'center', fontSize: '14px', color: '#FF8C00', fontWeight: 'bold' }}>
+                                На 15% лучше, чем на прошлой неделе! 📈
+                            </div>
+                        </div>
+                    )}
+
                     {activeTab === 'social' && (
-                        <div className="card" style={{ marginTop: '20px' }}>
-                            <h3 style={{ textAlign: 'center', color: '#FF8C00' }}>Лидеры</h3>
-                            <div style={{ padding: '10px 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>1. Алексей М.</span>
-                                <strong>150 🔥</strong>
+                        <div className="card" style={{ width: '90%', marginTop: '20px' }}>
+                            <h3 style={{ textAlign: 'center', color: '#FF8C00', margin:'0 0 15px 0' }}>Лидеры города</h3>
+                            {[ {n:'Алексей М.', s:150}, {n:userName+' (Вы)', s:streak, me:true}, {n:'Мария К.', s:112} ].map((u, i) => (
+                                <div key={i} style={{ padding: '12px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', background: u.me ? '#fff4e5' : 'none', borderRadius: u.me ? '10px' : '0' }}>
+                                    <span>{i+1}. {u.n}</span>
+                                    <strong>{u.s} 🔥</strong>
+                                </div>
+                            ))}
+                            <button onClick={inviteFriend} style={{ width: '100%', marginTop: '20px', background: 'none', border: '1px dashed #FF8C00', color: '#FF8C00', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>+ ПОЗВАТЬ ДРУГА</button>
+                        </div>
+                    )}
+
+                    {activeTab === 'settings' && (
+                        <div className="card" style={{ width: '90%', marginTop: '20px' }}>
+                            <h3 style={{ textAlign: 'center', color: '#FF8C00', margin:'0 0 20px 0' }}>Настройки</h3>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>Тема звука:</label>
+                                <select value={soundTheme} onChange={e => setSoundTheme(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #ddd' }}>
+                                    <option value="standard">Стандартная</option>
+                                    <option value="movie">Кино</option>
+                                    <option value="voice">Голос</option>
+                                </select>
                             </div>
-                            <div style={{ padding: '10px 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', background: '#fff4e5' }}>
-                                <span>2. {userName} (Вы)</span>
-                                <strong>{streak} 🔥</strong>
-                            </div>
-                            <button onClick={inviteFriend} style={{ width: '100%', marginTop: '20px', background: 'none', border: '1px dashed #FF8C00', color: '#FF8C00', padding: '10px', borderRadius: '10px', fontWeight: 'bold' }}>+ Позвать друга</button>
+                            <label style={{ display: 'flex', alignItems: 'center', fontSize: '14px' }}>
+                                <input type="checkbox" checked={weekendsEnabled} onChange={() => setWeekendsEnabled(!weekendsEnabled)} style={{ marginRight: '10px', width: '18px', height: '18px' }} />
+                                Задачи на выходные
+                            </label>
                         </div>
                     )}
 
                     <div style={{ position: 'fixed', bottom: 0, width: '100%', background: 'white', display: 'flex', justifyContent: 'space-around', padding: '15px 0', borderTop: '1px solid #eee' }}>
-                        <div onClick={() => setActiveTab('home')} style={{ color: activeTab === 'home' ? '#FF8C00' : '#ccc', textAlign: 'center' }}>
-                            <div style={{ fontSize: '20px' }}>✓</div><div style={{ fontSize: '10px' }}>ЗАДАЧИ</div>
-                        </div>
-                        <div onClick={() => setActiveTab('social')} style={{ color: activeTab === 'social' ? '#FF8C00' : '#ccc', textAlign: 'center' }}>
-                            <div style={{ fontSize: '20px' }}>🏆</div><div style={{ fontSize: '10px' }}>ЛИДЕРЫ</div>
-                        </div>
+                        {[ {id:'home', icon:'✓', n:'ЗАДАЧИ'}, {id:'progress', icon:'📊', n:'ПРОГРЕСС'}, {id:'social', icon:'🏆', n:'ЛИДЕРЫ'}, {id:'settings', icon:'⚙️', n:'ОПЦИИ'} ].map(t => (
+                            <div key={t.id} onClick={() => {setActiveTab(t.id); window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');}} style={{ color: activeTab === t.id ? '#FF8C00' : '#ccc', textAlign: 'center', cursor:'pointer' }}>
+                                <div style={{ fontSize: '22px' }}>{t.icon}</div>
+                                <div style={{ fontSize: '9px', fontWeight: 'bold' }}>{t.n}</div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             );

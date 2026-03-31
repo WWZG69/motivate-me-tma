@@ -10,25 +10,26 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         body { margin: 0; padding: 0; background-color: #FF8C00; font-family: -apple-system, system-ui, sans-serif; color: white; -webkit-tap-highlight-color: transparent; }
-        .container { padding: 20px; display: flex; flexDirection: column; alignItems: center; paddingBottom: 100px; }
-        .card { background: white; border-radius: 20px; padding: 18px; color: #333; width: 100%; max-width: 360px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); margin-bottom: 12px; position: relative; animation: fadeIn 0.3s; }
+        .container { padding: 20px; display: flex; flex-direction: column; align-items: center; padding-bottom: 100px; }
+        .card { background: white; border-radius: 20px; padding: 20px; color: #333; width: 100%; max-width: 340px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); margin-bottom: 15px; box-sizing: border-box; animation: fadeIn 0.3s; }
         .goal-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .goal-title { font-weight: bold; font-size: 18px; margin: 0; }
         .goal-desc { font-size: 13px; color: #777; margin: 5px 0 10px 0; }
-        .stats-row { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+        .stats-row { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
         .badge { background: #fff0e0; color: #FF8C00; padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 12px; display: flex; align-items: center; gap: 4px; }
         
         /* Modal Style */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: flex-end; }
-        .modal-content { background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px; color: #333; box-sizing: border-box; animation: slideUp 0.3s; }
+        .modal-content { background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px; color: #333; box-sizing: border-box; animation: slideUp 0.3s; max-height: 90vh; overflow-y: auto; }
         
-        input, textarea, select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        .btn-add { background: white; color: #FF8C00; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; margin-top: 10px; }
-        .btn-save { background: #FF8C00; color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; width: 100%; font-size: 16px; }
+        input, textarea, select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
+        .btn-add { background: white; color: #FF8C00; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; margin-top: 10px; width: 100%; max-width: 340px; }
+        .btn-save { background: #FF8C00; color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; }
+        .btn-cancel { background: #eee; color: #777; border: none; padding: 15px; border-radius: 15px; font-weight: bold; width: 100%; font-size: 16px; margin-top: 10px; cursor: pointer; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .tab-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #eee; }
+        .tab-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #eee; z-index: 100; }
     </style>
 </head>
 <body>
@@ -38,22 +39,61 @@
 
         function App() {
             const [activeTab, setActiveTab] = useState('home');
+            const [userName, setUserName] = useState('Чемпион');
+            const [streak, setStreak] = useState(128); // Глобальный ударный режим
+            const [currentDate, setCurrentDate] = useState(new Date());
+            
+            // Настройки
+            const [motivationTone, setMotivationTone] = useState('soft');
+            const [soundTheme, setSoundTheme] = useState('standard');
+            
+            // Таймер
+            const [timeLeft, setTimeLeft] = useState(25 * 60);
+            const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+            // Цели
             const [goals, setGoals] = useState(() => {
-                const saved = localStorage.getItem('motivateMe_v3_goals');
+                const saved = localStorage.getItem('motivateMe_v4_goals');
                 return saved ? JSON.parse(saved) : [];
             });
 
+            // Форма
             const [isModalOpen, setIsModalOpen] = useState(false);
-            const [currentDate, setCurrentDate] = useState(new Date());
-
-            // Состояние новой цели
             const [form, setForm] = useState({
-                title: '', description: '', type: 'habit', deadline: '09:00', duration: '', ignoreHoliday: false
+                title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false
             });
 
             useEffect(() => {
-                localStorage.setItem('motivateMe_v3_goals', JSON.stringify(goals));
+                const tg = window.Telegram.WebApp;
+                if (tg) {
+                    tg.ready(); tg.expand();
+                    if (tg.initDataUnsafe?.user) setUserName(tg.initDataUnsafe.user.first_name);
+                }
+            }, []);
+
+            useEffect(() => {
+                localStorage.setItem('motivateMe_v4_goals', JSON.stringify(goals));
             }, [goals]);
+
+            // Логика таймера
+            useEffect(() => {
+                let interval = null;
+                if (isTimerRunning && timeLeft > 0) {
+                    interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+                } else if (timeLeft === 0) {
+                    setIsTimerRunning(false);
+                    window.Telegram?.WebApp?.showAlert('Время фокуса вышло!');
+                    window.Telegram?.WebApp?.HapticFeedback.notificationOccurred('success');
+                }
+                return () => clearInterval(interval);
+            }, [isTimerRunning, timeLeft]);
+
+            const changeDate = (days) => {
+                const newDate = new Date(currentDate);
+                newDate.setDate(newDate.getDate() + days);
+                setCurrentDate(newDate);
+                window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');
+            };
 
             const saveGoal = () => {
                 if (!form.title) return;
@@ -66,41 +106,80 @@
                 };
                 setGoals([goal, ...goals]);
                 setIsModalOpen(false);
-                setForm({ title: '', description: '', type: 'habit', deadline: '09:00', duration: '', ignoreHoliday: false });
+                setForm({ title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false });
                 window.Telegram?.WebApp?.HapticFeedback.notificationOccurred('success');
             };
 
-            const toggleGoal = (id) => {
+            const toggleGoal = (goalObj) => {
                 const todayStr = currentDate.toDateString();
-                setGoals(goals.map(g => {
-                    if (g.id !== id) return g;
-                    const newHistory = { ...g.history };
-                    const isDone = !!newHistory[todayStr];
+                const isCheckingToday = todayStr === new Date().toDateString();
+                const isCurrentlyDone = !!goalObj.history[todayStr];
+
+                if (!isCurrentlyDone && isCheckingToday) {
+                    // Проверка дедлайна
+                    const [h, m] = goalObj.deadline.split(':');
+                    const limit = new Date();
+                    limit.setHours(parseInt(h, 10), parseInt(m, 10), 0);
                     
-                    if (!isDone) {
+                    if (new Date() > limit) {
+                        const msg = motivationTone === 'hard' 
+                            ? "Время вышло! Ты провалил дедлайн. Соберись!" 
+                            : "Увы, время вышло. Завтра получится лучше!";
+                        window.Telegram?.WebApp?.showAlert(msg);
+                        window.Telegram?.WebApp?.HapticFeedback.notificationOccurred('error');
+                        return; // Блокируем выполнение
+                    }
+                }
+
+                setGoals(goals.map(g => {
+                    if (g.id !== goalObj.id) return g;
+                    const newHistory = { ...g.history };
+                    
+                    if (!isCurrentlyDone) {
                         newHistory[todayStr] = true;
                         window.Telegram?.WebApp?.HapticFeedback.impactOccurred('medium');
                     } else {
                         delete newHistory[todayStr];
                         window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');
                     }
-                    return { ...g, history: newHistory, streak: isDone ? Math.max(0, g.streak - 1) : g.streak + 1 };
+                    return { ...g, history: newHistory, streak: isCurrentlyDone ? Math.max(0, g.streak - 1) : g.streak + 1 };
                 }));
             };
 
             return (
                 <div className="container">
-                    <h1 style={{ textAlign: 'center', marginBottom: '5px' }}>Цели</h1>
-                    <p style={{ textAlign: 'center', opacity: 0.8, marginBottom: '25px' }}>Твой путь к величию</p>
+                    <h1 style={{ textAlign: 'center', marginBottom: '5px', fontSize: '26px' }}>MotivateMe Pro</h1>
+                    <p style={{ textAlign: 'center', opacity: 0.8, marginBottom: '20px' }}>{userName}, действуй!</p>
 
                     {activeTab === 'home' && (
-                        <>
-                            {goals.length === 0 && <p style={{textAlign:'center', marginTop:'50px'}}>Список пуст. Время ставить цели!</p>}
+                        <React.Fragment>
+                            {/* Календарь */}
+                            <div className="card" style={{ padding: '15px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <button onClick={() => changeDate(-1)} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '22px' }}>◀</button>
+                                    <span style={{ fontSize: '15px', fontWeight: 'bold' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span>
+                                    <button onClick={() => changeDate(1)} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '22px' }}>▶</button>
+                                </div>
+                            </div>
+
+                            {/* Таймер Фокуса */}
+                            <div className="card" style={{ textAlign: 'center' }}>
+                                <h3 style={{ margin: '0 0 10px 0', color: '#FF8C00' }}>Таймер Фокуса</h3>
+                                <div style={{ fontSize: '42px', fontWeight: 'bold', marginBottom: '10px' }}>
+                                    {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+                                </div>
+                                <button onClick={() => setIsTimerRunning(!isTimerRunning)} style={{ width: '100%', background: '#FF8C00', border: 'none', color: 'white', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>
+                                    {isTimerRunning ? 'ПАУЗА' : 'СТАРТ'}
+                                </button>
+                            </div>
+
+                            {/* Список Целей */}
+                            {goals.length === 0 && <p style={{textAlign:'center', marginTop:'20px'}}>Список пуст. Добавь свою первую цель!</p>}
                             
                             {goals.map(g => {
                                 const isDone = !!g.history[currentDate.toDateString()];
                                 return (
-                                    <div key={g.id} className="card" onClick={() => toggleGoal(g.id)} style={{ borderLeft: g.ignoreHoliday ? '6px solid #FF8C00' : 'none', opacity: isDone ? 0.6 : 1 }}>
+                                    <div key={g.id} className="card" onClick={() => toggleGoal(g)} style={{ borderLeft: g.ignoreHoliday ? '6px solid #FF8C00' : 'none', opacity: isDone ? 0.6 : 1, cursor: 'pointer' }}>
                                         <div className="goal-header">
                                             <div className="goal-title">{g.title}</div>
                                             {isDone && <span style={{color:'green', fontSize:'20px'}}>✓</span>}
@@ -109,72 +188,124 @@
                                         
                                         <div className="stats-row">
                                             {g.type !== 'once' && <span className="badge">🔥 {g.streak}</span>}
-                                            
                                             {g.type === 'habit' && <span className="badge">∞</span>}
-                                            
-                                            {g.type === 'sprint' && (
-                                                <span className="badge">⏳ {g.duration - g.streak} дн.</span>
-                                            )}
-                                            
-                                            <span style={{fontSize:'11px', color:'#999', marginLeft:'auto'}}>до {g.deadline}</span>
+                                            {g.type === 'sprint' && <span className="badge">⏳ Осталось: {Math.max(0, parseInt(g.duration || 0) - g.streak)} дн.</span>}
+                                            <span style={{fontSize:'11px', color:'#ef5350', fontWeight:'bold', marginLeft:'auto'}}>до {g.deadline}</span>
                                         </div>
                                     </div>
                                 );
                             })}
 
                             <button className="btn-add" onClick={() => setIsModalOpen(true)}>+ Добавить цель</button>
-                        </>
+                        </React.Fragment>
                     )}
 
-                    {/* Модальное окно создания */}
+                    {activeTab === 'progress' && (
+                        <div className="card">
+                            <h3 style={{ textAlign: 'center', color: '#FF8C00', margin:'0 0 20px 0' }}>Прогресс недели</h3>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '120px', paddingBottom: '10px' }}>
+                                {[{d:'Пн',v:40},{d:'Вт',v:70},{d:'Ср',v:50},{d:'Чт',v:90},{d:'Пт',v:60},{d:'Сб',v:100},{d:'Вс',v:80}].map((d, i) => (
+                                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                                        <div style={{ width: '15px', height: `${d.v}%`, background: d.v === 100 ? '#FF8C00' : '#ffd1a1', borderRadius: '4px 4px 0 0' }}></div>
+                                        <span style={{ fontSize: '10px', marginTop: '5px', color: '#999' }}>{d.d}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{ background: '#fff4e5', padding: '15px', borderRadius: '12px', marginTop: '20px', textAlign: 'center', fontSize: '14px', color: '#FF8C00', fontWeight: 'bold' }}>
+                                На 15% лучше, чем на прошлой неделе! 📈
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'social' && (
+                        <div className="card">
+                            <h3 style={{ textAlign: 'center', color: '#FF8C00', margin:'0 0 15px 0' }}>Лидеры города</h3>
+                            {[ {n:'Алексей М.', s:150}, {n:userName+' (Вы)', s:streak, me:true}, {n:'Мария К.', s:112} ].map((u, i) => (
+                                <div key={i} style={{ padding: '12px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', background: u.me ? '#fff4e5' : 'none', borderRadius: u.me ? '10px' : '0' }}>
+                                    <span>{i+1}. {u.n}</span>
+                                    <strong>{u.s} 🔥</strong>
+                                </div>
+                            ))}
+                            <button onClick={() => window.Telegram?.WebApp?.openTelegramLink(`https://t.me/share/url?url=https://t.me/MotivateMe_ibot`)} style={{ width: '100%', marginTop: '20px', background: 'none', border: '1px dashed #FF8C00', color: '#FF8C00', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>+ ПОЗВАТЬ ДРУГА</button>
+                        </div>
+                    )}
+
+                    {activeTab === 'settings' && (
+                        <div className="card">
+                            <h3 style={{ textAlign: 'center', color: '#FF8C00', margin:'0 0 20px 0' }}>Опции и Мотивация</h3>
+                            
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>Тон поддержки от бота:</label>
+                                <select value={motivationTone} onChange={e => setMotivationTone(e.target.value)}>
+                                    <option value="soft">Мягкий ("У тебя всё получится!")</option>
+                                    <option value="hard">Жесткий ("Не будь тряпкой, соберись!")</option>
+                                </select>
+                            </div>
+
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>Звуки в приложении:</label>
+                                <select value={soundTheme} onChange={e => setSoundTheme(e.target.value)}>
+                                    <option value="standard">Стандартные</option>
+                                    <option value="movie">Эпичные (Кино)</option>
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Модальное окно создания цели */}
                     {isModalOpen && (
                         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
                             <div className="modal-content" onClick={e => e.stopPropagation()}>
                                 <h2 style={{margin:'0 0 20px 0'}}>Новая цель</h2>
                                 
-                                <input placeholder="Заголовок (например: Бег)" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-                                <textarea placeholder="Описание (зачем это тебе?)" rows="2" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                                <input placeholder="Название (например: Пробежка)" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
+                                <textarea placeholder="Описание (зачем тебе это?)" rows="2" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
                                 
                                 <div style={{fontSize:'12px', marginBottom:'5px', fontWeight:'bold'}}>Тип цели:</div>
                                 <select value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-                                    <option value="once">Разовая задача</option>
-                                    <option value="habit">Постоянная (Бесконечно)</option>
-                                    <option value="sprint">Срочная (На количество дней)</option>
+                                    <option value="once">Разовая (один раз)</option>
+                                    <option value="habit">Постоянная (навсегда)</option>
+                                    <option value="sprint">Спринт (на N дней)</option>
                                 </select>
 
                                 {form.type === 'sprint' && (
-                                    <input type="number" placeholder="Сколько дней нужно соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} />
+                                    <input type="number" placeholder="Сколько дней?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} />
                                 )}
 
                                 <div style={{display:'flex', gap:'15px'}}>
                                     <div style={{flex:1}}>
-                                        <div style={{fontSize:'12px', marginBottom:'5px', fontWeight:'bold'}}>Дедлайн:</div>
+                                        <div style={{fontSize:'12px', marginBottom:'5px', fontWeight:'bold', color: '#ef5350'}}>Крайний срок (Дедлайн):</div>
                                         <input type="time" value={form.deadline} onChange={e => setForm({...form, deadline: e.target.value})} />
                                     </div>
                                     <div style={{flex:1, display:'flex', alignItems:'center'}}>
-                                        <label style={{fontSize:'12px', display:'flex', alignItems:'center', gap:'8px', marginTop:'10px'}}>
+                                        <label style={{fontSize:'12px', display:'flex', alignItems:'center', gap:'8px', marginTop:'10px', fontWeight: 'bold'}}>
                                             <input type="checkbox" checked={form.ignoreHoliday} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} style={{width:'auto', margin:0}} /> 
-                                            Без выходных
+                                            Игнорировать выходные
                                         </label>
                                     </div>
                                 </div>
 
-                                <button className="btn-save" onClick={saveGoal}>СОЗДАТЬ ЦЕЛЬ</button>
+                                <button className="btn-save" onClick={saveGoal}>СОХРАНИТЬ ЦЕЛЬ</button>
+                                <button className="btn-cancel" onClick={() => setIsModalOpen(false)}>ОТМЕНА</button>
                             </div>
                         </div>
                     )}
 
                     {/* Нижнее меню */}
                     <div className="tab-bar">
-                        <div onClick={() => setActiveTab('home')} style={{ color: activeTab === 'home' ? '#FF8C00' : '#ccc', textAlign: 'center' }}>
+                        <div onClick={() => setActiveTab('home')} style={{ color: activeTab === 'home' ? '#FF8C00' : '#ccc', textAlign: 'center', cursor: 'pointer' }}>
                             <div style={{ fontSize: '24px' }}>🎯</div>
                             <div style={{ fontSize: '10px', fontWeight: 'bold' }}>ГЛАВНАЯ</div>
                         </div>
-                        <div onClick={() => setActiveTab('progress')} style={{ color: activeTab === 'progress' ? '#FF8C00' : '#ccc', textAlign: 'center' }}>
+                        <div onClick={() => setActiveTab('progress')} style={{ color: activeTab === 'progress' ? '#FF8C00' : '#ccc', textAlign: 'center', cursor: 'pointer' }}>
                             <div style={{ fontSize: '24px' }}>📊</div>
                             <div style={{ fontSize: '10px', fontWeight: 'bold' }}>АНАЛИЗ</div>
                         </div>
-                        <div onClick={() => setActiveTab('settings')} style={{ color: activeTab === 'settings' ? '#FF8C00' : '#ccc', textAlign: 'center' }}>
+                        <div onClick={() => setActiveTab('social')} style={{ color: activeTab === 'social' ? '#FF8C00' : '#ccc', textAlign: 'center', cursor: 'pointer' }}>
+                            <div style={{ fontSize: '24px' }}>🏆</div>
+                            <div style={{ fontSize: '10px', fontWeight: 'bold' }}>ЛИДЕРЫ</div>
+                        </div>
+                        <div onClick={() => setActiveTab('settings')} style={{ color: activeTab === 'settings' ? '#FF8C00' : '#ccc', textAlign: 'center', cursor: 'pointer' }}>
                             <div style={{ fontSize: '24px' }}>⚙️</div>
                             <div style={{ fontSize: '10px', fontWeight: 'bold' }}>ОПЦИИ</div>
                         </div>

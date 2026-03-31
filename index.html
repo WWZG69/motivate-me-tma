@@ -22,40 +22,66 @@
 
         function App() {
             const [activeTab, setActiveTab] = useState('home');
-            const [streak, setStreak] = useState(128);
+            const [streak, setStreak] = useState(128); 
             const [userName, setUserName] = useState('Чемпион');
+            
+            // Геймификация: Уровень зависит от ударного режима (1 уровень за каждые 10 дней)
+            const userLevel = Math.floor(streak / 10) + 1;
             
             const [soundTheme, setSoundTheme] = useState('standard');
             const [weekendsEnabled, setWeekendsEnabled] = useState(true);
             const [currentDate, setCurrentDate] = useState(new Date());
 
-            // Защищенная загрузка задач
-            const [tasks, setTasks] = useState(() => {
-                try {
-                    const savedTasks = localStorage.getItem('motivateMe_tasks');
-                    return savedTasks ? JSON.parse(savedTasks) : [
-                        { id: 1, text: 'Чтение (30 мин)', completed: false, isAnimating: false, date: new Date().toDateString() },
-                        { id: 2, text: 'Спорт', completed: false, isAnimating: false, date: new Date().toDateString() }
-                    ];
-                } catch (e) {
-                    return [];
-                }
-            });
+            // Состояния для облачной синхронизации
+            const [isCloudLoaded, setIsCloudLoaded] = useState(false);
+            const [tasks, setTasks] = useState([]);
 
             const [newTaskText, setNewTaskText] = useState('');
             const [timeLeft, setTimeLeft] = useState(25 * 60);
             const [isTimerRunning, setIsTimerRunning] = useState(false);
 
-            useEffect(() => { localStorage.setItem('motivateMe_tasks', JSON.stringify(tasks)); }, [tasks]);
-
+            // 1. ЗАГРУЗКА ДАННЫХ ИЗ TELEGRAM CLOUD
             useEffect(() => {
                 const tg = window.Telegram.WebApp;
                 if (tg) {
                     tg.ready();
                     tg.expand();
                     if (tg.initDataUnsafe && tg.initDataUnsafe.user) setUserName(tg.initDataUnsafe.user.first_name);
+                    
+                    // Магия: запрашиваем задачи из облака Telegram
+                    tg.CloudStorage.getItem('motivateMe_tasks', (err, value) => {
+                        if (!err && value) {
+                            try {
+                                setTasks(JSON.parse(value));
+                            } catch (e) { console.error('Ошибка парсинга облака'); }
+                        } else {
+                            // Если облако пустое (первый вход) - даем базовые задачи
+                            setTasks([
+                                { id: 1, text: 'Чтение (30 мин)', completed: false, isAnimating: false, date: new Date().toDateString() },
+                                { id: 2, text: 'Спорт', completed: false, isAnimating: false, date: new Date().toDateString() }
+                            ]);
+                        }
+                        setIsCloudLoaded(true);
+                    });
+                } else {
+                    // Fallback для браузера
+                    const savedTasks = localStorage.getItem('motivateMe_tasks');
+                    if (savedTasks) setTasks(JSON.parse(savedTasks));
+                    setIsCloudLoaded(true);
                 }
             }, []);
+
+            // 2. СОХРАНЕНИЕ В TELEGRAM CLOUD ПРИ КАЖДОМ ИЗМЕНЕНИИ
+            useEffect(() => {
+                if (!isCloudLoaded) return; // Не сохраняем, пока не загрузили старые
+                const tasksString = JSON.stringify(tasks);
+                
+                const tg = window.Telegram.WebApp;
+                if (tg) {
+                    tg.CloudStorage.setItem('motivateMe_tasks', tasksString);
+                }
+                localStorage.setItem('motivateMe_tasks', tasksString); // дублируем локально
+            }, [tasks, isCloudLoaded]);
 
             const playMotivationSound = () => {
                 try {
@@ -180,128 +206,137 @@
             const visibleTasks = tasks.filter(t => t.date === currentDate.toDateString() || !t.date);
             const weeklyData = [{ day: 'Пн', val: 40 }, { day: 'Вт', val: 70 }, { day: 'Ср', val: 50 }, { day: 'Чт', val: 90 }, { day: 'Пт', val: 60 }, { day: 'Сб', val: 100 }, { day: 'Вс', val: 80 }];
             const leaderboard = [
-                { rank: 1, name: 'Алексей М.', streak: 150, isMe: false },
-                { rank: 2, name: userName, streak: streak, isMe: true },
-                { rank: 3, name: 'Мария К.', streak: 112, isMe: false },
+                { rank: 1, name: 'Алексей М.', streak: 150, level: 16, isMe: false },
+                { rank: 2, name: userName, streak: streak, level: userLevel, isMe: true },
+                { rank: 3, name: 'Мария К.', streak: 112, level: 12, isMe: false },
             ];
 
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', boxSizing: 'border-box', paddingBottom: '90px' }}>
                     <div style={{ padding: '20px', width: '100%', textAlign: 'center', boxSizing: 'border-box' }}>
                         <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 5px 0' }}>MotivateMe</h1>
-                        <p style={{ opacity: 0.9, fontSize: '14px', margin: '0' }}>Платформа для роста</p>
+                        <p style={{ opacity: 0.9, fontSize: '14px', margin: '0' }}>Уровень {userLevel} • Платформа для роста</p>
                     </div>
 
-                    {activeTab === 'home' && (
-                        <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
-                            <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '25px', padding: '20px', textAlign: 'center', width: '100%', maxWidth: '300px', marginBottom: '20px' }}>
-                                <div style={{ fontSize: '40px', marginBottom: '5px' }}>🔥</div>
-                                <h2 style={{ fontSize: '40px', margin: '0' }}>{streak}</h2>
-                                <p style={{ fontSize: '14px', marginTop: '5px' }}>дней подряд!</p>
-                                <button onClick={showMotivation} style={{ marginTop: '15px', padding: '10px 20px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'transparent', color: 'white', fontSize: '13px', cursor: 'pointer', transition: 'background 0.3s' }}>
-                                    💌 Получить поддержку
-                                </button>
-                            </div>
-                            
-                            <div style={{ width: '100%', maxWidth: '300px', background: '#fff', borderRadius: '20px', padding: '20px', color: '#333', marginBottom: '20px', textAlign: 'center', boxSizing: 'border-box' }}>
-                                <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FF8C00' }}>Контроль времени</h3>
-                                <div style={{ fontSize: '48px', fontWeight: 'bold', color: isTimerRunning ? '#FF8C00' : '#333', margin: '10px 0' }}>{formatTime(timeLeft)}</div>
-                                <button onClick={() => { if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); setIsTimerRunning(!isTimerRunning); }} style={{ padding: '12px 30px', borderRadius: '12px', border: 'none', backgroundColor: isTimerRunning ? '#ffe0b2' : '#FF8C00', color: isTimerRunning ? '#FF8C00' : 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px', width: '100%' }}>
-                                    {isTimerRunning ? 'ПАУЗА' : 'НАЧАТЬ ФОКУС'}
-                                </button>
-                            </div>
+                    {!isCloudLoaded ? (
+                        <div style={{ marginTop: '50px', fontSize: '18px', animation: 'fadeIn 1s infinite alternate' }}>Синхронизация...</div>
+                    ) : (
+                        <>
+                            {activeTab === 'home' && (
+                                <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
+                                    <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '25px', padding: '20px', textAlign: 'center', width: '100%', maxWidth: '300px', marginBottom: '20px' }}>
+                                        <div style={{ fontSize: '40px', marginBottom: '5px' }}>🔥</div>
+                                        <h2 style={{ fontSize: '40px', margin: '0' }}>{streak}</h2>
+                                        <p style={{ fontSize: '14px', marginTop: '5px' }}>дней подряд!</p>
+                                        <button onClick={showMotivation} style={{ marginTop: '15px', padding: '10px 20px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'transparent', color: 'white', fontSize: '13px', cursor: 'pointer', transition: 'background 0.3s' }}>
+                                            💌 Получить поддержку
+                                        </button>
+                                    </div>
+                                    
+                                    <div style={{ width: '100%', maxWidth: '300px', background: '#fff', borderRadius: '20px', padding: '20px', color: '#333', marginBottom: '20px', textAlign: 'center', boxSizing: 'border-box' }}>
+                                        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FF8C00' }}>Контроль времени</h3>
+                                        <div style={{ fontSize: '48px', fontWeight: 'bold', color: isTimerRunning ? '#FF8C00' : '#333', margin: '10px 0' }}>{formatTime(timeLeft)}</div>
+                                        <button onClick={() => { if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); setIsTimerRunning(!isTimerRunning); }} style={{ padding: '12px 30px', borderRadius: '12px', border: 'none', backgroundColor: isTimerRunning ? '#ffe0b2' : '#FF8C00', color: isTimerRunning ? '#FF8C00' : 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px', width: '100%' }}>
+                                            {isTimerRunning ? 'ПАУЗА' : 'НАЧАТЬ ФОКУС'}
+                                        </button>
+                                    </div>
 
-                            <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '20px', color: '#333', boxSizing: 'border-box' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '20px', borderBottom: '2px solid #f0f0f0', paddingBottom: '15px' }}>
-                                    <button onClick={() => changeDate(-1)} style={{ border: 'none', background: 'transparent', fontSize: '20px', color: '#FF8C00', cursor: 'pointer', padding: '0 10px' }}>◀</button>
-                                    <span style={{ fontWeight: 'bold', fontSize: '13px', textTransform: 'capitalize', textAlign: 'center', flexGrow: 1 }}>{formatDate(currentDate)}</span>
-                                    <button onClick={() => changeDate(1)} style={{ border: 'none', background: 'transparent', fontSize: '20px', color: '#FF8C00', cursor: 'pointer', padding: '0 10px' }}>▶</button>
-                                </div>
-
-                                <div style={{ display: 'flex', marginBottom: '15px' }}>
-                                    <input type="text" value={newTaskText} onChange={(e) => setNewTaskText(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addTask()} placeholder="Новая цель..." style={{ flexGrow: 1, padding: '10px', borderRadius: '10px 0 0 10px', border: '1px solid #ddd', outline: 'none', fontSize: '14px', width: '100%' }} />
-                                    <button onClick={addTask} style={{ padding: '10px 15px', borderRadius: '0 10px 10px 0', border: 'none', backgroundColor: '#FF8C00', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '18px' }}>+</button>
-                                </div>
-                                
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                    {visibleTasks.length === 0 && <p style={{textAlign: 'center', color: '#999', fontSize: '13px', margin: '20px 0'}}>На этот день нет задач. Отдыхай или добавь новую!</p>}
-                                    {visibleTasks.map(task => (
-                                        <li key={task.id} onClick={() => toggleTask(task.id)} style={{ display: 'flex', alignItems: 'center', padding: task.isAnimating ? '0px' : '12px 0', borderBottom: task.isAnimating ? 'none' : '1px solid #eee', cursor: 'pointer', opacity: task.isAnimating ? 0 : (task.completed ? 0.5 : 1), maxHeight: task.isAnimating ? '0px' : '100px', transform: task.isAnimating ? 'translateY(30px) scale(0.9)' : 'translateY(0) scale(1)', overflow: 'hidden', transition: 'all 0.4s' }}>
-                                            <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: '2px solid #FF8C00', marginRight: '12px', background: task.completed ? '#FF8C00' : 'transparent', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
-                                                {task.completed && <span style={{ color: 'white', fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
-                                            </div>
-                                            <span style={{ textDecoration: task.completed ? 'line-through' : 'none', flexGrow: 1, fontSize: '15px', fontWeight: '500' }}>{task.text}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'progress' && (
-                        <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
-                            <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '25px 20px', color: '#333', marginBottom: '20px', boxSizing: 'border-box' }}>
-                                <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#FF8C00', textAlign: 'center' }}>Твои тенденции</h3>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '150px', borderBottom: '2px solid #eee', paddingBottom: '10px', marginBottom: '15px' }}>
-                                    {weeklyData.map((data, index) => (
-                                        <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-                                            <div style={{ width: '20px', height: `${data.val}%`, backgroundColor: data.val === 100 ? '#FF8C00' : '#ffe0b2', borderRadius: '5px 5px 0 0' }}></div>
-                                            <span style={{ fontSize: '10px', marginTop: '8px', color: '#999', fontWeight: 'bold' }}>{data.day}</span>
+                                    <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '20px', color: '#333', boxSizing: 'border-box' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '20px', borderBottom: '2px solid #f0f0f0', paddingBottom: '15px' }}>
+                                            <button onClick={() => changeDate(-1)} style={{ border: 'none', background: 'transparent', fontSize: '20px', color: '#FF8C00', cursor: 'pointer', padding: '0 10px' }}>◀</button>
+                                            <span style={{ fontWeight: 'bold', fontSize: '13px', textTransform: 'capitalize', textAlign: 'center', flexGrow: 1 }}>{formatDate(currentDate)}</span>
+                                            <button onClick={() => changeDate(1)} style={{ border: 'none', background: 'transparent', fontSize: '20px', color: '#FF8C00', cursor: 'pointer', padding: '0 10px' }}>▶</button>
                                         </div>
-                                    ))}
-                                </div>
-                                <div style={{ background: '#fff4e5', padding: '15px', borderRadius: '12px', textAlign: 'center' }}>
-                                    <span style={{ fontSize: '24px' }}>📈</span>
-                                    <p style={{ margin: '10px 0 0 0', fontSize: '14px', fontWeight: '500', color: '#FF8C00' }}>Вы достигли цели на 80%!</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
-                    {activeTab === 'social' && (
-                        <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
-                            <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '20px', color: '#333', boxSizing: 'border-box' }}>
-                                <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#FF8C00', textAlign: 'center' }}>Рейтинг (Твой город)</h3>
-                                <p style={{ fontSize: '12px', color: '#777', margin: '0 0 15px 0', textAlign: 'center' }}>Лидеры за последнюю неделю</p>
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                    {leaderboard.map(user => (
-                                        <li key={user.rank} style={{ display: 'flex', alignItems: 'center', padding: '12px', borderBottom: '1px solid #eee', background: user.isMe ? '#fff4e5' : 'transparent', borderRadius: user.isMe ? '10px' : '0' }}>
-                                            <strong style={{ width: '25px', color: user.rank === 1 ? '#FFD700' : '#999', fontSize: '16px' }}>#{user.rank}</strong>
-                                            <span style={{ flexGrow: 1, fontSize: '15px', fontWeight: user.isMe ? 'bold' : '500' }}>{user.name}</span>
-                                            <span style={{ fontWeight: 'bold', color: '#FF8C00' }}>{user.streak} 🔥</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                                <button onClick={inviteFriend} style={{ width: '100%', marginTop: '15px', padding: '10px', borderRadius: '10px', border: '1px dashed #FF8C00', background: 'transparent', color: '#FF8C00', fontWeight: 'bold', cursor: 'pointer' }}>
-                                    + Пригласить друга
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'settings' && (
-                        <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
-                            <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '20px', color: '#333', boxSizing: 'border-box' }}>
-                                <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', color: '#FF8C00', textAlign: 'center' }}>Персонализация</h3>
-                                
-                                <div style={{ marginBottom: '20px' }}>
-                                    <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>Звук уведомлений:</p>
-                                    <select value={soundTheme} onChange={(e) => setSoundTheme(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #ddd', outline: 'none', fontSize: '14px' }}>
-                                        <option value="standard">Стандартный</option>
-                                        <option value="movie">Из любимого фильма</option>
-                                        <option value="voice">Голос близкого</option>
-                                    </select>
+                                        <div style={{ display: 'flex', marginBottom: '15px' }}>
+                                            <input type="text" value={newTaskText} onChange={(e) => setNewTaskText(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addTask()} placeholder="Новая цель..." style={{ flexGrow: 1, padding: '10px', borderRadius: '10px 0 0 10px', border: '1px solid #ddd', outline: 'none', fontSize: '14px', width: '100%' }} />
+                                            <button onClick={addTask} style={{ padding: '10px 15px', borderRadius: '0 10px 10px 0', border: 'none', backgroundColor: '#FF8C00', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '18px' }}>+</button>
+                                        </div>
+                                        
+                                        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                            {visibleTasks.length === 0 && <p style={{textAlign: 'center', color: '#999', fontSize: '13px', margin: '20px 0'}}>На этот день нет задач. Отдыхай или добавь новую!</p>}
+                                            {visibleTasks.map(task => (
+                                                <li key={task.id} onClick={() => toggleTask(task.id)} style={{ display: 'flex', alignItems: 'center', padding: task.isAnimating ? '0px' : '12px 0', borderBottom: task.isAnimating ? 'none' : '1px solid #eee', cursor: 'pointer', opacity: task.isAnimating ? 0 : (task.completed ? 0.5 : 1), maxHeight: task.isAnimating ? '0px' : '100px', transform: task.isAnimating ? 'translateY(30px) scale(0.9)' : 'translateY(0) scale(1)', overflow: 'hidden', transition: 'all 0.4s' }}>
+                                                    <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: '2px solid #FF8C00', marginRight: '12px', background: task.completed ? '#FF8C00' : 'transparent', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
+                                                        {task.completed && <span style={{ color: 'white', fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
+                                                    </div>
+                                                    <span style={{ textDecoration: task.completed ? 'line-through' : 'none', flexGrow: 1, fontSize: '15px', fontWeight: '500' }}>{task.text}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 </div>
+                            )}
 
-                                <div style={{ marginBottom: '10px' }}>
-                                    <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>Гибкость планирования:</p>
-                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '14px' }}>
-                                        <input type="checkbox" checked={weekendsEnabled} onChange={() => setWeekendsEnabled(!weekendsEnabled)} style={{ marginRight: '10px', width: '18px', height: '18px', accentColor: '#FF8C00' }} />
-                                        Назначать задачи на выходные
-                                    </label>
+                            {activeTab === 'progress' && (
+                                <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
+                                    <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '25px 20px', color: '#333', marginBottom: '20px', boxSizing: 'border-box' }}>
+                                        <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#FF8C00', textAlign: 'center' }}>Твои тенденции</h3>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '150px', borderBottom: '2px solid #eee', paddingBottom: '10px', marginBottom: '15px' }}>
+                                            {weeklyData.map((data, index) => (
+                                                <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                                                    <div style={{ width: '20px', height: `${data.val}%`, backgroundColor: data.val === 100 ? '#FF8C00' : '#ffe0b2', borderRadius: '5px 5px 0 0' }}></div>
+                                                    <span style={{ fontSize: '10px', marginTop: '8px', color: '#999', fontWeight: 'bold' }}>{data.day}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div style={{ background: '#fff4e5', padding: '15px', borderRadius: '12px', textAlign: 'center' }}>
+                                            <span style={{ fontSize: '24px' }}>📈</span>
+                                            <p style={{ margin: '10px 0 0 0', fontSize: '14px', fontWeight: '500', color: '#FF8C00' }}>Вы достигли цели на 80%!</p>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            )}
+
+                            {activeTab === 'social' && (
+                                <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
+                                    <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '20px', color: '#333', boxSizing: 'border-box' }}>
+                                        <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#FF8C00', textAlign: 'center' }}>Рейтинг (Твой город)</h3>
+                                        <p style={{ fontSize: '12px', color: '#777', margin: '0 0 15px 0', textAlign: 'center' }}>Лидеры за последнюю неделю</p>
+                                        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                            {leaderboard.map(user => (
+                                                <li key={user.rank} style={{ display: 'flex', alignItems: 'center', padding: '12px', borderBottom: '1px solid #eee', background: user.isMe ? '#fff4e5' : 'transparent', borderRadius: user.isMe ? '10px' : '0' }}>
+                                                    <strong style={{ width: '25px', color: user.rank === 1 ? '#FFD700' : '#999', fontSize: '16px' }}>#{user.rank}</strong>
+                                                    <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                                                        <span style={{ fontSize: '15px', fontWeight: user.isMe ? 'bold' : '500' }}>{user.name}</span>
+                                                        <span style={{ fontSize: '11px', color: '#888' }}>Ур. {user.level}</span>
+                                                    </div>
+                                                    <span style={{ fontWeight: 'bold', color: '#FF8C00' }}>{user.streak} 🔥</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <button onClick={inviteFriend} style={{ width: '100%', marginTop: '15px', padding: '10px', borderRadius: '10px', border: '1px dashed #FF8C00', background: 'transparent', color: '#FF8C00', fontWeight: 'bold', cursor: 'pointer' }}>
+                                            + Пригласить друга
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'settings' && (
+                                <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
+                                    <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '20px', color: '#333', boxSizing: 'border-box' }}>
+                                        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', color: '#FF8C00', textAlign: 'center' }}>Персонализация</h3>
+                                        
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>Звук уведомлений:</p>
+                                            <select value={soundTheme} onChange={(e) => setSoundTheme(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #ddd', outline: 'none', fontSize: '14px' }}>
+                                                <option value="standard">Стандартный</option>
+                                                <option value="movie">Из любимого фильма</option>
+                                                <option value="voice">Голос близкого</option>
+                                            </select>
+                                        </div>
+
+                                        <div style={{ marginBottom: '10px' }}>
+                                            <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>Гибкость планирования:</p>
+                                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '14px' }}>
+                                                <input type="checkbox" checked={weekendsEnabled} onChange={() => setWeekendsEnabled(!weekendsEnabled)} style={{ marginRight: '10px', width: '18px', height: '18px', accentColor: '#FF8C00' }} />
+                                                Назначать задачи на выходные
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'white', display: 'flex', justifyContent: 'space-around', padding: '15px 0', boxShadow: '0 -5px 15px rgba(0,0,0,0.05)', zIndex: 1000 }}>

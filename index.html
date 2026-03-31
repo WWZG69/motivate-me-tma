@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotivateMe</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background-color: #FF8C00; font-family: sans-serif; color: white; -webkit-tap-highlight-color: transparent; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Скрываем скроллбар для красоты */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('home');
+            const [streak, setStreak] = useState(128);
+            const [userName, setUserName] = useState('Чемпион');
+            
+            // Настройки пользователя
+            const [soundTheme, setSoundTheme] = useState('standard');
+            const [weekendsEnabled, setWeekendsEnabled] = useState(true);
+
+            const [tasks, setTasks] = useState(() => {
+                const savedTasks = localStorage.getItem('motivateMe_tasks');
+                return savedTasks ? JSON.parse(savedTasks) : [
+                    { id: 1, text: 'Чтение (30 мин)', completed: false, isAnimating: false },
+                    { id: 2, text: 'Спорт', completed: false, isAnimating: false }
+                ];
+            });
+
+            const [newTaskText, setNewTaskText] = useState('');
+            const [timeLeft, setTimeLeft] = useState(25 * 60);
+            const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+            useEffect(() => { localStorage.setItem('motivateMe_tasks', JSON.stringify(tasks)); }, [tasks]);
+
+            useEffect(() => {
+                const tg = window.Telegram.WebApp;
+                if (tg) {
+                    tg.ready();
+                    tg.expand();
+                    if (tg.initDataUnsafe && tg.initDataUnsafe.user) setUserName(tg.initDataUnsafe.user.first_name);
+                }
+            }, []);
+
+            // Генератор звуков для имитации "Мотивирующих аудио-уведомлений"
+            const playMotivationSound = () => {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContext) return;
+                    const ctx = new AudioContext();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    if (soundTheme === 'standard') {
+                        osc.frequency.value = 600;
+                        osc.type = 'sine';
+                    } else if (soundTheme === 'movie') {
+                        osc.frequency.value = 440; // Эпичный низкий тон
+                        osc.type = 'square';
+                    } else if (soundTheme === 'voice') {
+                        osc.frequency.value = 880; // Мягкий высокий тон
+                        osc.type = 'triangle';
+                    }
+
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                    
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.5);
+                } catch (e) { console.log("Аудио не поддерживается в этом окружении"); }
+            };
+
+            useEffect(() => {
+                let interval = null;
+                if (isTimerRunning && timeLeft > 0) {
+                    interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+                } else if (timeLeft === 0) {
+                    setIsTimerRunning(false);
+                    playMotivationSound(); // Звук при окончании таймера
+                    if (window.Telegram && window.Telegram.WebApp) {
+                        window.Telegram.WebApp.showAlert('Время фокуса вышло!');
+                        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                    }
+                }
+                return () => clearInterval(interval);
+            }, [isTimerRunning, timeLeft, soundTheme]);
+
+            const toggleTask = (id) => {
+                if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                
+                const task = tasks.find(t => t.id === id);
+                if (!task.completed) playMotivationSound(); // Звук при выполнении задачи
+
+                setTasks(tasks.map(t => t.id === id ? { ...t, isAnimating: true } : t));
+                setTimeout(() => {
+                    setTasks(currentTasks => {
+                        let updatedTasks = currentTasks.map(t => t.id === id ? { ...t, completed: !t.completed, isAnimating: false } : t);
+                        return updatedTasks.sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
+                    });
+                }, 400); 
+            };
+
+            const addTask = () => {
+                if (newTaskText.trim() === '') return;
+                const newTask = { id: Date.now(), text: newTaskText, completed: false, isAnimating: false };
+                setTasks(prev => [{...newTask}, ...prev].sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1)));
+                setNewTaskText('');
+                if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+            };
+
+            const formatTime = (seconds) => {
+                const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const s = (seconds % 60).toString().padStart(2, '0');
+                return `${m}:${s}`;
+            };
+
+            const switchTab = (tab) => {
+                if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                setActiveTab(tab);
+            };
+
+            const weeklyData = [{ day: 'Пн', val: 40 }, { day: 'Вт', val: 70 }, { day: 'Ср', val: 50 }, { day: 'Чт', val: 90 }, { day: 'Пт', val: 60 }, { day: 'Сб', val: 100 }, { day: 'Вс', val: 80 }];
+            const leaderboard = [
+                { rank: 1, name: 'Алексей М.', streak: 150, isMe: false },
+                { rank: 2, name: userName, streak: streak, isMe: true },
+                { rank: 3, name: 'Мария К.', streak: 112, isMe: false },
+            ];
+
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', boxSizing: 'border-box', paddingBottom: '90px' }}>
+                    <div style={{ padding: '20px', width: '100%', textAlign: 'center', boxSizing: 'border-box' }}>
+                        <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 5px 0' }}>MotivateMe</h1>
+                        <p style={{ opacity: 0.9, fontSize: '14px', margin: '0' }}>Платформа для роста</p>
+                    </div>
+
+                    {/* Вкладка 1: Главная */}
+                    {activeTab === 'home' && (
+                        <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '25px', padding: '20px', textAlign: 'center', width: '100%', maxWidth: '300px', marginBottom: '20px' }}>
+                                <div style={{ fontSize: '40px', marginBottom: '5px' }}>🔥</div>
+                                <h2 style={{ fontSize: '40px', margin: '0' }}>{streak}</h2>
+                                <p style={{ fontSize: '14px', marginTop: '5px' }}>дней подряд!</p>
+                            </div>
+                            <div style={{ width: '100%', maxWidth: '300px', background: '#fff', borderRadius: '20px', padding: '20px', color: '#333', marginBottom: '20px', textAlign: 'center', boxSizing: 'border-box' }}>
+                                <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FF8C00' }}>Контроль времени</h3>
+                                <div style={{ fontSize: '48px', fontWeight: 'bold', color: isTimerRunning ? '#FF8C00' : '#333', margin: '10px 0' }}>{formatTime(timeLeft)}</div>
+                                <button onClick={() => { if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); setIsTimerRunning(!isTimerRunning); }} style={{ padding: '12px 30px', borderRadius: '12px', border: 'none', backgroundColor: isTimerRunning ? '#ffe0b2' : '#FF8C00', color: isTimerRunning ? '#FF8C00' : 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px', width: '100%' }}>
+                                    {isTimerRunning ? 'ПАУЗА' : 'НАЧАТЬ ФОКУС'}
+                                </button>
+                            </div>
+                            <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '20px', color: '#333', boxSizing: 'border-box' }}>
+                                <h3 style={{ margin: '0 0 15px 0', fontSize: '18px', color: '#FF8C00' }}>Дневник задач</h3>
+                                <div style={{ display: 'flex', marginBottom: '15px' }}>
+                                    <input type="text" value={newTaskText} onChange={(e) => setNewTaskText(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addTask()} placeholder="Новая цель..." style={{ flexGrow: 1, padding: '10px', borderRadius: '10px 0 0 10px', border: '1px solid #ddd', outline: 'none', fontSize: '14px', width: '100%' }} />
+                                    <button onClick={addTask} style={{ padding: '10px 15px', borderRadius: '0 10px 10px 0', border: 'none', backgroundColor: '#FF8C00', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '18px' }}>+</button>
+                                </div>
+                                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                    {tasks.map(task => (
+                                        <li key={task.id} onClick={() => toggleTask(task.id)} style={{ display: 'flex', alignItems: 'center', padding: task.isAnimating ? '0px' : '12px 0', borderBottom: task.isAnimating ? 'none' : '1px solid #eee', cursor: 'pointer', opacity: task.isAnimating ? 0 : (task.completed ? 0.5 : 1), maxHeight: task.isAnimating ? '0px' : '100px', transform: task.isAnimating ? 'translateY(30px) scale(0.9)' : 'translateY(0) scale(1)', overflow: 'hidden', transition: 'all 0.4s' }}>
+                                            <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: '2px solid #FF8C00', marginRight: '12px', background: task.completed ? '#FF8C00' : 'transparent', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
+                                                {task.completed && <span style={{ color: 'white', fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
+                                            </div>
+                                            <span style={{ textDecoration: task.completed ? 'line-through' : 'none', flexGrow: 1, fontSize: '15px', fontWeight: '500' }}>{task.text}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Вкладка 2: Прогресс */}
+                    {activeTab === 'progress' && (
+                        <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
+                            <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '25px 20px', color: '#333', marginBottom: '20px', boxSizing: 'border-box' }}>
+                                <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#FF8C00', textAlign: 'center' }}>Твои тенденции</h3>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '150px', borderBottom: '2px solid #eee', paddingBottom: '10px', marginBottom: '15px' }}>
+                                    {weeklyData.map((data, index) => (
+                                        <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                                            <div style={{ width: '20px', height: `${data.val}%`, backgroundColor: data.val === 100 ? '#FF8C00' : '#ffe0b2', borderRadius: '5px 5px 0 0' }}></div>
+                                            <span style={{ fontSize: '10px', marginTop: '8px', color: '#999', fontWeight: 'bold' }}>{data.day}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={{ background: '#fff4e5', padding: '15px', borderRadius: '12px', textAlign: 'center' }}>
+                                    <span style={{ fontSize: '24px' }}>📈</span>
+                                    <p style={{ margin: '10px 0 0 0', fontSize: '14px', fontWeight: '500', color: '#FF8C00' }}>Вы достигли цели на 80%!</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Вкладка 3: Социум */}
+                    {activeTab === 'social' && (
+                        <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
+                            <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '20px', color: '#333', boxSizing: 'border-box' }}>
+                                <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#FF8C00', textAlign: 'center' }}>Рейтинг (Твой город)</h3>
+                                <p style={{ fontSize: '12px', color: '#777', margin: '0 0 15px 0', textAlign: 'center' }}>Лидеры за последнюю неделю</p>
+                                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                    {leaderboard.map(user => (
+                                        <li key={user.rank} style={{ display: 'flex', alignItems: 'center', padding: '12px', borderBottom: '1px solid #eee', background: user.isMe ? '#fff4e5' : 'transparent', borderRadius: user.isMe ? '10px' : '0' }}>
+                                            <strong style={{ width: '25px', color: user.rank === 1 ? '#FFD700' : '#999', fontSize: '16px' }}>#{user.rank}</strong>
+                                            <span style={{ flexGrow: 1, fontSize: '15px', fontWeight: user.isMe ? 'bold' : '500' }}>{user.name}</span>
+                                            <span style={{ fontWeight: 'bold', color: '#FF8C00' }}>{user.streak} 🔥</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Вкладка 4: Настройки (Новое!) */}
+                    {activeTab === 'settings' && (
+                        <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
+                            <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '20px', color: '#333', boxSizing: 'border-box' }}>
+                                <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', color: '#FF8C00', textAlign: 'center' }}>Персонализация</h3>
+                                
+                                <div style={{ marginBottom: '20px' }}>
+                                    <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>Звук уведомлений:</p>
+                                    <select value={soundTheme} onChange={(e) => setSoundTheme(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #ddd', outline: 'none', fontSize: '14px' }}>
+                                        <option value="standard">Стандартный</option>
+                                        <option value="movie">Из любимого фильма</option>
+                                        <option value="voice">Голос близкого</option>
+                                    </select>
+                                </div>
+
+                                <div style={{ marginBottom: '10px' }}>
+                                    <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>Гибкость планирования:</p>
+                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '14px' }}>
+                                        <input type="checkbox" checked={weekendsEnabled} onChange={() => setWeekendsEnabled(!weekendsEnabled)} style={{ marginRight: '10px', width: '18px', height: '18px', accentColor: '#FF8C00' }} />
+                                        Назначать задачи на выходные
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* НИЖНЕЕ МЕНЮ НАВИГАЦИИ (Теперь 4 кнопки) */}
+                    <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'white', display: 'flex', justifyContent: 'space-around', padding: '15px 0', boxShadow: '0 -5px 15px rgba(0,0,0,0.05)', zIndex: 1000 }}>
+                        <div onClick={() => switchTab('home')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: activeTab === 'home' ? '#FF8C00' : '#bbb' }}>
+                            <span style={{ fontSize: '22px', marginBottom: '4px' }}>✓</span><span style={{ fontSize: '11px', fontWeight: 'bold' }}>Задачи</span>
+                        </div>
+                        <div onClick={() => switchTab('progress')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: activeTab === 'progress' ? '#FF8C00' : '#bbb' }}>
+                            <span style={{ fontSize: '22px', marginBottom: '4px' }}>📊</span><span style={{ fontSize: '11px', fontWeight: 'bold' }}>Прогресс</span>
+                        </div>
+                        <div onClick={() => switchTab('social')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: activeTab === 'social' ? '#FF8C00' : '#bbb' }}>
+                            <span style={{ fontSize: '22px', marginBottom: '4px' }}>🏆</span><span style={{ fontSize: '11px', fontWeight: 'bold' }}>Лидеры</span>
+                        </div>
+                        <div onClick={() => switchTab('settings')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: activeTab === 'settings' ? '#FF8C00' : '#bbb' }}>
+                            <span style={{ fontSize: '22px', marginBottom: '4px' }}>⚙️</span><span style={{ fontSize: '11px', fontWeight: 'bold' }}>Настройки</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

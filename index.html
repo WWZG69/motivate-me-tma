@@ -11,7 +11,6 @@
     <style>
         body { margin: 0; padding: 0; background-color: #FF8C00; font-family: sans-serif; color: white; -webkit-tap-highlight-color: transparent; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Скрываем скроллбар для красоты */
         ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
@@ -26,19 +25,21 @@
             const [streak, setStreak] = useState(128);
             const [userName, setUserName] = useState('Чемпион');
             
-            // Настройки
             const [soundTheme, setSoundTheme] = useState('standard');
             const [weekendsEnabled, setWeekendsEnabled] = useState(true);
-
-            // Календарь
             const [currentDate, setCurrentDate] = useState(new Date());
 
+            // Защищенная загрузка задач
             const [tasks, setTasks] = useState(() => {
-                const savedTasks = localStorage.getItem('motivateMe_tasks');
-                return savedTasks ? JSON.parse(savedTasks) : [
-                    { id: 1, text: 'Чтение (30 мин)', completed: false, isAnimating: false, date: new Date().toDateString() },
-                    { id: 2, text: 'Спорт', completed: false, isAnimating: false, date: new Date().toDateString() }
-                ];
+                try {
+                    const savedTasks = localStorage.getItem('motivateMe_tasks');
+                    return savedTasks ? JSON.parse(savedTasks) : [
+                        { id: 1, text: 'Чтение (30 мин)', completed: false, isAnimating: false, date: new Date().toDateString() },
+                        { id: 2, text: 'Спорт', completed: false, isAnimating: false, date: new Date().toDateString() }
+                    ];
+                } catch (e) {
+                    return [];
+                }
             });
 
             const [newTaskText, setNewTaskText] = useState('');
@@ -137,8 +138,80 @@
                 if (window.Telegram && window.Telegram.WebApp) {
                     window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
                     const text = "Присоединяйся ко мне в MotivateMe! Пора вырваться из кольца ожидания 🔥";
-                    
-                    // Имя твоего бота интегрировано
-    </script>
-</body>
-</html>
+                    const botUsername = "MotivateMe_ibot"; 
+                    const botLink = `https://t.me/${botUsername}`;
+                    window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(text)}`);
+                } else {
+                    alert("Функция работает только внутри Telegram!");
+                }
+            };
+
+            const showMotivation = () => {
+                if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.HapticFeedback.impactOccurred('rigid');
+                const quotes = [
+                    "Мы верим в тебя! Каждый твой шаг делает тебя лучше. ❤️ (Твоя семья)",
+                    "Не сдавайся! Твоя дисциплина вдохновляет нас всех. 💪 (Друзья)",
+                    "Ты делаешь потрясающую работу. Гордимся тобой! ✨",
+                    "Даже маленькие победы — это шаг к большой цели. Вперед! 🚀",
+                    "Мы знаем, что иногда бывает трудно, но ты справишься! Обнимаем. 🤗"
+                ];
+                const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.showAlert(`💌 Сообщение поддержки:\n\n"${randomQuote}"`);
+                } else {
+                    alert(`💌 Сообщение поддержки:\n\n"${randomQuote}"`);
+                }
+            };
+
+            const changeDate = (days) => {
+                if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                const newDate = new Date(currentDate);
+                newDate.setDate(newDate.getDate() + days);
+                setCurrentDate(newDate);
+            };
+
+            const formatDate = (date) => {
+                const options = { weekday: 'short', day: 'numeric', month: 'long' };
+                let str = date.toLocaleDateString('ru-RU', options);
+                if (date.toDateString() === new Date().toDateString()) return `Сегодня, ${str}`;
+                return str;
+            };
+
+            const visibleTasks = tasks.filter(t => t.date === currentDate.toDateString() || !t.date);
+            const weeklyData = [{ day: 'Пн', val: 40 }, { day: 'Вт', val: 70 }, { day: 'Ср', val: 50 }, { day: 'Чт', val: 90 }, { day: 'Пт', val: 60 }, { day: 'Сб', val: 100 }, { day: 'Вс', val: 80 }];
+            const leaderboard = [
+                { rank: 1, name: 'Алексей М.', streak: 150, isMe: false },
+                { rank: 2, name: userName, streak: streak, isMe: true },
+                { rank: 3, name: 'Мария К.', streak: 112, isMe: false },
+            ];
+
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', boxSizing: 'border-box', paddingBottom: '90px' }}>
+                    <div style={{ padding: '20px', width: '100%', textAlign: 'center', boxSizing: 'border-box' }}>
+                        <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 5px 0' }}>MotivateMe</h1>
+                        <p style={{ opacity: 0.9, fontSize: '14px', margin: '0' }}>Платформа для роста</p>
+                    </div>
+
+                    {activeTab === 'home' && (
+                        <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', animation: 'fadeIn 0.3s' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '25px', padding: '20px', textAlign: 'center', width: '100%', maxWidth: '300px', marginBottom: '20px' }}>
+                                <div style={{ fontSize: '40px', marginBottom: '5px' }}>🔥</div>
+                                <h2 style={{ fontSize: '40px', margin: '0' }}>{streak}</h2>
+                                <p style={{ fontSize: '14px', marginTop: '5px' }}>дней подряд!</p>
+                                <button onClick={showMotivation} style={{ marginTop: '15px', padding: '10px 20px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.5)', backgroundColor: 'transparent', color: 'white', fontSize: '13px', cursor: 'pointer', transition: 'background 0.3s' }}>
+                                    💌 Получить поддержку
+                                </button>
+                            </div>
+                            
+                            <div style={{ width: '100%', maxWidth: '300px', background: '#fff', borderRadius: '20px', padding: '20px', color: '#333', marginBottom: '20px', textAlign: 'center', boxSizing: 'border-box' }}>
+                                <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FF8C00' }}>Контроль времени</h3>
+                                <div style={{ fontSize: '48px', fontWeight: 'bold', color: isTimerRunning ? '#FF8C00' : '#333', margin: '10px 0' }}>{formatTime(timeLeft)}</div>
+                                <button onClick={() => { if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); setIsTimerRunning(!isTimerRunning); }} style={{ padding: '12px 30px', borderRadius: '12px', border: 'none', backgroundColor: isTimerRunning ? '#ffe0b2' : '#FF8C00', color: isTimerRunning ? '#FF8C00' : 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px', width: '100%' }}>
+                                    {isTimerRunning ? 'ПАУЗА' : 'НАЧАТЬ ФОКУС'}
+                                </button>
+                            </div>
+
+                            <div style={{ width: '100%', maxWidth: '300px', background: 'white', borderRadius: '20px', padding: '20px', color: '#333', boxSizing: 'border-box' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '20px', borderBottom: '2px solid #f0f0f0', paddingBottom: '15px' }}>
+                                    <button onClick={() => changeDate(-1)} style={{ border: 'none', background: 'transparent', fontSize: '20px', color: '#FF8C00', cursor: 'pointer', padding: '0 10px' }}>◀</button>
+                                    <span style={{ fontWeight: 'bold

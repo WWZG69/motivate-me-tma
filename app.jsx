@@ -1,7 +1,6 @@
 const { useState, useEffect, useRef } = React;
 
 const Icons = {
-    // 1. Прицел (Counter Strike 1.6 стиль)
     Goals: (props) => (
         <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}>
             <circle cx="12" cy="12" r="9" />
@@ -12,14 +11,19 @@ const Icons = {
             <circle cx="12" cy="12" r="0.5" fill={props.active ? "#FF8C00" : "#fff"} />
         </svg>
     ),
-    // 2. Фокус (Камера: квадрат с углами и кругом)
     Focus: (props) => (
         <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}>
             <path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5" strokeLinecap="round" strokeLinejoin="round"/>
             <circle cx="12" cy="12" r="3" />
         </svg>
     ),
-    // 3. Статистика (Точки соединенные линией)
+    // Новая иконка плюса для центральной кнопки
+    Add: (props) => (
+        <svg viewBox="0 0 24 24" className="tab-add-icon" {...props}>
+            <line x1="12" y1="5" x2="12" y2="19" strokeLinecap="round" />
+            <line x1="5" y1="12" x2="19" y2="12" strokeLinecap="round" />
+        </svg>
+    ),
     Stats: (props) => (
         <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}>
             <circle cx="4" cy="17" r="1.5" fill={props.active ? "#FF8C00" : "#fff"} />
@@ -28,7 +32,6 @@ const Icons = {
             <path d="M5.5 16l5-7.5M13.5 8l5 4.5" strokeLinecap="round" />
         </svg>
     ),
-    // 4. Шестеренка (Минимализм)
     Settings: (props) => (
         <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}>
             <circle cx="12" cy="12" r="3" />
@@ -101,6 +104,14 @@ function App() {
         triggerHaptic('light');
     };
 
+    // Вынесли функцию открытия модалки в отдельную, чтобы вызывать ее из центральной кнопки
+    const openCreateModal = () => {
+        triggerHaptic('light');
+        setEditingGoalId(null);
+        setForm({title:'', description:'', type:'habit', deadline:'23:59', duration:'', ignoreHoliday:false});
+        setIsModalOpen(true);
+    };
+
     const saveGoal = () => {
         if (!form.title) return;
         if (editingGoalId) {
@@ -161,7 +172,7 @@ function App() {
                         </div>
                     </div>
                     
-                    {goals.length === 0 && <p style={{textAlign:'center', marginTop:'20px'}}>Список пуст. Добавь цель!</p>}
+                    {goals.length === 0 && <p style={{textAlign:'center', marginTop:'20px'}}>Список пуст. Нажми + внизу!</p>}
                     
                     {goals.map(g => {
                         const isDone = !!g.history[currentDate.toDateString()];
@@ -181,7 +192,6 @@ function App() {
                             </div>
                         );
                     })}
-                    <button className="btn-add" onClick={() => { setEditingGoalId(null); setForm({title:'', description:'', type:'habit', deadline:'23:59', duration:'', ignoreHoliday:false}); setIsModalOpen(true); }}>+ Добавить цель</button>
                 </React.Fragment>
             )}
 
@@ -215,7 +225,6 @@ function App() {
                 </div>
             )}
 
-            {/* МЕНЮ ДЕЙСТВИЙ С ЦЕЛЬЮ */}
             {actionMenuGoal && (
                 <div className="modal-overlay" onClick={() => setActionMenuGoal(null)}>
                     <div className="modal-content" style={{ paddingBottom: '40px', display: 'block' }} onClick={e => e.stopPropagation()}>
@@ -229,7 +238,6 @@ function App() {
                 </div>
             )}
 
-            {/* ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ */}
             {confirmDeleteGoalId && (
                 <div className="modal-overlay modal-center" onClick={() => setConfirmDeleteGoalId(null)}>
                     <div className="modal-content-center" style={{ display: 'block' }} onClick={e => e.stopPropagation()}>
@@ -241,7 +249,6 @@ function App() {
                 </div>
             )}
 
-            {/* ПОЛНОЦЕННОЕ ОКНО СОЗДАНИЯ/РЕДАКТИРОВАНИЯ */}
             {isModalOpen && (
                 <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
                     <div className="modal-content" style={{ display: 'block' }} onClick={e => e.stopPropagation()}>
@@ -280,7 +287,7 @@ function App() {
                 </div>
             )}
 
-            {/* НИЖНЯЯ ПАНЕЛЬ С НОВЫМИ ИКОНКАМИ */}
+            {/* НОВАЯ ПАНЕЛЬ С 5 ЭЛЕМЕНТАМИ */}
             <div className="tab-bar">
                 <div onClick={() => setActiveTab('home')} className="tab-item">
                     <Icons.Goals active={activeTab === 'home'} />
@@ -288,6 +295,14 @@ function App() {
                 <div onClick={() => setActiveTab('progress')} className="tab-item">
                     <Icons.Focus active={activeTab === 'progress'} />
                 </div>
+                
+                {/* Центральная кнопка "+" */}
+                <div className="tab-add-wrapper" onClick={openCreateModal}>
+                    <div className="tab-add-btn">
+                        <Icons.Add />
+                    </div>
+                </div>
+
                 <div onClick={() => setActiveTab('social')} className="tab-item">
                     <Icons.Stats active={activeTab === 'social'} />
                 </div>

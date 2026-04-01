@@ -17,7 +17,6 @@ const Icons = {
             <circle cx="12" cy="12" r="3" />
         </svg>
     ),
-    // Новая иконка плюса для центральной кнопки
     Add: (props) => (
         <svg viewBox="0 0 24 24" className="tab-add-icon" {...props}>
             <line x1="12" y1="5" x2="12" y2="19" strokeLinecap="round" />
@@ -104,7 +103,6 @@ function App() {
         triggerHaptic('light');
     };
 
-    // Вынесли функцию открытия модалки в отдельную, чтобы вызывать ее из центральной кнопки
     const openCreateModal = () => {
         triggerHaptic('light');
         setEditingGoalId(null);
@@ -164,31 +162,31 @@ function App() {
 
             {activeTab === 'home' && (
                 <React.Fragment>
-                    <div className="card" style={{ padding: '15px', borderRadius: '15px', display: 'block' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <button onClick={() => changeDate(-1)} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '22px' }}>◀</button>
-                            <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#000' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span>
-                            <button onClick={() => changeDate(1)} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '22px' }}>▶</button>
-                        </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '360px', marginBottom: '15px' }}>
+                        <button onClick={() => changeDate(-1)} style={{ border: 'none', background: 'none', color: '#fff', fontSize: '22px', padding: '10px' }}>◀</button>
+                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span>
+                        <button onClick={() => changeDate(1)} style={{ border: 'none', background: 'none', color: '#fff', fontSize: '22px', padding: '10px' }}>▶</button>
                     </div>
                     
-                    {goals.length === 0 && <p style={{textAlign:'center', marginTop:'20px'}}>Список пуст. Нажми + внизу!</p>}
+                    {goals.length === 0 && <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Список пуст. Нажми + внизу!</p>}
                     
                     {goals.map(g => {
                         const isDone = !!g.history[currentDate.toDateString()];
                         return (
-                            <div key={g.id} className="card" onTouchStart={() => handleTouchStart(g)} onTouchEnd={handleTouchEnd} onMouseDown={() => handleTouchStart(g)} onMouseUp={handleTouchEnd} onClick={() => triggerHaptic('light')} style={{ borderLeft: g.ignoreHoliday ? '6px solid #FF8C00' : 'none', opacity: isDone ? 0.7 : 1 }}>
+                            <div key={g.id} className="card" onTouchStart={() => handleTouchStart(g)} onTouchEnd={handleTouchEnd} onMouseDown={() => handleTouchStart(g)} onMouseUp={handleTouchEnd} onClick={() => triggerHaptic('light')} style={{ opacity: isDone ? 0.6 : 1 }}>
                                 <div className="goal-info">
-                                    <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none' }}>{g.title}</div>
-                                    {g.description && <div className="goal-desc">{g.description}</div>}
-                                    <div className="stats-row">
-                                        {g.type !== 'once' && <span className="badge">🔥 {g.streak}</span>}
-                                        {g.type === 'habit' && <span className="badge">∞</span>}
-                                        {g.type === 'sprint' && <span className="badge">⏳ {Math.max(0, parseInt(g.duration || 0) - g.streak)} дн.</span>}
+                                    <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>
+                                        {g.title}
                                     </div>
-                                    <div className="deadline-tag">до {g.deadline}</div>
+                                    <div className="stats-row">
+                                        {g.type !== 'once' && <span className="badge">{g.streak} 🔥</span>}
+                                        {g.type === 'habit' && <span className="badge">∞</span>}
+                                        {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - g.streak)} ⏳</span>}
+                                    </div>
                                 </div>
-                                <button className={`btn-complete ${isDone ? 'done' : ''}`} onClick={(e) => toggleGoal(e, g)}>{isDone ? '✓' : ''}</button>
+                                <button className={`btn-complete ${isDone ? 'done' : ''}`} onClick={(e) => toggleGoal(e, g)}>
+                                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </button>
                             </div>
                         );
                     })}
@@ -196,9 +194,9 @@ function App() {
             )}
 
             {activeTab === 'progress' && (
-                <div className="card" style={{ display: 'block' }}>
-                    <h3 style={{ textAlign: 'center', color: '#FF8C00' }}>Таймер Фокуса</h3>
-                    <div style={{ fontSize: '42px', fontWeight: 'bold', textAlign: 'center', margin: '20px 0', color: '#000' }}>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.65)' }}>
+                    <h3 style={{ textAlign: 'center', color: '#fff', margin: 0 }}>Таймер Фокуса</h3>
+                    <div style={{ fontSize: '42px', fontWeight: 'bold', textAlign: 'center', margin: '20px 0', color: '#FF8C00' }}>
                         {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
                     </div>
                     <button onClick={() => setIsTimerRunning(!isTimerRunning)} style={{ width: '100%', background: '#FF8C00', border: 'none', color: 'white', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>
@@ -208,19 +206,19 @@ function App() {
             )}
 
             {activeTab === 'social' && (
-                <div className="card" style={{ display: 'block' }}>
-                    <h3 style={{ textAlign: 'center', color: '#FF8C00' }}>Статистика</h3>
-                    <p style={{textAlign: 'center', color: '#777'}}>Графики появятся здесь совсем скоро!</p>
+                <div className="card" style={{ display: 'block', background: 'rgba(0,0,0,0.65)' }}>
+                    <h3 style={{ textAlign: 'center', color: '#fff', margin: '0 0 10px 0' }}>Статистика</h3>
+                    <p style={{textAlign: 'center', color: 'rgba(255,255,255,0.6)'}}>Графики появятся здесь совсем скоро!</p>
                 </div>
             )}
 
             {activeTab === 'settings' && (
-                <div className="card" style={{ display: 'block' }}>
-                    <h3 style={{ textAlign: 'center', color: '#FF8C00' }}>Настройки</h3>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px', color: '#000' }}>Тон поддержки:</label>
-                    <select className="custom-select" value={motivationTone} onChange={e => setMotivationTone(e.target.value)}>
-                        <option value="soft">Мягкий</option>
-                        <option value="hard">Жесткий</option>
+                <div className="card" style={{ display: 'block', background: 'rgba(0,0,0,0.65)' }}>
+                    <h3 style={{ textAlign: 'center', color: '#fff', margin: '0 0 15px 0' }}>Настройки</h3>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px', color: '#fff' }}>Тон поддержки:</label>
+                    <select className="custom-select" value={motivationTone} onChange={e => setMotivationTone(e.target.value)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
+                        <option value="soft" style={{color: '#000'}}>Мягкий</option>
+                        <option value="hard" style={{color: '#000'}}>Жесткий</option>
                     </select>
                 </div>
             )}
@@ -287,7 +285,6 @@ function App() {
                 </div>
             )}
 
-            {/* НОВАЯ ПАНЕЛЬ С 5 ЭЛЕМЕНТАМИ */}
             <div className="tab-bar">
                 <div onClick={() => setActiveTab('home')} className="tab-item">
                     <Icons.Goals active={activeTab === 'home'} />
@@ -296,7 +293,6 @@ function App() {
                     <Icons.Focus active={activeTab === 'progress'} />
                 </div>
                 
-                {/* Центральная кнопка "+" */}
                 <div className="tab-add-wrapper" onClick={openCreateModal}>
                     <div className="tab-add-btn">
                         <Icons.Add />

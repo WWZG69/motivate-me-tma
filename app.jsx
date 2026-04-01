@@ -22,6 +22,7 @@ function App() {
     
     const touchStartX = useRef(0);
     const touchStartY = useRef(0);
+    const touchStartTime = useRef(0); // ТАЙМЕР ДЛЯ СКОРОСТИ СВАЙПА
     const isDragging = useRef(false);
     const isSwipeValid = useRef(null); 
     
@@ -114,11 +115,12 @@ function App() {
         }, 350);
     };
 
-    // УМНАЯ ФИЗИКА СВАЙПА 
+    // ФИЗИКА СВАЙПА + VELOCITY (СКОРОСТЬ И ИМПУЛЬС)
     const onSwipeStart = (e) => {
         if (isTransitioning) return;
         touchStartX.current = e.touches[0].clientX;
         touchStartY.current = e.touches[0].clientY;
+        touchStartTime.current = Date.now(); // Засекаем время старта
         isDragging.current = true;
         isSwipeValid.current = null; 
     };
@@ -128,16 +130,14 @@ function App() {
         const deltaX = e.touches[0].clientX - touchStartX.current;
         const deltaY = e.touches[0].clientY - touchStartY.current;
 
-        // Если палец хоть немного поехал — это не долгое нажатие
         if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
             if (pressTimer.current) clearTimeout(pressTimer.current);
             isLongPress.current = false;
         }
 
-        // РАСШИРЕННЫЙ УГОЛ СВАЙПА (прощаем неровные движения по диагонали)
+        // РАСШИРЕННЫЙ УГОЛ СВАЙПА (можно тянуть не идеально ровно)
         if (isSwipeValid.current === null) {
             if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-                // Разрешаем свайп, даже если палец съехал вниз/вверх почти на столько же, сколько вбок
                 isSwipeValid.current = Math.abs(deltaX) > Math.abs(deltaY) * 0.5;
             }
         }
@@ -154,11 +154,16 @@ function App() {
         }
         isDragging.current = false;
         
+        const swipeDuration = Date.now() - touchStartTime.current;
+        const velocity = offsetPx / swipeDuration; // Считаем скорость пальца
         const threshold = window.innerWidth * 0.25; 
         
-        if (offsetPx > threshold) animateToDate(-1); 
-        else if (offsetPx < -threshold) animateToDate(1); 
-        else {
+        // Перелистываем, если протащили далеко ИЛИ дернули быстро (velocity)
+        if (offsetPx > threshold || velocity > 0.6) {
+            animateToDate(-1); 
+        } else if (offsetPx < -threshold || velocity < -0.6) {
+            animateToDate(1); 
+        } else {
             setIsTransitioning(true);
             setOffsetPx(0);
             setTimeout(() => setIsTransitioning(false), 300);
@@ -258,7 +263,6 @@ function App() {
         }));
     };
 
-    // Отрисовка одной панели дня
     const renderDayView = (renderDate) => {
         const dateKey = renderDate.toDateString();
         return (
@@ -307,6 +311,10 @@ function App() {
         );
     };
 
+    // МАТЕМАТИКА ДЛЯ ИДЕАЛЬНОГО ДВИЖЕНИЯ ДАТЫ В ПРОЦЕНТАХ
+    const screenW = window.innerWidth || 390;
+    const dateShiftPercent = (offsetPx / screenW) * 33.333333;
+
     const transitionStyle = isTransitioning ? 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
     const dateTransitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none'; 
 
@@ -332,7 +340,7 @@ function App() {
                         
                         <div className="date-mask">
                             <div className="date-track" style={{
-                                transform: `translateX(calc(-33.3333% + ${offsetPx * 0.4}px))`,
+                                transform: `translateX(calc(-33.333333% + ${dateShiftPercent}%))`,
                                 transition: dateTransitionStyle
                             }}>
                                 <div className="date-pane"><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{getOffsetDate(currentDate, -1).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>

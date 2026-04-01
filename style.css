@@ -10,7 +10,7 @@ body {
     overflow-x: hidden; 
 }
 
-/* ФИГУРА: Увеличена на 20% и сдвинута сильнее влево */
+/* ОПТИМИЗИРОВАННАЯ КАПЛЯ */
 body::before {
     content: '';
     position: fixed;
@@ -38,6 +38,7 @@ body::before {
 .main-title { margin: 0; font-size: 28px; font-weight: bold; color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
 .m-logo { width: 57px; height: 57px; border-radius: 18px; margin-left: 12px; object-fit: cover; background: #fff; transform: rotate(-20deg); box-shadow: 0 4px 11px rgba(0,0,0,0.4); }
 
+/* Карточки */
 .card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 20px; padding: 20px; color: #000; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); margin-bottom: 15px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; transition: transform 0.15s ease, box-shadow 0.15s ease; cursor: pointer; user-select: none; }
 .card:active { transform: scale(0.96); }
 
@@ -51,27 +52,65 @@ body::before {
 .btn-complete { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #FF8C00; background: transparent; color: white; font-size: 32px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; }
 .btn-complete.done { background: #FF8C00; transform: scale(1.05); }
 
-/* ПАРЯЩАЯ ПАНЕЛЬ В СТИЛЕ iOS */
+/* ПАРЯЩАЯ ПАНЕЛЬ */
 .tab-bar { 
     position: fixed; 
-    bottom: 25px; /* Отступ снизу */
-    left: 20px;   /* Отступ слева */
-    right: 20px;  /* Отступ справа */
+    bottom: 25px; 
+    left: 20px;   
+    right: 20px;  
     background: rgba(0, 0, 0, 0.8); 
     backdrop-filter: blur(20px); 
     -webkit-backdrop-filter: blur(20px); 
     display: flex; 
-    justify-content: space-around; 
-    padding: 16px 0; 
-    border-radius: 35px; /* Закругленные края как капсула */
+    align-items: center; /* Центрируем элементы по вертикали */
+    justify-content: space-evenly; /* Идеально равное расстояние */
+    padding: 10px 0; /* Чуть уменьшили отступы, чтобы кнопка выделялась */
+    border-radius: 35px; 
     border: 1px solid rgba(255, 255, 255, 0.15); 
     z-index: 100; 
     box-shadow: 0 15px 35px rgba(0,0,0,0.5);
 }
 
-.tab-item { text-align: center; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+.tab-item { text-align: center; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; height: 100%; }
 .tab-item:active { transform: scale(0.9); }
-.tab-label { display: none; } /* Скрываем названия по ТЗ */
 .tab-icon { width: 28px; height: 28px; stroke-width: 1.8; fill: none; transition: all 0.3s ease; }
 
-.btn-add { background: #000; color: white; border: none; padding: 16px 30px; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); cursor: pointer; margin-top: 10px; width: 100%; max-width: 360px; border: 1px solid rgba(255,255,255,0.1); }
+/* НОВАЯ ЦЕНТРАЛЬНАЯ КНОПКА (+) */
+.tab-add-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.tab-add-btn {
+    width: 48px; 
+    height: 48px; 
+    background: #FF8C00; /* Яркий акцентный круг */
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); 
+    transition: transform 0.15s ease; 
+    cursor: pointer;
+}
+.tab-add-btn:active { transform: scale(0.9); }
+.tab-add-icon { width: 26px; height: 26px; stroke: white; stroke-width: 2.5; }
+
+/* Стили модальных окон */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; justify-content: center; align-items: flex-end; animation: fadeIn 0.3s ease; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+.modal-center { align-items: center; }
+.modal-content { background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px; color: #000; box-sizing: border-box; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90vh; overflow-y: auto; border-top: 2px solid #000; }
+.modal-content-center { border-radius: 25px; width: 90%; max-width: 320px; padding: 25px; text-align: center; border: none; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+input, textarea, select { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; transition: border-color 0.2s; background: #fafafa; color: #000; }
+input:focus, textarea:focus, select:focus { border-color: #000; background: #fff; }
+select.custom-select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 15px center; background-size: 16px; color: #000; padding-right: 40px; }
+
+.btn-save { background: linear-gradient(90deg, #FF8C00, #ff5e00); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; }
+.btn-cancel { background: #eee; color: #555; border: none; padding: 16px; border-radius: 16px; font-weight: bold; width: 100%; font-size: 16px; margin-top: 10px; cursor: pointer; }
+.btn-danger { background: #ff3b30; color: white; border: none; padding: 16px; border-radius: 16px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; margin-bottom: 10px; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }

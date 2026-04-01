@@ -12,14 +12,11 @@
         body { margin: 0; padding: 0; background-color: #FF8C00; font-family: -apple-system, system-ui, sans-serif; color: white; -webkit-tap-highlight-color: transparent; }
         .container { padding: 20px; display: flex; flex-direction: column; align-items: center; padding-bottom: 120px; }
         
-        /* HEADER С ЛОГОТИПОМ */
         .header { padding: 10px 20px 20px 20px; text-align: center; width: 100%; box-sizing: border-box; }
         .title-row { display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
         .main-title { margin: 0; font-size: 28px; font-weight: bold; color: white; }
-        /* CSS магия: обрезаем черные углы, делаем закругления */
         .m-logo { width: 57px; height: 57px; border-radius: 18px; margin-left: 12px; object-fit: cover; background: #fff; transform: rotate(-20deg); }
         
-        /* ЖИВАЯ КАРТОЧКА */
         .card { background: white; border-radius: 20px; padding: 20px; color: #000; width: 100%; max-width: 360px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); margin-bottom: 15px; box-sizing: border-box; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; justify-content: space-between; transition: transform 0.15s ease, box-shadow 0.15s ease; cursor: pointer; user-select: none; -webkit-user-select: none; }
         .card:active { transform: scale(0.96); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         
@@ -30,22 +27,18 @@
         .badge { background: #fff0e0; color: #FF8C00; padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 12px; display: flex; align-items: center; gap: 4px; }
         .deadline-tag { font-size: 11px; color: #ef5350; font-weight: bold; margin-top: 5px; }
         
-        /* ОГРОМНАЯ КНОПКА ОТМЕТКИ (x2 размер, справа, по центру) */
         .btn-complete { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #FF8C00; background: transparent; color: white; font-size: 32px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; cursor: pointer; }
         .btn-complete.done { background: #FF8C00; transform: scale(1.05); }
         
-        /* МОДАЛЬНЫЕ ОКНА */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; justify-content: center; align-items: flex-end; animation: fadeIn 0.3s ease; backdrop-filter: blur(3px); }
         .modal-center { align-items: center; }
         .modal-content { background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px; color: #000; box-sizing: border-box; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90vh; overflow-y: auto; border-top: 2px solid #000; }
         .modal-content-center { border-radius: 25px; width: 90%; max-width: 320px; padding: 25px; text-align: center; border: none; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         
-        /* ФОРМЫ */
         input, textarea, select { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; transition: border-color 0.2s; background: #fafafa; }
         input:focus, textarea:focus, select:focus { border-color: #000; background: #fff; }
         select.custom-select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 15px center; background-size: 16px; color: #000; padding-right: 40px; }
         
-        /* КНОПКИ */
         .btn-add { background: #000; color: white; border: none; padding: 16px 30px; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; margin-top: 10px; width: 100%; max-width: 360px; transition: transform 0.1s; }
         .btn-add:active { transform: scale(0.97); }
         .btn-save { background: #FF8C00; color: white; border: none; padding: 16px; border-radius: 16px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; }
@@ -56,11 +49,9 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         
-        /* ОБНОВЛЕННОЕ НИЖНЕЕ МЕНЮ (ЧБ ИКОНКИ) */
         .tab-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #000; z-index: 100; }
         .tab-item { text-align: center; cursor: pointer; flex: 1; transition: all 0.2s; }
         .tab-label { font-size: 10px; font-weight: bold; margin-top: 4px; }
-        /* Стилизация ЧБ иконок SVG */
         .tab-icon { width: 26px; height: 26px; stroke-width: 1.5; fill: none; transition: stroke 0.2s; }
     </style>
 </head>
@@ -69,7 +60,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // Векторные иконки SVG (Черно-белые, лайн-арт)
         const Icons = {
             Goals: (props) => (
                 <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#ccc"} {...props}>
@@ -107,12 +97,17 @@
             const [timeLeft, setTimeLeft] = useState(25 * 60);
             const [isTimerRunning, setIsTimerRunning] = useState(false);
             
+            // БРОНЕБОЙНАЯ ЗАГРУЗКА ДАННЫХ
             const [goals, setGoals] = useState(() => {
-                const saved = localStorage.getItem('motivateMe_v7_goals');
-                return saved ? JSON.parse(saved) : [];
+                try {
+                    const saved = localStorage.getItem('motivateMe_v20_goals');
+                    return saved ? JSON.parse(saved) : [];
+                } catch (e) {
+                    console.log("Локальное хранилище заблокировано браузером");
+                    return [];
+                }
             });
 
-            // Состояния окон
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [editingGoalId, setEditingGoalId] = useState(null);
             const [actionMenuGoal, setActionMenuGoal] = useState(null);
@@ -124,16 +119,43 @@
 
             const pressTimer = useRef(null);
 
+            // БРОНЕБОЙНЫЕ ФУНКЦИИ TELEGRAM
+            const triggerHaptic = (type) => {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+                    if (type === 'success' || type === 'error') {
+                        window.Telegram.WebApp.HapticFeedback.notificationOccurred(type);
+                    } else {
+                        window.Telegram.WebApp.HapticFeedback.impactOccurred(type);
+                    }
+                }
+            };
+
+            const showAlert = (msg) => {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.showAlert) {
+                    window.Telegram.WebApp.showAlert(msg);
+                } else {
+                    alert(msg);
+                }
+            };
+
             useEffect(() => {
-                const tg = window.Telegram.WebApp;
+                const tg = window.Telegram && window.Telegram.WebApp;
                 if (tg) {
-                    tg.ready(); tg.expand();
-                    if (tg.initDataUnsafe?.user) setUserName(tg.initDataUnsafe.user.first_name);
+                    tg.ready(); 
+                    tg.expand();
+                    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                        setUserName(tg.initDataUnsafe.user.first_name);
+                    }
                 }
             }, []);
 
+            // БРОНЕБОЙНОЕ СОХРАНЕНИЕ
             useEffect(() => {
-                localStorage.setItem('motivateMe_v7_goals', JSON.stringify(goals));
+                try {
+                    localStorage.setItem('motivateMe_v20_goals', JSON.stringify(goals));
+                } catch (e) {
+                    // Игнорируем ошибку, если браузер запрещает сохранять (чтобы не было оранжевого экрана)
+                }
             }, [goals]);
 
             useEffect(() => {
@@ -142,8 +164,8 @@
                     interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
                 } else if (timeLeft === 0) {
                     setIsTimerRunning(false);
-                    window.Telegram?.WebApp?.showAlert('Время фокуса вышло!');
-                    window.Telegram?.WebApp?.HapticFeedback.notificationOccurred('success');
+                    showAlert('Время фокуса вышло!');
+                    triggerHaptic('success');
                 }
                 return () => clearInterval(interval);
             }, [isTimerRunning, timeLeft]);
@@ -152,7 +174,7 @@
                 const newDate = new Date(currentDate);
                 newDate.setDate(newDate.getDate() + days);
                 setCurrentDate(newDate);
-                window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');
+                triggerHaptic('light');
             };
 
             const openCreateModal = () => {
@@ -177,27 +199,26 @@
                     setGoals([newGoal, ...goals]);
                 }
                 setIsModalOpen(false);
-                window.Telegram?.WebApp?.HapticFeedback.notificationOccurred('success');
+                triggerHaptic('success');
             };
 
             const deleteGoal = () => {
                 setGoals(goals.filter(g => g.id !== confirmDeleteGoalId));
                 setConfirmDeleteGoalId(null);
-                window.Telegram?.WebApp?.HapticFeedback.notificationOccurred('success');
+                triggerHaptic('success');
             };
 
-            // Долгое нажатие
             const handleTouchStart = (goal) => {
                 pressTimer.current = setTimeout(() => {
-                    window.Telegram?.WebApp?.HapticFeedback.impactOccurred('heavy');
+                    triggerHaptic('heavy');
                     setActionMenuGoal(goal);
                 }, 500); 
             };
+            
             const handleTouchEnd = () => {
                 if (pressTimer.current) clearTimeout(pressTimer.current);
             };
 
-            // Отметка цели (Только по кнопке)
             const toggleGoal = (e, goalObj) => {
                 e.stopPropagation(); 
                 
@@ -211,8 +232,8 @@
                     
                     if (new Date() > limit) {
                         const msg = motivationTone === 'hard' ? "Время вышло! Провал. Соберись!" : "Увы, время вышло. Завтра получится лучше!";
-                        window.Telegram?.WebApp?.showAlert(msg);
-                        window.Telegram?.WebApp?.HapticFeedback.notificationOccurred('error');
+                        showAlert(msg);
+                        triggerHaptic('error');
                         return; 
                     }
                 }
@@ -222,10 +243,10 @@
                     const newHistory = { ...g.history };
                     if (!isCurrentlyDone) {
                         newHistory[todayStr] = true;
-                        window.Telegram?.WebApp?.HapticFeedback.notificationOccurred('success');
+                        triggerHaptic('success');
                     } else {
                         delete newHistory[todayStr];
-                        window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');
+                        triggerHaptic('light');
                     }
                     return { ...g, history: newHistory, streak: isCurrentlyDone ? Math.max(0, g.streak - 1) : g.streak + 1 };
                 }));
@@ -243,7 +264,6 @@
 
                     {activeTab === 'home' && (
                         <React.Fragment>
-                            {/* Календарь */}
                             <div className="card" style={{ padding: '15px', borderRadius: '15px', display: 'block' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <button onClick={() => changeDate(-1)} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '22px', cursor: 'pointer' }}>◀</button>
@@ -252,7 +272,6 @@
                                 </div>
                             </div>
 
-                            {/* Цели */}
                             {goals.length === 0 && <p style={{textAlign:'center', marginTop:'20px', color:'white'}}>Список пуст. Добавь свою первую цель!</p>}
                             
                             {goals.map(g => {
@@ -267,7 +286,7 @@
                                         onMouseDown={() => handleTouchStart(g)}
                                         onMouseUp={handleTouchEnd}
                                         onMouseLeave={handleTouchEnd}
-                                        onClick={() => { window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light'); }} 
+                                        onClick={() => triggerHaptic('light')} 
                                         style={{ borderLeft: g.ignoreHoliday ? '6px solid #FF8C00' : 'none', opacity: isDone ? 0.7 : 1 }}
                                     >
                                         <div className="goal-info">
@@ -282,7 +301,6 @@
                                             <div className="deadline-tag">до {g.deadline}</div>
                                         </div>
                                         
-                                        {/* БОЛЬШАЯ КНОПКА ОТМЕТКИ */}
                                         <button 
                                             className={`btn-complete ${isDone ? 'done' : ''}`} 
                                             onClick={(e) => toggleGoal(e, g)}
@@ -297,7 +315,6 @@
                         </React.Fragment>
                     )}
 
-                    {/* Остальные вкладки */}
                     {activeTab === 'progress' && (
                         <div className="card" style={{ display: 'block' }}>
                             <h3 style={{ textAlign: 'center', color: '#FF8C00', margin:'0 0 10px 0' }}>Таймер Фокуса</h3>
@@ -319,7 +336,11 @@
                                     <strong>{u.s} 🔥</strong>
                                 </div>
                             ))}
-                            <button onClick={() => window.Telegram?.WebApp?.openTelegramLink(`https://t.me/share/url?url=https://t.me/MotivateMe_ibot`)} style={{ width: '100%', marginTop: '20px', background: 'white', border: '1px dashed #FF8C00', color: '#FF8C00', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>+ ПОЗВАТЬ ДРУГА</button>
+                            <button onClick={() => {
+                                if(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
+                                    window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=https://t.me/MotivateMe_ibot`);
+                                }
+                            }} style={{ width: '100%', marginTop: '20px', background: 'white', border: '1px dashed #FF8C00', color: '#FF8C00', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>+ ПОЗВАТЬ ДРУГА</button>
                         </div>
                     )}
 
@@ -334,7 +355,6 @@
                         </div>
                     )}
                     
-                    {/* МОДАЛКИ */}
                     {actionMenuGoal && (
                         <div className="modal-overlay" onClick={() => setActionMenuGoal(null)}>
                             <div className="modal-content" style={{ paddingBottom: '40px', display: 'block' }} onClick={e => e.stopPropagation()}>
@@ -397,7 +417,6 @@
                         </div>
                     )}
 
-                    {/* ОБНОВЛЕННОЕ НИЖНЕЕ МЕНЮ С ЧБ SVG ИКОНКАМИ */}
                     <div className="tab-bar">
                         <div onClick={() => setActiveTab('home')} className="tab-item" style={{ color: activeTab === 'home' ? '#FF8C00' : '#ccc' }}>
                             <Icons.Goals active={activeTab === 'home'} />

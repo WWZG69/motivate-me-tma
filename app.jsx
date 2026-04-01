@@ -43,12 +43,10 @@ function App() {
     const [activeTab, setActiveTab] = useState('home');
     const [userName, setUserName] = useState('Чемпион');
     const [currentDate, setCurrentDate] = useState(new Date());
-    
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     
-    // Новое состояние: какая карточка сейчас развернута
     const [expandedGoalId, setExpandedGoalId] = useState(null);
     const isLongPress = useRef(false);
 
@@ -75,6 +73,11 @@ function App() {
             if (type === 'success' || type === 'error') window.Telegram.WebApp.HapticFeedback.notificationOccurred(type);
             else window.Telegram.WebApp.HapticFeedback.impactOccurred(type);
         }
+    };
+
+    const showAlert = (msg) => {
+        if (window.Telegram?.WebApp?.showAlert) window.Telegram.WebApp.showAlert(msg);
+        else alert(msg);
     };
 
     useEffect(() => {
@@ -132,9 +135,38 @@ function App() {
         triggerHaptic('success');
     };
 
-    // ОБНОВЛЕННАЯ ЛОГИКА НАЖАТИЙ
+    // ФУНКЦИЯ ПРОВЕРКИ ЛОГИКИ ВРЕМЕНИ
+    const checkPermissions = (goal) => {
+        const now = new Date();
+        const viewingDate = new Date(currentDate);
+        viewingDate.setHours(0, 0, 0, 0);
+        const actualToday = new Date();
+        actualToday.setHours(0, 0, 0, 0);
+
+        const isPast = viewingDate < actualToday;
+        const isToday = viewingDate.getTime() === actualToday.getTime();
+
+        let isDeadlinePassed = isPast;
+        if (isToday) {
+            const [h, m] = goal.deadline.split(':');
+            const limit = new Date();
+            limit.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+            if (now > limit) isDeadlinePassed = true;
+        }
+
+        return {
+            canToggle: isToday && !isDeadlinePassed,
+            canEdit: !isPast && !isDeadlinePassed
+        };
+    };
+
     const handleTouchStart = (goal) => {
+        const { canEdit } = checkPermissions(goal);
         isLongPress.current = false;
+        
+        // Отключаем долгое нажатие (редактирование) для просроченных
+        if (!canEdit) return;
+
         pressTimer.current = setTimeout(() => {
             isLongPress.current = true;
             triggerHaptic('heavy');
@@ -147,7 +179,6 @@ function App() {
     };
 
     const handleCardClick = (goal) => {
-        // Если это было долгое нажатие, мы не раскрываем карточку
         if (!isLongPress.current) {
             setExpandedGoalId(prev => prev === goal.id ? null : goal.id);
             triggerHaptic('light');
@@ -156,6 +187,14 @@ function App() {
 
     const toggleGoal = (e, goalObj) => {
         e.stopPropagation(); 
+        const { canToggle } = checkPermissions(goalObj);
+        
+        if (!canToggle) {
+            triggerHaptic('error');
+            showAlert("Время вышло или день не совпадает! Изменять отметку нельзя.");
+            return;
+        }
+
         const todayStr = currentDate.toDateString();
         const isCurrentlyDone = !!goalObj.history[todayStr];
         setGoals(goals.map(g => {
@@ -190,6 +229,7 @@ function App() {
                     {goals.map(g => {
                         const isDone = !!g.history[currentDate.toDateString()];
                         const isExpanded = expandedGoalId === g.id;
+                        const { canToggle } = checkPermissions(g);
                         
                         return (
                             <div 
@@ -212,7 +252,6 @@ function App() {
                                         {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - g.streak)} ⏳</span>}
                                     </div>
                                     
-                                    {/* СКРЫТОЕ ОПИСАНИЕ, которое плавно выезжает */}
                                     <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}>
                                         <div className="goal-desc-inner">
                                             <div className="goal-desc">
@@ -222,7 +261,8 @@ function App() {
                                     </div>
                                 </div>
                                 
-                                <button className={`btn-complete ${isDone ? 'done' : ''}`} onClick={(e) => toggleGoal(e, g)}>
+                                {/* Кнопка тускнеет, если ее нельзя нажать */}
+                                <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g)}>
                                     <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 </button>
                             </div>

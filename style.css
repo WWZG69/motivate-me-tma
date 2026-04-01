@@ -14,16 +14,15 @@ body {
 body::before {
     content: '';
     position: fixed;
-    /* Сдвигаем сильнее вверх и влево, так как размер увеличился */
-    top: -60vh; 
+    /* Подняли фигуру на 25vh вверх (было -60vh, стало -85vh) */
+    top: -85vh; 
     left: -60vw;
-    /* Увеличили размер фигуры на ~30% */
     width: 180vw; 
     height: 160vh; 
     background-color: #000000; 
     z-index: -1; 
     
-    /* Размытие капельку меньше (с 120px до 90px) */
+    /* Мягкое размытие */
     filter: blur(90px);
     -webkit-filter: blur(90px);
     

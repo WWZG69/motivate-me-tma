@@ -14,18 +14,18 @@ body {
 body::before {
     content: '';
     position: fixed;
-    /* Размещение в верхнем левом углу с выходом за края */
-    top: -40vh; 
-    left: -40vw;
-    /* Огромный размер, чтобы закрыть нужную часть экрана */
-    width: 140vw; 
-    height: 120vh; 
+    /* Сдвигаем сильнее вверх и влево, так как размер увеличился */
+    top: -60vh; 
+    left: -60vw;
+    /* Увеличили размер фигуры на ~30% */
+    width: 180vw; 
+    height: 160vh; 
     background-color: #000000; 
     z-index: -1; 
     
-    /* То самое экстремальное размытие границ */
-    filter: blur(120px);
-    -webkit-filter: blur(120px);
+    /* Размытие капельку меньше (с 120px до 90px) */
+    filter: blur(90px);
+    -webkit-filter: blur(90px);
     
     /* Анимация ленивого дрожания */
     animation: zeroGravWobble 18s ease-in-out infinite;
@@ -39,15 +39,15 @@ body::before {
     }
     25% {
         border-radius: 70% 30% 46% 54% / 30% 29% 71% 70%;
-        transform: translate(4vw, 6vh) rotate(5deg) scale(1.05);
+        transform: translate(5vw, 7vh) rotate(5deg) scale(1.05);
     }
     50% {
         border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%;
-        transform: translate(-3vw, 8vh) rotate(-5deg) scale(0.95);
+        transform: translate(-4vw, 9vh) rotate(-5deg) scale(0.95);
     }
     75% {
         border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-        transform: translate(5vw, -4vh) rotate(2deg) scale(1.02);
+        transform: translate(6vw, -5vh) rotate(2deg) scale(1.02);
     }
 }
 

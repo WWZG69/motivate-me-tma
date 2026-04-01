@@ -48,6 +48,7 @@ function App() {
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     
     const [expandedGoalId, setExpandedGoalId] = useState(null);
+    const [shakingGoalId, setShakingGoalId] = useState(null); // Стейт для трясущейся карточки
     const isLongPress = useRef(false);
 
     const [goals, setGoals] = useState(() => {
@@ -73,11 +74,6 @@ function App() {
             if (type === 'success' || type === 'error') window.Telegram.WebApp.HapticFeedback.notificationOccurred(type);
             else window.Telegram.WebApp.HapticFeedback.impactOccurred(type);
         }
-    };
-
-    const showAlert = (msg) => {
-        if (window.Telegram?.WebApp?.showAlert) window.Telegram.WebApp.showAlert(msg);
-        else alert(msg);
     };
 
     useEffect(() => {
@@ -135,7 +131,6 @@ function App() {
         triggerHaptic('success');
     };
 
-    // ФУНКЦИЯ ПРОВЕРКИ ЛОГИКИ ВРЕМЕНИ
     const checkPermissions = (goal) => {
         const now = new Date();
         const viewingDate = new Date(currentDate);
@@ -164,7 +159,6 @@ function App() {
         const { canEdit } = checkPermissions(goal);
         isLongPress.current = false;
         
-        // Отключаем долгое нажатие (редактирование) для просроченных
         if (!canEdit) return;
 
         pressTimer.current = setTimeout(() => {
@@ -189,9 +183,11 @@ function App() {
         e.stopPropagation(); 
         const { canToggle } = checkPermissions(goalObj);
         
+        // ЕСЛИ НЕЛЬЗЯ ОТМЕТИТЬ: Запускаем тряску карточки и вибрацию ошибки
         if (!canToggle) {
             triggerHaptic('error');
-            showAlert("Время вышло или день не совпадает! Изменять отметку нельзя.");
+            setShakingGoalId(goalObj.id);
+            setTimeout(() => setShakingGoalId(null), 400); // Выключаем тряску через 0.4 сек
             return;
         }
 
@@ -200,8 +196,13 @@ function App() {
         setGoals(goals.map(g => {
             if (g.id !== goalObj.id) return g;
             const newHistory = { ...g.history };
-            if (!isCurrentlyDone) { newHistory[todayStr] = true; triggerHaptic('success'); }
-            else { delete newHistory[todayStr]; triggerHaptic('light'); }
+            if (!isCurrentlyDone) { 
+                newHistory[todayStr] = true; 
+                triggerHaptic('success'); // Приятный двойной щелчок при выполнении
+            } else { 
+                delete newHistory[todayStr]; 
+                triggerHaptic('light'); // Легкий щелчок при снятии
+            }
             return { ...g, history: newHistory, streak: isCurrentlyDone ? Math.max(0, g.streak - 1) : g.streak + 1 };
         }));
     };
@@ -229,12 +230,14 @@ function App() {
                     {goals.map(g => {
                         const isDone = !!g.history[currentDate.toDateString()];
                         const isExpanded = expandedGoalId === g.id;
+                        const isShaking = shakingGoalId === g.id; // Проверяем, трясется ли эта карточка
                         const { canToggle } = checkPermissions(g);
                         
                         return (
                             <div 
                                 key={g.id} 
-                                className="card" 
+                                // Добавляем класс shake, если нажали с ошибкой
+                                className={`card ${isShaking ? 'shake' : ''}`} 
                                 onTouchStart={() => handleTouchStart(g)} 
                                 onTouchEnd={handleTouchEnd} 
                                 onMouseDown={() => handleTouchStart(g)} 
@@ -261,7 +264,6 @@ function App() {
                                     </div>
                                 </div>
                                 
-                                {/* Кнопка тускнеет, если ее нельзя нажать */}
                                 <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g)}>
                                     <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 </button>

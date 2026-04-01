@@ -38,7 +38,7 @@ body::before {
 .main-title { margin: 0; font-size: 28px; font-weight: bold; color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
 .m-logo { width: 57px; height: 57px; border-radius: 18px; margin-left: 12px; object-fit: cover; background: #fff; transform: rotate(-20deg); box-shadow: 0 4px 11px rgba(0,0,0,0.4); }
 
-/* НОВЫЕ КАРТОЧКИ: Темное стекло в стиле нижней панели */
+/* КАРТОЧКИ: Темное стекло */
 .card { 
     background: rgba(0, 0, 0, 0.65); 
     backdrop-filter: blur(20px); 
@@ -61,13 +61,37 @@ body::before {
 }
 .card:active { transform: scale(0.96); }
 
-/* Минималистичная информация внутри карточки */
+/* ИНФОРМАЦИЯ В КАРТОЧКЕ */
 .goal-info { flex: 1; padding-right: 15px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
 .goal-title { font-weight: 600; font-size: 17px; margin: 0; color: white; line-height: 1.2; letter-spacing: 0.3px; transition: color 0.3s; }
 .stats-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .badge { color: rgba(255, 255, 255, 0.8); font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 4px; }
 
-/* НОВАЯ КНОПКА ЗАВЕРШЕНИЯ (Круг с галочкой) */
+/* МАГИЯ РАСШИРЕНИЯ ОПИСАНИЯ */
+.goal-desc-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease, margin-top 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    margin-top: 0;
+}
+.goal-desc-wrapper.expanded {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-top: 8px;
+}
+.goal-desc-inner {
+    overflow: hidden;
+}
+.goal-desc {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+    margin: 0;
+    padding-bottom: 4px;
+}
+
+/* КНОПКА ЗАВЕРШЕНИЯ (Круг с галочкой) */
 .btn-complete { 
     width: 44px; 
     height: 44px; 
@@ -88,23 +112,8 @@ body::before {
     box-shadow: 0 4px 15px rgba(255, 140, 0, 0.5);
     transform: scale(1.05);
 }
-/* Анимация самой галочки внутри круга */
-.btn-complete svg {
-    width: 20px;
-    height: 20px;
-    stroke: white;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    fill: none;
-    opacity: 0;
-    transform: scale(0.5);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.btn-complete.done svg {
-    opacity: 1;
-    transform: scale(1);
-}
+.btn-complete svg { width: 20px; height: 20px; stroke: white; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; opacity: 0; transform: scale(0.5); transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+.btn-complete.done svg { opacity: 1; transform: scale(1); }
 
 /* ПАРЯЩАЯ ПАНЕЛЬ */
 .tab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-evenly; padding: 10px 0; border-radius: 35px; border: 1px solid rgba(255, 255, 255, 0.15); z-index: 100; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }

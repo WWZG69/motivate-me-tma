@@ -38,6 +38,42 @@ body::before {
 .main-title { margin: 0; font-size: 28px; font-weight: bold; color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
 .m-logo { width: 57px; height: 57px; border-radius: 18px; margin-left: 12px; object-fit: cover; background: #fff; transform: rotate(-20deg); box-shadow: 0 4px 11px rgba(0,0,0,0.4); }
 
+/* НОВЫЕ СТРЕЛКИ ДАТЫ */
+.date-nav-btn {
+    background: none; 
+    border: none; 
+    color: white; 
+    padding: 10px; 
+    cursor: pointer;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s;
+}
+.date-nav-btn:active {
+    transform: scale(1.5);
+    color: #FF8C00;
+}
+.date-nav-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+/* АНИМАЦИИ ПЕРЕХОДА ДАТЫ И КАРТОЧЕК (ПОЕЗД) */
+.slide-next { animation: slideTrainNext both cubic-bezier(0.45, 0, 0.15, 1); }
+.slide-prev { animation: slideTrainPrev both cubic-bezier(0.45, 0, 0.15, 1); }
+
+/* Дата летит быстрее */
+.date-wrapper.slide-next, .date-wrapper.slide-prev { animation-duration: 0.35s; }
+/* Карточки догоняют чуть медленнее */
+.cards-wrapper.slide-next, .cards-wrapper.slide-prev { animation-duration: 0.55s; width: 100%; display: flex; flex-direction: column; align-items: center; }
+
+@keyframes slideTrainNext {
+    0% { transform: translateX(80px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes slideTrainPrev {
+    0% { transform: translateX(-80px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
 /* КАРТОЧКИ: Темное стекло */
 .card { 
     background: rgba(0, 0, 0, 0.65); 
@@ -80,16 +116,8 @@ body::before {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.15); }
 }
-.urgent-timer {
-    color: #ff3b30 !important;
-    font-weight: 800 !important;
-    animation: pulseUrgent 0.5s ease-in-out infinite;
-    display: inline-block;
-}
-.failed-timer {
-    color: #ff3b30 !important;
-    font-weight: bold !important;
-}
+.urgent-timer { color: #ff3b30 !important; font-weight: 800 !important; animation: pulseUrgent 0.5s ease-in-out infinite; display: inline-block; }
+.failed-timer { color: #ff3b30 !important; font-weight: bold !important; }
 
 /* МАГИЯ РАСШИРЕНИЯ ОПИСАНИЯ И ЛИМИТ ТЕКСТА */
 .goal-desc-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease, margin-top 0.3s ease, opacity 0.3s ease; opacity: 0; margin-top: 0; }

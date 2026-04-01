@@ -43,12 +43,16 @@ function App() {
     const [activeTab, setActiveTab] = useState('home');
     const [userName, setUserName] = useState('Чемпион');
     const [currentDate, setCurrentDate] = useState(new Date());
+    
+    // МАШИНА ВРЕМЕНИ: Тикает каждую секунду для таймеров
+    const [now, setNow] = useState(new Date());
+    
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     
     const [expandedGoalId, setExpandedGoalId] = useState(null);
-    const [shakingGoalId, setShakingGoalId] = useState(null); // Стейт для трясущейся карточки
+    const [shakingGoalId, setShakingGoalId] = useState(null);
     const isLongPress = useRef(false);
 
     const [goals, setGoals] = useState(() => {
@@ -69,10 +73,19 @@ function App() {
 
     const pressTimer = useRef(null);
 
+    // УЛУЧШЕННАЯ ВИБРАЦИЯ (Пробивает систему)
     const triggerHaptic = (type) => {
         if (window.Telegram?.WebApp?.HapticFeedback) {
-            if (type === 'success' || type === 'error') window.Telegram.WebApp.HapticFeedback.notificationOccurred(type);
-            else window.Telegram.WebApp.HapticFeedback.impactOccurred(type);
+            if (type === 'success') {
+                // Двойной плотный удар для галочки (очень приятно ощущается)
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
+                setTimeout(() => window.Telegram.WebApp.HapticFeedback.impactOccurred('rigid'), 150);
+            } else if (type === 'error') {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+                setTimeout(() => window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'), 50); // Удар при ошибке
+            } else {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred(type);
+            }
         }
     };
 
@@ -87,6 +100,12 @@ function App() {
     useEffect(() => {
         try { localStorage.setItem('motivateMe_v20_goals', JSON.stringify(goals)); } catch (e) {}
     }, [goals]);
+
+    // ТАЙМЕР РЕАЛЬНОГО ВРЕМЕНИ
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         let interval = null;
@@ -131,11 +150,11 @@ function App() {
         triggerHaptic('success');
     };
 
+    // ПРОВЕРКА ЛОГИКИ (ИСПОЛЬЗУЕМ ЖИВОЕ ВРЕМЯ NOW)
     const checkPermissions = (goal) => {
-        const now = new Date();
         const viewingDate = new Date(currentDate);
         viewingDate.setHours(0, 0, 0, 0);
-        const actualToday = new Date();
+        const actualToday = new Date(now);
         actualToday.setHours(0, 0, 0, 0);
 
         const isPast = viewingDate < actualToday;
@@ -144,7 +163,7 @@ function App() {
         let isDeadlinePassed = isPast;
         if (isToday) {
             const [h, m] = goal.deadline.split(':');
-            const limit = new Date();
+            const limit = new Date(now);
             limit.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
             if (now > limit) isDeadlinePassed = true;
         }
@@ -153,6 +172,40 @@ function App() {
             canToggle: isToday && !isDeadlinePassed,
             canEdit: !isPast && !isDeadlinePassed
         };
+    };
+
+    // ФУНКЦИЯ ДЛЯ ОТРИСОВКИ ЖИВОГО ТАЙМЕРА
+    const getTimerData = (goal, isDone) => {
+        const view = new Date(currentDate);
+        view.setHours(0, 0, 0, 0);
+        const today = new Date(now);
+        today.setHours(0, 0, 0, 0);
+
+        // Будущие даты
+        if (view > today) return { text: `до ${goal.deadline}`, className: 'badge', style: {color: 'white'} };
+        // Прошлые даты
+        if (view < today) return { text: "00:00:00", className: 'badge failed-timer', style: {} };
+
+        // Текущий день
+        const [h, m] = goal.deadline.split(':');
+        const limit = new Date(now);
+        limit.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+        
+        const diffMs = limit - now;
+        
+        // Дедлайн прошел
+        if (diffMs <= 0) return { text: "00:00:00", className: 'badge failed-timer', style: {} };
+
+        // Считаем часы, минуты, секунды
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((diffMs % (1000 * 60)) / 1000);
+        const text = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        
+        // Меньше часа (и задача еще не выполнена) = тревога!
+        const isUrgent = !isDone && diffMs < 3600000;
+        
+        return { text, className: `badge ${isUrgent ? 'urgent-timer' : ''}`, style: {} };
     };
 
     const handleTouchStart = (goal) => {
@@ -183,11 +236,11 @@ function App() {
         e.stopPropagation(); 
         const { canToggle } = checkPermissions(goalObj);
         
-        // ЕСЛИ НЕЛЬЗЯ ОТМЕТИТЬ: Запускаем тряску карточки и вибрацию ошибки
+        // ТРЯСКА КАРТОЧКИ ПРИ ОШИБКЕ БЕЗ ALERT
         if (!canToggle) {
             triggerHaptic('error');
             setShakingGoalId(goalObj.id);
-            setTimeout(() => setShakingGoalId(null), 400); // Выключаем тряску через 0.4 сек
+            setTimeout(() => setShakingGoalId(null), 400); 
             return;
         }
 
@@ -198,10 +251,10 @@ function App() {
             const newHistory = { ...g.history };
             if (!isCurrentlyDone) { 
                 newHistory[todayStr] = true; 
-                triggerHaptic('success'); // Приятный двойной щелчок при выполнении
+                triggerHaptic('success'); 
             } else { 
                 delete newHistory[todayStr]; 
-                triggerHaptic('light'); // Легкий щелчок при снятии
+                triggerHaptic('light'); 
             }
             return { ...g, history: newHistory, streak: isCurrentlyDone ? Math.max(0, g.streak - 1) : g.streak + 1 };
         }));
@@ -230,13 +283,15 @@ function App() {
                     {goals.map(g => {
                         const isDone = !!g.history[currentDate.toDateString()];
                         const isExpanded = expandedGoalId === g.id;
-                        const isShaking = shakingGoalId === g.id; // Проверяем, трясется ли эта карточка
+                        const isShaking = shakingGoalId === g.id;
                         const { canToggle } = checkPermissions(g);
+                        
+                        // Получаем данные для живого таймера
+                        const timerData = getTimerData(g, isDone);
                         
                         return (
                             <div 
                                 key={g.id} 
-                                // Добавляем класс shake, если нажали с ошибкой
                                 className={`card ${isShaking ? 'shake' : ''}`} 
                                 onTouchStart={() => handleTouchStart(g)} 
                                 onTouchEnd={handleTouchEnd} 
@@ -253,6 +308,11 @@ function App() {
                                         {g.type !== 'once' && <span className="badge">{g.streak} 🔥</span>}
                                         {g.type === 'habit' && <span className="badge">∞</span>}
                                         {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - g.streak)} ⏳</span>}
+                                        
+                                        {/* НАШ НОВЫЙ ЖИВОЙ ТАЙМЕР */}
+                                        <span className={timerData.className} style={timerData.style}>
+                                            ⏱ {timerData.text}
+                                        </span>
                                     </div>
                                     
                                     <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}>

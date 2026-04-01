@@ -23,7 +23,7 @@ function App() {
     const touchStartX = useRef(0);
     const touchStartY = useRef(0);
     const isDragging = useRef(false);
-    const isSwipeValid = useRef(null); // null означает, что ось свайпа еще не определена
+    const isSwipeValid = useRef(null); 
     
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -114,7 +114,7 @@ function App() {
         }, 350);
     };
 
-    // ФИЗИКА СВАЙПА (ИДЕАЛЬНАЯ ЛОГИКА)
+    // ФИЗИКА СВАЙПА 
     const onSwipeStart = (e) => {
         if (isTransitioning) return;
         touchStartX.current = e.touches[0].clientX;
@@ -128,13 +128,11 @@ function App() {
         const deltaX = e.touches[0].clientX - touchStartX.current;
         const deltaY = e.touches[0].clientY - touchStartY.current;
 
-        // ПРЕДОХРАНИТЕЛЬ: Если палец сдвинулся, это точно не долгое нажатие
         if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
             if (pressTimer.current) clearTimeout(pressTimer.current);
             isLongPress.current = false;
         }
 
-        // Фиксация оси свайпа (вбок или вниз)
         if (isSwipeValid.current === null) {
             if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
                 isSwipeValid.current = Math.abs(deltaX) > Math.abs(deltaY);
@@ -257,13 +255,15 @@ function App() {
         }));
     };
 
+    // УНИКАЛЬНЫЙ KEY ДЛЯ ПРЕДОТВРАЩЕНИЯ МЕРЦАНИЯ
     const renderDayView = (renderDate) => {
+        const dateKey = renderDate.toDateString();
         return (
-            <div className="cards-pane">
+            <div className="cards-pane" key={dateKey}>
                 {goals.length === 0 && <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Список пуст. Нажми + внизу!</p>}
                 
                 {goals.map(g => {
-                    const isDone = !!g.history[renderDate.toDateString()];
+                    const isDone = !!g.history[dateKey];
                     const isExpanded = expandedGoalId === g.id;
                     const isShaking = shakingGoalId === g.id;
                     const { canToggle } = checkPermissions(g, renderDate);
@@ -305,8 +305,6 @@ function App() {
     };
 
     const transitionStyle = isTransitioning ? 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
-    
-    // Анимация даты чуть быстрее для эффекта параллакса
     const dateTransitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none'; 
 
     return (
@@ -322,35 +320,28 @@ function App() {
             {activeTab === 'home' && (
                 <div 
                     className="swipe-area"
-                    style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
                     onTouchStart={onSwipeStart}
                     onTouchMove={onSwipeMove}
                     onTouchEnd={onSwipeEnd}
                 >
-                    <div className="date-row-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '400px', margin: '0 auto 15px auto', padding: '0 10px', boxSizing: 'border-box' }}>
-                        <button className="date-nav-btn" onClick={() => animateToDate(-1)} style={{ background: 'none', border: 'none', color: 'white', padding: '10px', cursor: 'pointer', zIndex: 10 }}>
-                            <Icons.ChevronLeft />
-                        </button>
+                    <div className="date-row-wrapper">
+                        <button className="date-nav-btn" onClick={() => animateToDate(-1)}><Icons.ChevronLeft /></button>
                         
-                        <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', justifyContent: 'center' }}>
-                            <div style={{
-                                display: 'flex', width: '300%', alignItems: 'center',
-                                transform: `translateX(calc(-33.333% + ${offsetPx * 0.4}px))`,
+                        <div className="date-mask">
+                            <div className="date-track" style={{
+                                transform: `translateX(calc(-33.3333% + ${offsetPx * 0.4}px))`,
                                 transition: dateTransitionStyle
                             }}>
-                                <div style={{ width: '33.333%', flexShrink: 0, textAlign: 'center' }}><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{getOffsetDate(currentDate, -1).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
-                                <div style={{ width: '33.333%', flexShrink: 0, textAlign: 'center' }}><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
-                                <div style={{ width: '33.333%', flexShrink: 0, textAlign: 'center' }}><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{getOffsetDate(currentDate, 1).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
+                                <div className="date-pane"><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{getOffsetDate(currentDate, -1).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
+                                <div className="date-pane"><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
+                                <div className="date-pane"><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{getOffsetDate(currentDate, 1).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
                             </div>
                         </div>
                         
-                        <button className="date-nav-btn" onClick={() => animateToDate(1)} style={{ background: 'none', border: 'none', color: 'white', padding: '10px', cursor: 'pointer', zIndex: 10 }}>
-                            <Icons.ChevronRight />
-                        </button>
+                        <button className="date-nav-btn" onClick={() => animateToDate(1)}><Icons.ChevronRight /></button>
                     </div>
                     
                     <div className="cards-track" style={{
-                        display: 'flex', width: '300vw', alignItems: 'flex-start',
                         transform: `translateX(calc(-100vw + ${offsetPx}px))`,
                         transition: transitionStyle
                     }}>
@@ -361,6 +352,7 @@ function App() {
                 </div>
             )}
 
+            {/* ОСТАЛЬНЫЕ ЭКРАНЫ */}
             {activeTab === 'progress' && (
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.65)', maxWidth: '360px', margin: '0 auto' }}>
                     <h3 style={{ textAlign: 'center', color: '#fff', margin: 0 }}>Таймер Фокуса</h3>
@@ -391,6 +383,7 @@ function App() {
                 </div>
             )}
 
+            {/* МЕНЮ ДЕЙСТВИЙ */}
             {actionMenuGoal && (
                 <div className="modal-overlay" onClick={() => setActionMenuGoal(null)}>
                     <div className="modal-content" style={{ paddingBottom: '40px', display: 'block' }} onClick={e => e.stopPropagation()}>
@@ -414,6 +407,7 @@ function App() {
                 </div>
             )}
 
+            {/* МОДАЛКА ДОБАВЛЕНИЯ ЦЕЛИ */}
             {isModalOpen && (
                 <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
                     <div className="modal-content" style={{ display: 'block' }} onClick={e => e.stopPropagation()}>
@@ -444,6 +438,7 @@ function App() {
                 </div>
             )}
 
+            {/* НИЖНЯЯ ПАНЕЛЬ */}
             <div className="tab-bar">
                 <div onClick={() => setActiveTab('home')} className="tab-item"><Icons.Goals active={activeTab === 'home'} /></div>
                 <div onClick={() => setActiveTab('progress')} className="tab-item"><Icons.Focus active={activeTab === 'progress'} /></div>

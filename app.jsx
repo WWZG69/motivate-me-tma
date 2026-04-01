@@ -48,6 +48,10 @@ function App() {
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     
+    // Новое состояние: какая карточка сейчас развернута
+    const [expandedGoalId, setExpandedGoalId] = useState(null);
+    const isLongPress = useRef(false);
+
     const [goals, setGoals] = useState(() => {
         try {
             const saved = localStorage.getItem('motivateMe_v20_goals');
@@ -128,14 +132,27 @@ function App() {
         triggerHaptic('success');
     };
 
+    // ОБНОВЛЕННАЯ ЛОГИКА НАЖАТИЙ
     const handleTouchStart = (goal) => {
+        isLongPress.current = false;
         pressTimer.current = setTimeout(() => {
+            isLongPress.current = true;
             triggerHaptic('heavy');
             setActionMenuGoal(goal);
         }, 500); 
     };
     
-    const handleTouchEnd = () => { if (pressTimer.current) clearTimeout(pressTimer.current); };
+    const handleTouchEnd = () => { 
+        if (pressTimer.current) clearTimeout(pressTimer.current); 
+    };
+
+    const handleCardClick = (goal) => {
+        // Если это было долгое нажатие, мы не раскрываем карточку
+        if (!isLongPress.current) {
+            setExpandedGoalId(prev => prev === goal.id ? null : goal.id);
+            triggerHaptic('light');
+        }
+    };
 
     const toggleGoal = (e, goalObj) => {
         e.stopPropagation(); 
@@ -172,8 +189,19 @@ function App() {
                     
                     {goals.map(g => {
                         const isDone = !!g.history[currentDate.toDateString()];
+                        const isExpanded = expandedGoalId === g.id;
+                        
                         return (
-                            <div key={g.id} className="card" onTouchStart={() => handleTouchStart(g)} onTouchEnd={handleTouchEnd} onMouseDown={() => handleTouchStart(g)} onMouseUp={handleTouchEnd} onClick={() => triggerHaptic('light')} style={{ opacity: isDone ? 0.6 : 1 }}>
+                            <div 
+                                key={g.id} 
+                                className="card" 
+                                onTouchStart={() => handleTouchStart(g)} 
+                                onTouchEnd={handleTouchEnd} 
+                                onMouseDown={() => handleTouchStart(g)} 
+                                onMouseUp={handleTouchEnd} 
+                                onClick={() => handleCardClick(g)} 
+                                style={{ opacity: isDone ? 0.6 : 1 }}
+                            >
                                 <div className="goal-info">
                                     <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>
                                         {g.title}
@@ -183,7 +211,17 @@ function App() {
                                         {g.type === 'habit' && <span className="badge">∞</span>}
                                         {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - g.streak)} ⏳</span>}
                                     </div>
+                                    
+                                    {/* СКРЫТОЕ ОПИСАНИЕ, которое плавно выезжает */}
+                                    <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}>
+                                        <div className="goal-desc-inner">
+                                            <div className="goal-desc">
+                                                {g.description || 'Описания нет. Просто бери и делай!'}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+                                
                                 <button className={`btn-complete ${isDone ? 'done' : ''}`} onClick={(e) => toggleGoal(e, g)}>
                                     <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 </button>

@@ -2,7 +2,7 @@
 body { 
     margin: 0; 
     padding: 0; 
-    background-color: #FF8C00; /* Плотный Оранжевый фундамент */
+    background-color: #FF8C00; 
     font-family: -apple-system, system-ui, sans-serif; 
     color: white; 
     -webkit-tap-highlight-color: transparent; 
@@ -10,27 +10,20 @@ body {
     overflow-x: hidden; 
 }
 
-/* ОПТИМИЗИРОВАННАЯ КАПЛЯ (Увеличена на 40% и сдвинута влево) */
+/* ФИГУРА: Увеличена на 20% и сдвинута сильнее влево */
 body::before {
     content: '';
     position: fixed;
-    /* Сильно сдвигаем влево (на ~треть экрана) и поднимаем вверх для компенсации огромного размера */
-    top: -90vmax; 
-    left: -110vmax; 
-    /* Увеличили размер на ~40% (было 140vmax, стало 200vmax) */
-    width: 200vmax; 
-    height: 200vmax; 
-    
-    /* Радиальный градиент: Черное ядро -> Огненный контур -> Растворение */
+    top: -110vmax; 
+    left: -130vmax; 
+    width: 240vmax; 
+    height: 240vmax; 
     background: radial-gradient(circle at center, #000000 35%, #ff2a00 52%, #ff5e00 62%, rgba(255, 140, 0, 0) 75%);
     z-index: -1; 
-    
-    /* Аппаратное ускорение */
     will-change: transform;
     animation: liquidGpuWobble 20s linear infinite;
 }
 
-/* АНИМАЦИЯ НА ТРАНСФОРМАЦИЯХ (летает без фризов) */
 @keyframes liquidGpuWobble {
     0% { transform: translate(0, 0) scale(1, 0.85) rotate(0deg); }
     33% { transform: translate(4vw, 5vh) scale(0.95, 1.1) rotate(120deg); }
@@ -38,16 +31,15 @@ body::before {
     100% { transform: translate(0, 0) scale(1, 0.85) rotate(360deg); }
 }
 
-.container { padding: 20px; display: flex; flex-direction: column; align-items: center; padding-bottom: 120px; }
+.container { padding: 20px; display: flex; flex-direction: column; align-items: center; padding-bottom: 140px; }
 
 .header { padding: 10px 20px 20px 20px; text-align: center; width: 100%; box-sizing: border-box; }
 .title-row { display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
 .main-title { margin: 0; font-size: 28px; font-weight: bold; color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
 .m-logo { width: 57px; height: 57px; border-radius: 18px; margin-left: 12px; object-fit: cover; background: #fff; transform: rotate(-20deg); box-shadow: 0 4px 11px rgba(0,0,0,0.4); }
 
-/* Карточки: матовое стекло */
-.card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 20px; padding: 20px; color: #000; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); margin-bottom: 15px; box-sizing: border-box; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; justify-content: space-between; transition: transform 0.15s ease, box-shadow 0.15s ease; cursor: pointer; user-select: none; -webkit-user-select: none; }
-.card:active { transform: scale(0.96); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+.card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 20px; padding: 20px; color: #000; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); margin-bottom: 15px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; transition: transform 0.15s ease, box-shadow 0.15s ease; cursor: pointer; user-select: none; }
+.card:active { transform: scale(0.96); }
 
 .goal-info { flex: 1; padding-right: 15px; display: flex; flex-direction: column; justify-content: center; }
 .goal-title { font-weight: bold; font-size: 18px; margin: 0; color: #000; line-height: 1.2; }
@@ -56,32 +48,30 @@ body::before {
 .badge { background: #fff0e0; color: #FF8C00; padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 12px; display: flex; align-items: center; gap: 4px; }
 .deadline-tag { font-size: 11px; color: #ef5350; font-weight: bold; margin-top: 5px; }
 
-.btn-complete { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #FF8C00; background: transparent; color: white; font-size: 32px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; cursor: pointer; }
-.btn-complete.done { background: #FF8C00; transform: scale(1.05); box-shadow: 0 0 15px rgba(255,140,0,0.4); }
+.btn-complete { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #FF8C00; background: transparent; color: white; font-size: 32px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; }
+.btn-complete.done { background: #FF8C00; transform: scale(1.05); }
 
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; justify-content: center; align-items: flex-end; animation: fadeIn 0.3s ease; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
-.modal-center { align-items: center; }
-.modal-content { background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px; color: #000; box-sizing: border-box; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90vh; overflow-y: auto; border-top: 2px solid #000; }
-.modal-content-center { border-radius: 25px; width: 90%; max-width: 320px; padding: 25px; text-align: center; border: none; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+/* ПАРЯЩАЯ ПАНЕЛЬ В СТИЛЕ iOS */
+.tab-bar { 
+    position: fixed; 
+    bottom: 25px; /* Отступ снизу */
+    left: 20px;   /* Отступ слева */
+    right: 20px;  /* Отступ справа */
+    background: rgba(0, 0, 0, 0.8); 
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px); 
+    display: flex; 
+    justify-content: space-around; 
+    padding: 16px 0; 
+    border-radius: 35px; /* Закругленные края как капсула */
+    border: 1px solid rgba(255, 255, 255, 0.15); 
+    z-index: 100; 
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+}
 
-input, textarea, select { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; transition: border-color 0.2s; background: #fafafa; color: #000; }
-input:focus, textarea:focus, select:focus { border-color: #000; background: #fff; }
-select.custom-select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 15px center; background-size: 16px; color: #000; padding-right: 40px; }
+.tab-item { text-align: center; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+.tab-item:active { transform: scale(0.9); }
+.tab-label { display: none; } /* Скрываем названия по ТЗ */
+.tab-icon { width: 28px; height: 28px; stroke-width: 1.8; fill: none; transition: all 0.3s ease; }
 
-.btn-add { background: #000; color: white; border: none; padding: 16px 30px; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); cursor: pointer; margin-top: 10px; width: 100%; max-width: 360px; transition: transform 0.1s; border: 1px solid rgba(255,255,255,0.1); }
-.btn-add:active { transform: scale(0.97); }
-.btn-save { background: linear-gradient(90deg, #FF8C00, #ff5e00); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; }
-.btn-cancel { background: #eee; color: #555; border: none; padding: 16px; border-radius: 16px; font-weight: bold; width: 100%; font-size: 16px; margin-top: 10px; cursor: pointer; }
-.btn-danger { background: #ff3b30; color: white; border: none; padding: 16px; border-radius: 16px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; margin-bottom: 10px; }
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-@keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-
-/* Черная панель навигации */
-.tab-bar { position: fixed; bottom: 0; width: 100%; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
-.tab-item { text-align: center; cursor: pointer; flex: 1; transition: all 0.2s; }
-.tab-label { font-size: 10px; font-weight: bold; margin-top: 4px; color: #888; }
-.tab-item.active .tab-label { color: #FF8C00; }
-.tab-icon { width: 26px; height: 26px; stroke-width: 1.5; fill: none; transition: stroke 0.2s; stroke: #888; }
-.tab-item.active .tab-icon { stroke: #FF8C00; }
+.btn-add { background: #000; color: white; border: none; padding: 16px 30px; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); cursor: pointer; margin-top: 10px; width: 100%; max-width: 360px; border: 1px solid rgba(255,255,255,0.1); }

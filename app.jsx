@@ -15,20 +15,22 @@ function App() {
     const [userName, setUserName] = useState('Чемпион');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [now, setNow] = useState(new Date());
+    
+    // СТЕЙТЫ АНИМАЦИЙ И СВАЙПОВ
+    const [offsetPx, setOffsetPx] = useState(0);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    
+    const touchStartX = useRef(0);
+    const touchStartY = useRef(0);
+    const isDragging = useRef(false);
+    const isSwipeValid = useRef(true);
+    
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     
     const [expandedGoalId, setExpandedGoalId] = useState(null);
     const [shakingGoalId, setShakingGoalId] = useState(null);
-    
-    // СТЕЙТЫ ДЛЯ СВАЙПА И АНИМАЦИИ
-    const [offsetPx, setOffsetPx] = useState(0);
-    const [isTransitioning, setIsTransitioning] = useState(false);
-    const touchStartX = useRef(0);
-    const touchStartY = useRef(0);
-    const isDragging = useRef(false);
-    const isSwipeValid = useRef(true);
     const isLongPress = useRef(false);
     const pressTimer = useRef(null);
 
@@ -54,7 +56,6 @@ function App() {
         }
     };
 
-    // ЗАКРЫТИЕ КАРТОЧКИ ПРИ КЛИКЕ В ПУСТОЕ МЕСТО
     useEffect(() => {
         const handleGlobalTouch = (e) => {
             if (!e.target.closest('.card') && !e.target.closest('.modal-content') && expandedGoalId) {
@@ -81,23 +82,31 @@ function App() {
         return () => clearInterval(timer);
     }, []);
 
+    useEffect(() => {
+        let interval = null;
+        if (isTimerRunning && timeLeft > 0) {
+            interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+        } else if (timeLeft === 0) {
+            setIsTimerRunning(false);
+            triggerHaptic('success');
+        }
+        return () => clearInterval(interval);
+    }, [isTimerRunning, timeLeft]);
+
     const getOffsetDate = (baseDate, days) => {
         const d = new Date(baseDate);
         d.setDate(d.getDate() + days);
         return d;
     };
 
-    // ПЛАВНАЯ СМЕНА ДАТЫ (Кнопки и конец свайпа)
     const animateToDate = (daysShift) => {
         if (isTransitioning) return;
         setIsTransitioning(true);
-        setExpandedGoalId(null); // Прячем описание
+        setExpandedGoalId(null); 
         
-        // Сдвигаем на 1 экран влево или вправо
         setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth);
         triggerHaptic('light');
         
-        // Ждем пока анимация закончится (0.35s), затем мгновенно меняем дату и сбрасываем сдвиг
         setTimeout(() => {
             setIsTransitioning(false);
             setOffsetPx(0);
@@ -119,7 +128,13 @@ function App() {
         const deltaX = e.touches[0].clientX - touchStartX.current;
         const deltaY = e.touches[0].clientY - touchStartY.current;
 
-        // Если скроллим вниз/вверх (чтобы читать список), отменяем свайп вбок
+        // ПРЕДОХРАНИТЕЛЬ: Отменяем меню карточки, если палец сдвинулся 
+        if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
+            if (pressTimer.current) clearTimeout(pressTimer.current);
+            isLongPress.current = false;
+        }
+
+        // Если скроллим вниз/вверх, отменяем горизонтальный свайп
         if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(offsetPx) < 15) {
             isSwipeValid.current = false;
         }
@@ -136,14 +151,13 @@ function App() {
         }
         isDragging.current = false;
         
-        const threshold = window.innerWidth * 0.2; // 20% экрана достаточно для перелистывания
+        const threshold = window.innerWidth * 0.2; 
         
         if (offsetPx > threshold) {
-            animateToDate(-1); // Свайп вправо = Вчера
+            animateToDate(-1); 
         } else if (offsetPx < -threshold) {
-            animateToDate(1); // Свайп влево = Завтра
+            animateToDate(1); 
         } else {
-            // Если не дотянули - возвращаем на место с анимацией
             setIsTransitioning(true);
             setOffsetPx(0);
             setTimeout(() => setIsTransitioning(false), 300);
@@ -161,10 +175,8 @@ function App() {
     const deleteGoal = () => { setGoals(goals.filter(g => g.id !== confirmDeleteGoalId)); setConfirmDeleteGoalId(null); triggerHaptic('success'); };
 
     const checkPermissions = (goal, checkDate) => {
-        const viewingDate = new Date(checkDate);
-        viewingDate.setHours(0, 0, 0, 0);
-        const actualToday = new Date(now);
-        actualToday.setHours(0, 0, 0, 0);
+        const viewingDate = new Date(checkDate); viewingDate.setHours(0, 0, 0, 0);
+        const actualToday = new Date(now); actualToday.setHours(0, 0, 0, 0);
 
         const isPast = viewingDate < actualToday;
         const isToday = viewingDate.getTime() === actualToday.getTime();
@@ -204,10 +216,14 @@ function App() {
         const { canEdit } = checkPermissions(goal, dateTarget);
         isLongPress.current = false;
         if (!canEdit) return;
+        
         pressTimer.current = setTimeout(() => {
-            isLongPress.current = true;
-            triggerHaptic('heavy');
-            setActionMenuGoal(goal);
+            // Если флаг не сбросился движением свайпа - открываем меню
+            if (isLongPress.current === false) {
+                isLongPress.current = true;
+                triggerHaptic('heavy');
+                setActionMenuGoal(goal);
+            }
         }, 500); 
     };
     
@@ -242,7 +258,6 @@ function App() {
         }));
     };
 
-    // ФУНКЦИЯ ОТРИСОВКИ ОДНОГО ДНЯ (Она рендерится 3 раза: для Вчера, Сегодня, Завтра)
     const renderDayView = (renderDate) => {
         return (
             <div className="cards-pane">
@@ -267,23 +282,19 @@ function App() {
                             style={{ opacity: isDone ? 0.6 : 1 }}
                         >
                             <div className="goal-info">
-                                <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>
-                                    {g.title}
-                                </div>
+                                <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>{g.title}</div>
                                 <div className="stats-row">
                                     {g.type !== 'once' && <span className="badge">{g.streak} 🔥</span>}
                                     {g.type === 'habit' && <span className="badge">∞</span>}
                                     {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - g.streak)} ⏳</span>}
                                     <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
                                 </div>
-                                
                                 <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}>
                                     <div className="goal-desc-inner">
                                         <div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div>
                                     </div>
                                 </div>
                             </div>
-                            
                             <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g, renderDate)}>
                                 <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             </button>
@@ -294,9 +305,8 @@ function App() {
         );
     };
 
-    // Настройка физики анимации (кубическая безье-кривая как в iOS)
     const transitionStyle = isTransitioning ? 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
-    const dateTransitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none'; // Дата летит быстрее!
+    const dateTransitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none'; 
 
     return (
         <div className="container">
@@ -309,16 +319,21 @@ function App() {
             </div>
 
             {activeTab === 'home' && (
-                <React.Fragment>
-                    
-                    {/* ХЭДЕР С ДАТОЙ И КНОПКАМИ */}
-                    <div className="date-row-wrapper">
+                // ЗОНА СВАЙПА ТЕПЕРЬ ОХВАТЫВАЕТ ВСЮ ДОСТУПНУЮ ШИРИНУ И ВЫСОТУ
+                <div 
+                    className="swipe-area"
+                    style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'visible' }}
+                    onTouchStart={onSwipeStart}
+                    onTouchMove={onSwipeMove}
+                    onTouchEnd={onSwipeEnd}
+                >
+                    <div className="date-row-wrapper" style={{ margin: '0 auto 15px auto' }}>
                         <button className="date-nav-btn" onClick={() => animateToDate(-1)}><Icons.ChevronLeft /></button>
                         
-                        {/* Карусель даты (Эффект параллакса - движется быстрее) */}
                         <div className="date-carousel-viewport">
+                            {/* ФИКС: Точный сдвиг на -33.3333% ставит дату идеально по центру */}
                             <div className="date-track" style={{
-                                transform: `translateX(calc(-100% + ${offsetPx}px))`,
+                                transform: `translateX(calc(-33.3333% + ${offsetPx}px))`,
                                 transition: dateTransitionStyle
                             }}>
                                 <div className="date-pane"><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{getOffsetDate(currentDate, -1).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
@@ -330,27 +345,18 @@ function App() {
                         <button className="date-nav-btn" onClick={() => animateToDate(1)}><Icons.ChevronRight /></button>
                     </div>
                     
-                    {/* КАРУСЕЛЬ КАРТОЧЕК С ФИЗИКОЙ СВАЙПА */}
-                    <div 
-                        style={{ width: '100%', overflow: 'visible' }}
-                        onTouchStart={onSwipeStart}
-                        onTouchMove={onSwipeMove}
-                        onTouchEnd={onSwipeEnd}
-                    >
-                        <div className="cards-track" style={{
-                            transform: `translateX(calc(-100vw + ${offsetPx}px))`,
-                            transition: transitionStyle
-                        }}>
-                            {/* Рендерим 3 дня одновременно! */}
-                            {renderDayView(getOffsetDate(currentDate, -1))}
-                            {renderDayView(currentDate)}
-                            {renderDayView(getOffsetDate(currentDate, 1))}
-                        </div>
+                    <div className="cards-track" style={{
+                        transform: `translateX(calc(-100vw + ${offsetPx}px))`,
+                        transition: transitionStyle
+                    }}>
+                        {renderDayView(getOffsetDate(currentDate, -1))}
+                        {renderDayView(currentDate)}
+                        {renderDayView(getOffsetDate(currentDate, 1))}
                     </div>
-                </React.Fragment>
+                </div>
             )}
 
-            {/* ОСТАЛЬНЫЕ ЭКРАНЫ И МОДАЛКИ (без изменений) */}
+            {/* ОСТАЛЬНЫЕ ЭКРАНЫ */}
             {activeTab === 'progress' && (
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.65)', maxWidth: '360px', margin: '0 auto' }}>
                     <h3 style={{ textAlign: 'center', color: '#fff', margin: 0 }}>Таймер Фокуса</h3>
@@ -381,7 +387,7 @@ function App() {
                 </div>
             )}
 
-            {/* МЕНЮ И УДАЛЕНИЕ */}
+            {/* МЕНЮ ДЕЙСТВИЙ */}
             {actionMenuGoal && (
                 <div className="modal-overlay" onClick={() => setActionMenuGoal(null)}>
                     <div className="modal-content" style={{ paddingBottom: '40px', display: 'block' }} onClick={e => e.stopPropagation()}>
@@ -405,6 +411,7 @@ function App() {
                 </div>
             )}
 
+            {/* МОДАЛКА ДОБАВЛЕНИЯ ЦЕЛИ */}
             {isModalOpen && (
                 <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
                     <div className="modal-content" style={{ display: 'block' }} onClick={e => e.stopPropagation()}>

@@ -62,9 +62,7 @@ body::before {
 .card:active:not(.shake) { transform: scale(0.96); }
 
 /* АНИМАЦИЯ ОТКАЗА (ТРЯСКА) */
-.shake {
-    animation: shakeCard 0.4s cubic-bezier(.36,.07,.19,.97) both;
-}
+.shake { animation: shakeCard 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes shakeCard {
     0%, 100% { transform: translateX(0); }
     10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
@@ -77,50 +75,30 @@ body::before {
 .stats-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .badge { color: rgba(255, 255, 255, 0.8); font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 4px; }
 
-/* МАГИЯ РАСШИРЕНИЯ ОПИСАНИЯ И ЛИМИТ ТЕКСТА */
-.goal-desc-wrapper {
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: grid-template-rows 0.3s ease, margin-top 0.3s ease, opacity 0.3s ease;
-    opacity: 0;
-    margin-top: 0;
+/* МАГИЯ ТАЙМЕРА */
+@keyframes pulseUrgent {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
 }
-.goal-desc-wrapper.expanded {
-    grid-template-rows: 1fr;
-    opacity: 1;
-    margin-top: 8px;
+.urgent-timer {
+    color: #ff3b30 !important;
+    font-weight: 800 !important;
+    animation: pulseUrgent 0.5s ease-in-out infinite;
+    display: inline-block;
 }
-.goal-desc-inner {
-    overflow: hidden;
-}
-.goal-desc {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.7);
-    line-height: 1.5;
-    margin: 0;
-    padding-bottom: 4px;
-    display: -webkit-box;
-    -webkit-line-clamp: 5;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.failed-timer {
+    color: #ff3b30 !important;
+    font-weight: bold !important;
 }
 
+/* МАГИЯ РАСШИРЕНИЯ ОПИСАНИЯ И ЛИМИТ ТЕКСТА */
+.goal-desc-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease, margin-top 0.3s ease, opacity 0.3s ease; opacity: 0; margin-top: 0; }
+.goal-desc-wrapper.expanded { grid-template-rows: 1fr; opacity: 1; margin-top: 8px; }
+.goal-desc-inner { overflow: hidden; }
+.goal-desc { font-size: 13px; color: rgba(255, 255, 255, 0.7); line-height: 1.5; margin: 0; padding-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+
 /* КНОПКА ЗАВЕРШЕНИЯ */
-.btn-complete { 
-    width: 44px; 
-    height: 44px; 
-    border-radius: 50%; 
-    border: 2px solid rgba(255, 255, 255, 0.25); 
-    background: transparent; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
-    flex-shrink: 0; 
-    padding: 0; 
-    cursor: pointer;
-}
+.btn-complete { width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.25); background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; cursor: pointer; }
 .btn-complete.disabled { opacity: 0.2; cursor: not-allowed; border-color: rgba(255,255,255,0.1); }
 .btn-complete.done { background: #FF8C00; border-color: #FF8C00; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.5); transform: scale(1.05); }
 .btn-complete svg { width: 20px; height: 20px; stroke: white; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; opacity: 0; transform: scale(0.5); transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }

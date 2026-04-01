@@ -23,7 +23,7 @@ function App() {
     const touchStartX = useRef(0);
     const touchStartY = useRef(0);
     const isDragging = useRef(false);
-    const isSwipeValid = useRef(true);
+    const isSwipeValid = useRef(null); // null означает, что ось свайпа еще не определена
     
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -114,13 +114,13 @@ function App() {
         }, 350);
     };
 
-    // ФИЗИКА СВАЙПА ПАЛЬЦЕМ
+    // ФИЗИКА СВАЙПА (ИДЕАЛЬНАЯ ЛОГИКА)
     const onSwipeStart = (e) => {
         if (isTransitioning) return;
         touchStartX.current = e.touches[0].clientX;
         touchStartY.current = e.touches[0].clientY;
         isDragging.current = true;
-        isSwipeValid.current = true;
+        isSwipeValid.current = null; 
     };
 
     const onSwipeMove = (e) => {
@@ -128,36 +128,36 @@ function App() {
         const deltaX = e.touches[0].clientX - touchStartX.current;
         const deltaY = e.touches[0].clientY - touchStartY.current;
 
-        // ПРЕДОХРАНИТЕЛЬ: Отменяем меню карточки, если палец сдвинулся 
-        if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
+        // ПРЕДОХРАНИТЕЛЬ: Если палец сдвинулся, это точно не долгое нажатие
+        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
             if (pressTimer.current) clearTimeout(pressTimer.current);
             isLongPress.current = false;
         }
 
-        // Если скроллим вниз/вверх, отменяем горизонтальный свайп
-        if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(offsetPx) < 15) {
-            isSwipeValid.current = false;
+        // Фиксация оси свайпа (вбок или вниз)
+        if (isSwipeValid.current === null) {
+            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                isSwipeValid.current = Math.abs(deltaX) > Math.abs(deltaY);
+            }
         }
 
-        if (isSwipeValid.current) {
+        if (isSwipeValid.current === true) {
             setOffsetPx(deltaX);
         }
     };
 
     const onSwipeEnd = () => {
-        if (!isDragging.current || !isSwipeValid.current) {
+        if (!isDragging.current || isSwipeValid.current !== true) {
             isDragging.current = false;
             return;
         }
         isDragging.current = false;
         
-        const threshold = window.innerWidth * 0.2; 
+        const threshold = window.innerWidth * 0.25; 
         
-        if (offsetPx > threshold) {
-            animateToDate(-1); 
-        } else if (offsetPx < -threshold) {
-            animateToDate(1); 
-        } else {
+        if (offsetPx > threshold) animateToDate(-1); 
+        else if (offsetPx < -threshold) animateToDate(1); 
+        else {
             setIsTransitioning(true);
             setOffsetPx(0);
             setTimeout(() => setIsTransitioning(false), 300);
@@ -218,7 +218,6 @@ function App() {
         if (!canEdit) return;
         
         pressTimer.current = setTimeout(() => {
-            // Если флаг не сбросился движением свайпа - открываем меню
             if (isLongPress.current === false) {
                 isLongPress.current = true;
                 triggerHaptic('heavy');
@@ -306,6 +305,8 @@ function App() {
     };
 
     const transitionStyle = isTransitioning ? 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
+    
+    // Анимация даты чуть быстрее для эффекта параллакса
     const dateTransitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none'; 
 
     return (
@@ -319,33 +320,37 @@ function App() {
             </div>
 
             {activeTab === 'home' && (
-                // ЗОНА СВАЙПА ТЕПЕРЬ ОХВАТЫВАЕТ ВСЮ ДОСТУПНУЮ ШИРИНУ И ВЫСОТУ
                 <div 
                     className="swipe-area"
-                    style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'visible' }}
+                    style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
                     onTouchStart={onSwipeStart}
                     onTouchMove={onSwipeMove}
                     onTouchEnd={onSwipeEnd}
                 >
-                    <div className="date-row-wrapper" style={{ margin: '0 auto 15px auto' }}>
-                        <button className="date-nav-btn" onClick={() => animateToDate(-1)}><Icons.ChevronLeft /></button>
+                    <div className="date-row-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '400px', margin: '0 auto 15px auto', padding: '0 10px', boxSizing: 'border-box' }}>
+                        <button className="date-nav-btn" onClick={() => animateToDate(-1)} style={{ background: 'none', border: 'none', color: 'white', padding: '10px', cursor: 'pointer', zIndex: 10 }}>
+                            <Icons.ChevronLeft />
+                        </button>
                         
-                        <div className="date-carousel-viewport">
-                            {/* ФИКС: Точный сдвиг на -33.3333% ставит дату идеально по центру */}
-                            <div className="date-track" style={{
-                                transform: `translateX(calc(-33.3333% + ${offsetPx}px))`,
+                        <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                            <div style={{
+                                display: 'flex', width: '300%', alignItems: 'center',
+                                transform: `translateX(calc(-33.333% + ${offsetPx * 0.4}px))`,
                                 transition: dateTransitionStyle
                             }}>
-                                <div className="date-pane"><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{getOffsetDate(currentDate, -1).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
-                                <div className="date-pane"><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
-                                <div className="date-pane"><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{getOffsetDate(currentDate, 1).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
+                                <div style={{ width: '33.333%', flexShrink: 0, textAlign: 'center' }}><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{getOffsetDate(currentDate, -1).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
+                                <div style={{ width: '33.333%', flexShrink: 0, textAlign: 'center' }}><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
+                                <div style={{ width: '33.333%', flexShrink: 0, textAlign: 'center' }}><span style={{ fontSize: '16px', fontWeight: 'bold' }}>{getOffsetDate(currentDate, 1).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>
                             </div>
                         </div>
                         
-                        <button className="date-nav-btn" onClick={() => animateToDate(1)}><Icons.ChevronRight /></button>
+                        <button className="date-nav-btn" onClick={() => animateToDate(1)} style={{ background: 'none', border: 'none', color: 'white', padding: '10px', cursor: 'pointer', zIndex: 10 }}>
+                            <Icons.ChevronRight />
+                        </button>
                     </div>
                     
                     <div className="cards-track" style={{
+                        display: 'flex', width: '300vw', alignItems: 'flex-start',
                         transform: `translateX(calc(-100vw + ${offsetPx}px))`,
                         transition: transitionStyle
                     }}>
@@ -356,7 +361,6 @@ function App() {
                 </div>
             )}
 
-            {/* ОСТАЛЬНЫЕ ЭКРАНЫ */}
             {activeTab === 'progress' && (
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.65)', maxWidth: '360px', margin: '0 auto' }}>
                     <h3 style={{ textAlign: 'center', color: '#fff', margin: 0 }}>Таймер Фокуса</h3>
@@ -387,7 +391,6 @@ function App() {
                 </div>
             )}
 
-            {/* МЕНЮ ДЕЙСТВИЙ */}
             {actionMenuGoal && (
                 <div className="modal-overlay" onClick={() => setActionMenuGoal(null)}>
                     <div className="modal-content" style={{ paddingBottom: '40px', display: 'block' }} onClick={e => e.stopPropagation()}>
@@ -411,7 +414,6 @@ function App() {
                 </div>
             )}
 
-            {/* МОДАЛКА ДОБАВЛЕНИЯ ЦЕЛИ */}
             {isModalOpen && (
                 <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
                     <div className="modal-content" style={{ display: 'block' }} onClick={e => e.stopPropagation()}>
@@ -442,7 +444,6 @@ function App() {
                 </div>
             )}
 
-            {/* НИЖНЯЯ ПАНЕЛЬ */}
             <div className="tab-bar">
                 <div onClick={() => setActiveTab('home')} className="tab-item"><Icons.Goals active={activeTab === 'home'} /></div>
                 <div onClick={() => setActiveTab('progress')} className="tab-item"><Icons.Focus active={activeTab === 'progress'} /></div>

@@ -36,16 +36,20 @@ const Icons = {
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
         </svg>
-    )
+    ),
+    // Новые стрелки
+    ChevronLeft: () => <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>,
+    ChevronRight: () => <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
 };
 
 function App() {
     const [activeTab, setActiveTab] = useState('home');
     const [userName, setUserName] = useState('Чемпион');
     const [currentDate, setCurrentDate] = useState(new Date());
-    
-    // МАШИНА ВРЕМЕНИ: Тикает каждую секунду для таймеров
     const [now, setNow] = useState(new Date());
+    
+    // Стейт направления анимации (поезда)
+    const [slideDir, setSlideDir] = useState('next');
     
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -73,21 +77,35 @@ function App() {
 
     const pressTimer = useRef(null);
 
-    // УЛУЧШЕННАЯ ВИБРАЦИЯ (Пробивает систему)
     const triggerHaptic = (type) => {
         if (window.Telegram?.WebApp?.HapticFeedback) {
             if (type === 'success') {
-                // Двойной плотный удар для галочки (очень приятно ощущается)
                 window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
                 setTimeout(() => window.Telegram.WebApp.HapticFeedback.impactOccurred('rigid'), 150);
             } else if (type === 'error') {
                 window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
-                setTimeout(() => window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'), 50); // Удар при ошибке
+                setTimeout(() => window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'), 50);
             } else {
                 window.Telegram.WebApp.HapticFeedback.impactOccurred(type);
             }
         }
     };
+
+    // МАГИЯ АВТОЗАКРЫТИЯ: глобальный слушатель кликов/свайпов
+    useEffect(() => {
+        const handleGlobalTouch = (e) => {
+            // Если кликнули не по карточке и не по модальному окну, закрываем описание
+            if (!e.target.closest('.card') && !e.target.closest('.modal-content')) {
+                setExpandedGoalId(null);
+            }
+        };
+        document.addEventListener('touchstart', handleGlobalTouch);
+        document.addEventListener('mousedown', handleGlobalTouch);
+        return () => {
+            document.removeEventListener('touchstart', handleGlobalTouch);
+            document.removeEventListener('mousedown', handleGlobalTouch);
+        };
+    }, []);
 
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
@@ -101,7 +119,6 @@ function App() {
         try { localStorage.setItem('motivateMe_v20_goals', JSON.stringify(goals)); } catch (e) {}
     }, [goals]);
 
-    // ТАЙМЕР РЕАЛЬНОГО ВРЕМЕНИ
     useEffect(() => {
         const timer = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(timer);
@@ -118,10 +135,17 @@ function App() {
         return () => clearInterval(interval);
     }, [isTimerRunning, timeLeft]);
 
+    // Анимация перехода дат
     const changeDate = (days) => {
+        // Устанавливаем направление полета
+        setSlideDir(days > 0 ? 'next' : 'prev');
+        
         const newDate = new Date(currentDate);
         newDate.setDate(newDate.getDate() + days);
         setCurrentDate(newDate);
+        
+        // Закрываем развернутую карточку при смене дня
+        setExpandedGoalId(null);
         triggerHaptic('light');
     };
 
@@ -150,7 +174,6 @@ function App() {
         triggerHaptic('success');
     };
 
-    // ПРОВЕРКА ЛОГИКИ (ИСПОЛЬЗУЕМ ЖИВОЕ ВРЕМЯ NOW)
     const checkPermissions = (goal) => {
         const viewingDate = new Date(currentDate);
         viewingDate.setHours(0, 0, 0, 0);
@@ -174,37 +197,28 @@ function App() {
         };
     };
 
-    // ФУНКЦИЯ ДЛЯ ОТРИСОВКИ ЖИВОГО ТАЙМЕРА
     const getTimerData = (goal, isDone) => {
         const view = new Date(currentDate);
         view.setHours(0, 0, 0, 0);
         const today = new Date(now);
         today.setHours(0, 0, 0, 0);
 
-        // Будущие даты
         if (view > today) return { text: `до ${goal.deadline}`, className: 'badge', style: {color: 'white'} };
-        // Прошлые даты
         if (view < today) return { text: "00:00:00", className: 'badge failed-timer', style: {} };
 
-        // Текущий день
         const [h, m] = goal.deadline.split(':');
         const limit = new Date(now);
         limit.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
         
         const diffMs = limit - now;
-        
-        // Дедлайн прошел
         if (diffMs <= 0) return { text: "00:00:00", className: 'badge failed-timer', style: {} };
 
-        // Считаем часы, минуты, секунды
         const hours = Math.floor(diffMs / (1000 * 60 * 60));
         const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
         const secs = Math.floor((diffMs % (1000 * 60)) / 1000);
         const text = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         
-        // Меньше часа (и задача еще не выполнена) = тревога!
         const isUrgent = !isDone && diffMs < 3600000;
-        
         return { text, className: `badge ${isUrgent ? 'urgent-timer' : ''}`, style: {} };
     };
 
@@ -236,7 +250,6 @@ function App() {
         e.stopPropagation(); 
         const { canToggle } = checkPermissions(goalObj);
         
-        // ТРЯСКА КАРТОЧКИ ПРИ ОШИБКЕ БЕЗ ALERT
         if (!canToggle) {
             triggerHaptic('error');
             setShakingGoalId(goalObj.id);
@@ -273,63 +286,70 @@ function App() {
             {activeTab === 'home' && (
                 <React.Fragment>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '360px', marginBottom: '15px' }}>
-                        <button onClick={() => changeDate(-1)} style={{ border: 'none', background: 'none', color: '#fff', fontSize: '22px', padding: '10px' }}>◀</button>
-                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff' }}>{currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span>
-                        <button onClick={() => changeDate(1)} style={{ border: 'none', background: 'none', color: '#fff', fontSize: '22px', padding: '10px' }}>▶</button>
+                        <button className="date-nav-btn" onClick={() => changeDate(-1)}><Icons.ChevronLeft /></button>
+                        
+                        {/* Ключ заставляет React перерисовать элемент и запустить анимацию заново */}
+                        <div key={currentDate.toISOString() + 'text'} className={`date-wrapper slide-${slideDir}`}>
+                            <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff' }}>
+                                {currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
+                            </span>
+                        </div>
+                        
+                        <button className="date-nav-btn" onClick={() => changeDate(1)}><Icons.ChevronRight /></button>
                     </div>
                     
                     {goals.length === 0 && <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Список пуст. Нажми + внизу!</p>}
                     
-                    {goals.map(g => {
-                        const isDone = !!g.history[currentDate.toDateString()];
-                        const isExpanded = expandedGoalId === g.id;
-                        const isShaking = shakingGoalId === g.id;
-                        const { canToggle } = checkPermissions(g);
-                        
-                        // Получаем данные для живого таймера
-                        const timerData = getTimerData(g, isDone);
-                        
-                        return (
-                            <div 
-                                key={g.id} 
-                                className={`card ${isShaking ? 'shake' : ''}`} 
-                                onTouchStart={() => handleTouchStart(g)} 
-                                onTouchEnd={handleTouchEnd} 
-                                onMouseDown={() => handleTouchStart(g)} 
-                                onMouseUp={handleTouchEnd} 
-                                onClick={() => handleCardClick(g)} 
-                                style={{ opacity: isDone ? 0.6 : 1 }}
-                            >
-                                <div className="goal-info">
-                                    <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>
-                                        {g.title}
-                                    </div>
-                                    <div className="stats-row">
-                                        {g.type !== 'once' && <span className="badge">{g.streak} 🔥</span>}
-                                        {g.type === 'habit' && <span className="badge">∞</span>}
-                                        {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - g.streak)} ⏳</span>}
+                    {/* Анимированный контейнер для карточек */}
+                    <div key={currentDate.toISOString() + 'cards'} className={`cards-wrapper slide-${slideDir}`}>
+                        {goals.map(g => {
+                            const isDone = !!g.history[currentDate.toDateString()];
+                            const isExpanded = expandedGoalId === g.id;
+                            const isShaking = shakingGoalId === g.id;
+                            const { canToggle } = checkPermissions(g);
+                            const timerData = getTimerData(g, isDone);
+                            
+                            return (
+                                <div 
+                                    key={g.id} 
+                                    className={`card ${isShaking ? 'shake' : ''}`} 
+                                    onTouchStart={() => handleTouchStart(g)} 
+                                    onTouchEnd={handleTouchEnd} 
+                                    onMouseDown={() => handleTouchStart(g)} 
+                                    onMouseUp={handleTouchEnd} 
+                                    onClick={() => handleCardClick(g)} 
+                                    style={{ opacity: isDone ? 0.6 : 1 }}
+                                >
+                                    <div className="goal-info">
+                                        <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>
+                                            {g.title}
+                                        </div>
+                                        <div className="stats-row">
+                                            {g.type !== 'once' && <span className="badge">{g.streak} 🔥</span>}
+                                            {g.type === 'habit' && <span className="badge">∞</span>}
+                                            {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - g.streak)} ⏳</span>}
+                                            
+                                            <span className={timerData.className} style={timerData.style}>
+                                                ⏱ {timerData.text}
+                                            </span>
+                                        </div>
                                         
-                                        {/* НАШ НОВЫЙ ЖИВОЙ ТАЙМЕР */}
-                                        <span className={timerData.className} style={timerData.style}>
-                                            ⏱ {timerData.text}
-                                        </span>
-                                    </div>
-                                    
-                                    <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}>
-                                        <div className="goal-desc-inner">
-                                            <div className="goal-desc">
-                                                {g.description || 'Описания нет. Просто бери и делай!'}
+                                        <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}>
+                                            <div className="goal-desc-inner">
+                                                <div className="goal-desc">
+                                                    {g.description || 'Описания нет. Просто бери и делай!'}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g)}>
+                                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    </button>
                                 </div>
-                                
-                                <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g)}>
-                                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </button>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </React.Fragment>
             )}
 

@@ -114,7 +114,7 @@ function App() {
         }, 350);
     };
 
-    // ФИЗИКА СВАЙПА 
+    // УМНАЯ ФИЗИКА СВАЙПА 
     const onSwipeStart = (e) => {
         if (isTransitioning) return;
         touchStartX.current = e.touches[0].clientX;
@@ -128,14 +128,17 @@ function App() {
         const deltaX = e.touches[0].clientX - touchStartX.current;
         const deltaY = e.touches[0].clientY - touchStartY.current;
 
+        // Если палец хоть немного поехал — это не долгое нажатие
         if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
             if (pressTimer.current) clearTimeout(pressTimer.current);
             isLongPress.current = false;
         }
 
+        // РАСШИРЕННЫЙ УГОЛ СВАЙПА (прощаем неровные движения по диагонали)
         if (isSwipeValid.current === null) {
             if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-                isSwipeValid.current = Math.abs(deltaX) > Math.abs(deltaY);
+                // Разрешаем свайп, даже если палец съехал вниз/вверх почти на столько же, сколько вбок
+                isSwipeValid.current = Math.abs(deltaX) > Math.abs(deltaY) * 0.5;
             }
         }
 
@@ -255,7 +258,7 @@ function App() {
         }));
     };
 
-    // УНИКАЛЬНЫЙ KEY ДЛЯ ПРЕДОТВРАЩЕНИЯ МЕРЦАНИЯ
+    // Отрисовка одной панели дня
     const renderDayView = (renderDate) => {
         const dateKey = renderDate.toDateString();
         return (

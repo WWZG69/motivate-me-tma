@@ -160,7 +160,9 @@ function App() {
                             <button onClick={() => changeDate(1)} style={{ border: 'none', background: 'none', color: '#FF8C00', fontSize: '22px' }}>▶</button>
                         </div>
                     </div>
+                    
                     {goals.length === 0 && <p style={{textAlign:'center', marginTop:'20px'}}>Список пуст. Добавь цель!</p>}
+                    
                     {goals.map(g => {
                         const isDone = !!g.history[currentDate.toDateString()];
                         return (
@@ -213,39 +215,67 @@ function App() {
                 </div>
             )}
 
-            {/* Всплывающие меню и модалки (остались прежними) */}
+            {/* МЕНЮ ДЕЙСТВИЙ С ЦЕЛЬЮ */}
             {actionMenuGoal && (
                 <div className="modal-overlay" onClick={() => setActionMenuGoal(null)}>
-                    <div className="modal-content" style={{ display: 'block' }} onClick={e => e.stopPropagation()}>
-                        <button className="btn-save" style={{background: '#000', width: '100%', marginBottom: '10px'}} onClick={() => { setForm(actionMenuGoal); setEditingGoalId(actionMenuGoal.id); setActionMenuGoal(null); setIsModalOpen(true); }}>✏️ Редактировать</button>
-                        <button className="btn-danger" style={{width: '100%'}} onClick={() => { setConfirmDeleteGoalId(actionMenuGoal.id); setActionMenuGoal(null); }}>🗑 Удалить</button>
+                    <div className="modal-content" style={{ paddingBottom: '40px', display: 'block' }} onClick={e => e.stopPropagation()}>
+                        <h2 style={{margin:'0 0 5px 0', textAlign: 'center', color: '#000'}}>{actionMenuGoal.title}</h2>
+                        <p style={{textAlign: 'center', color: '#777', marginTop: 0, marginBottom: '25px'}}>Выберите действие</p>
+                        
+                        <button className="btn-save" style={{background: '#000', marginBottom: '10px'}} onClick={() => { setForm(actionMenuGoal); setEditingGoalId(actionMenuGoal.id); setActionMenuGoal(null); setIsModalOpen(true); }}>✏️ Редактировать</button>
+                        <button className="btn-danger" onClick={() => { setConfirmDeleteGoalId(actionMenuGoal.id); setActionMenuGoal(null); }}>🗑 Удалить цель</button>
+                        <button className="btn-cancel" onClick={() => setActionMenuGoal(null)}>Закрыть</button>
                     </div>
                 </div>
             )}
 
+            {/* ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ */}
             {confirmDeleteGoalId && (
                 <div className="modal-overlay modal-center" onClick={() => setConfirmDeleteGoalId(null)}>
                     <div className="modal-content-center" style={{ display: 'block' }} onClick={e => e.stopPropagation()}>
-                        <h2>Удалить?</h2>
-                        <button className="btn-danger" onClick={deleteGoal}>Да</button>
-                        <button className="btn-cancel" onClick={() => setConfirmDeleteGoalId(null)}>Нет</button>
+                        <h2>Удалить цель?</h2>
+                        <p style={{color: '#777', marginBottom: '25px'}}>История будет стерта безвозвратно.</p>
+                        <button className="btn-danger" onClick={deleteGoal}>Да, удалить</button>
+                        <button className="btn-cancel" onClick={() => setConfirmDeleteGoalId(null)}>Отмена</button>
                     </div>
                 </div>
             )}
 
+            {/* ПОЛНОЦЕННОЕ ОКНО СОЗДАНИЯ/РЕДАКТИРОВАНИЯ */}
             {isModalOpen && (
                 <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
                     <div className="modal-content" style={{ display: 'block' }} onClick={e => e.stopPropagation()}>
-                        <h2 style={{color: '#000'}}>{editingGoalId ? 'Правка' : 'Новая цель'}</h2>
-                        <input placeholder="Название" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-                        <textarea placeholder="Описание" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                        <h2 style={{margin:'0 0 20px 0', color: '#000'}}>{editingGoalId ? 'Редактировать цель' : 'Новая цель'}</h2>
+                        
+                        <input placeholder="Название (например: Пробежка)" value={form.title} onChange={e => setForm({...form, title: e.target.value})} style={{color: '#000'}} />
+                        <textarea placeholder="Описание (зачем тебе это?)" rows="2" value={form.description} onChange={e => setForm({...form, description: e.target.value})} style={{color: '#000'}} />
+                        
+                        <div style={{fontSize:'13px', marginBottom:'8px', fontWeight:'bold', color: '#000'}}>Тип цели:</div>
                         <select className="custom-select" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-                            <option value="once">Разовая</option>
-                            <option value="habit">Постоянная</option>
-                            <option value="sprint">Спринт</option>
+                            <option value="once">Разовая (один раз)</option>
+                            <option value="habit">Постоянная (∞)</option>
+                            <option value="sprint">Спринт (на N дней)</option>
                         </select>
-                        <input type="time" value={form.deadline} onChange={e => setForm({...form, deadline: e.target.value})} />
-                        <button className="btn-save" style={{width: '100%'}} onClick={saveGoal}>ГОТОВО</button>
+
+                        {form.type === 'sprint' && (
+                            <input type="number" placeholder="Сколько дней соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} style={{color: '#000'}} />
+                        )}
+
+                        <div style={{display:'flex', gap:'15px'}}>
+                            <div style={{flex:1}}>
+                                <div style={{fontSize:'13px', marginBottom:'8px', fontWeight:'bold', color: '#333'}}>Дедлайн:</div>
+                                <input type="time" value={form.deadline} onChange={e => setForm({...form, deadline: e.target.value})} style={{color: '#000'}} />
+                            </div>
+                            <div style={{flex:1, display:'flex', alignItems:'center'}}>
+                                <label style={{fontSize:'13px', display:'flex', alignItems:'center', gap:'8px', marginTop:'10px', fontWeight: 'bold', color: '#000', cursor: 'pointer'}}>
+                                    <input type="checkbox" checked={form.ignoreHoliday} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} style={{width:'auto', margin:0, transform: 'scale(1.2)'}} /> 
+                                    Без выходных
+                                </label>
+                            </div>
+                        </div>
+
+                        <button className="btn-save" onClick={saveGoal} style={{marginBottom: '10px'}}>{editingGoalId ? 'СОХРАНИТЬ ИЗМЕНЕНИЯ' : 'СОЗДАТЬ ЦЕЛЬ'}</button>
+                        <button className="btn-cancel" onClick={() => setIsModalOpen(false)} style={{margin: 0}}>ОТМЕНА</button>
                     </div>
                 </div>
             )}

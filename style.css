@@ -32,7 +32,7 @@ body::before {
 }
 
 /* КОНТЕЙНЕРЫ */
-.container { padding: 20px 0 140px 0; display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box;}
+.container { padding: 20px 0 140px 0; display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; }
 .header { padding: 0 20px 20px 20px; text-align: center; width: 100%; box-sizing: border-box; }
 .title-row { display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
 .main-title { margin: 0; font-size: 28px; font-weight: bold; color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
@@ -52,10 +52,10 @@ body::before {
 .date-nav-btn:active { transform: scale(1.6); color: #FF8C00; }
 .date-nav-btn svg { width: 28px; height: 28px; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; }
 
-/* МАСКА ДАТЫ */
-.date-mask { width: 200px; overflow: hidden; position: relative; display: flex; justify-content: center; flex: 1;}
+/* ИСПРАВЛЕННАЯ МАСКА ДАТЫ (Идеальное центрирование) */
+.date-mask { flex: 1; overflow: hidden; position: relative; }
 .date-track { display: flex; width: 300%; will-change: transform; align-items: center; }
-.date-pane { width: 33.333%; flex-shrink: 0; text-align: center; display: flex; justify-content: center; }
+.date-pane { width: 33.3333%; flex-shrink: 0; display: flex; justify-content: center; align-items: center; }
 
 /* ТРЕК КАРТОЧЕК */
 .cards-track { display: flex; width: 300vw; will-change: transform; align-items: flex-start; }

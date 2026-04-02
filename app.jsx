@@ -9,11 +9,52 @@ const Icons = {
     ChevronLeft: () => <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>,
     ChevronRight: () => <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>,
     
-    // ИКОНКИ ДЛЯ ПАНЕЛИ СОЗДАНИЯ ЦЕЛИ
+    // ИКОНКИ НОВОЙ ПАНЕЛИ
     Text: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round"/><line x1="4" y1="12" x2="20" y2="12" strokeLinecap="round"/><line x1="4" y1="18" x2="14" y2="18" strokeLinecap="round"/></svg>,
     Clock: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-    Save: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#4CAF50" : "#fff"} {...props}><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    Save: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+    
+    // ТИПЫ И НАСТРОЙКИ
+    Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+    Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 8a4 4 0 1 0 0 8 4 4 0 0 0 4-4 4 4 0 0 1 4-4 4 4 0 1 1 0 8 4 4 0 0 1-4-4"/></svg>,
+    Hourglass: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M8 2h8M8 22h8M10 10l-2-8h8l-2 8a2 2 0 0 0 0 4l2 8H8l2-8a2 2 0 0 0 0-4z"/></svg>,
+    Heart: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+    Fire: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.59 2 2 0 0 1 .6 1.51c-.08 1.33-.86 2.66-2.2 3.9a13 13 0 0 1-1.37 1 8.5 8.5 0 0 0-1.63-2c-.6-.5-1.2-.84-1.8-.84-.5 0-1 .3-1.4.88-.4.57-.6 1.25-.6 2.05 0 1 .3 2 .88 3.03.6.98 1.45 2.02 2.62 3.07a8.5 8.5 0 0 0 3.33 2.1c-1 .85-2.2 1.27-3.53 1.27-1.55 0-2.9-.5-4.05-1.5A5.5 5.5 0 0 1 5.5 15c0-1.45.6-2.95 1.7-4.4.9-1.2 2-2.14 3.3-2.8a10.5 10.5 0 0 1 1.6-1.74c1.1-1 1.83-2.15 2.2-3.46.2-.7.5-1.06.9-1.06.2 0 .4.08.6.22z"/></svg>
+};
+
+// КОМПОНЕНТ iOS-КОЛЕСИКА ВРЕМЕНИ
+const TimeWheel = ({ items, value, onChange }) => {
+    const ref = useRef(null);
+    const itemHeight = 44; 
+    
+    useEffect(() => {
+        const idx = items.indexOf(value);
+        if(ref.current && idx !== -1) {
+            ref.current.scrollTop = idx * itemHeight;
+        }
+    }, [value, items]);
+
+    const handleScroll = (e) => {
+        const idx = Math.round(e.target.scrollTop / itemHeight);
+        if (items[idx] && items[idx] !== value) {
+            onChange(items[idx]);
+            // Легкая вибрация как в iOS при прокрутке барабана
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+            }
+        }
+    };
+
+    return (
+        <div className="wheel-container" onScroll={handleScroll} ref={ref}>
+            <div className="wheel-spacer"></div>
+            {items.map(item => (
+                <div key={item} className={`wheel-item ${item === value ? 'selected' : ''}`}>{item}</div>
+            ))}
+            <div className="wheel-spacer"></div>
+        </div>
+    );
 };
 
 function App() {
@@ -44,13 +85,17 @@ function App() {
         try { const saved = localStorage.getItem('motivateMe_v20_goals'); return saved ? JSON.parse(saved) : []; } catch (e) { return []; }
     });
 
-    // СТЕЙТЫ СОЗДАНИЯ ЦЕЛИ
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [createStep, setCreateStep] = useState('text'); // 'text', 'time', 'notifs'
+    const [createStep, setCreateStep] = useState('text'); 
     const [editingGoalId, setEditingGoalId] = useState(null);
     const [actionMenuGoal, setActionMenuGoal] = useState(null);
     const [confirmDeleteGoalId, setConfirmDeleteGoalId] = useState(null);
-    const [form, setForm] = useState({ title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, supportTone: 'soft' });
+    
+    const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, supportTone: 'soft' };
+    const [form, setForm] = useState(defaultForm);
+
+    const hoursList = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'));
+    const minutesList = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
 
     const triggerHaptic = (type) => {
         if (window.Telegram?.WebApp?.HapticFeedback) {
@@ -101,11 +146,7 @@ function App() {
         return () => clearInterval(interval);
     }, [isTimerRunning, timeLeft]);
 
-    const getOffsetDate = (baseDate, days) => {
-        const d = new Date(baseDate);
-        d.setDate(d.getDate() + days);
-        return d;
-    };
+    const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
     const animateToDate = (daysShift) => {
         if (isTransitioning) return;
@@ -113,11 +154,7 @@ function App() {
         setExpandedGoalId(null); 
         setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth);
         triggerHaptic('light');
-        setTimeout(() => {
-            setIsTransitioning(false);
-            setOffsetPx(0);
-            setCurrentDate(prev => getOffsetDate(prev, daysShift));
-        }, 350);
+        setTimeout(() => { setIsTransitioning(false); setOffsetPx(0); setCurrentDate(prev => getOffsetDate(prev, daysShift)); }, 350);
     };
 
     const onSwipeStart = (e) => {
@@ -138,43 +175,31 @@ function App() {
             if (pressTimer.current) clearTimeout(pressTimer.current);
             isLongPress.current = false;
         }
-
         if (isSwipeValid.current === null) {
             if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
                 isSwipeValid.current = Math.abs(deltaX) > Math.abs(deltaY) * 0.5;
             }
         }
-
-        if (isSwipeValid.current === true) {
-            setOffsetPx(deltaX);
-        }
+        if (isSwipeValid.current === true) setOffsetPx(deltaX);
     };
 
     const onSwipeEnd = () => {
-        if (!isDragging.current || isSwipeValid.current !== true) {
-            isDragging.current = false;
-            return;
-        }
+        if (!isDragging.current || isSwipeValid.current !== true) { isDragging.current = false; return; }
         isDragging.current = false;
-        
         const swipeDuration = Date.now() - touchStartTime.current;
         const velocity = offsetPx / swipeDuration; 
         const threshold = window.innerWidth * 0.25; 
         
         if (offsetPx > threshold || velocity > 0.6) animateToDate(-1); 
         else if (offsetPx < -threshold || velocity < -0.6) animateToDate(1); 
-        else {
-            setIsTransitioning(true);
-            setOffsetPx(0);
-            setTimeout(() => setIsTransitioning(false), 300);
-        }
+        else { setIsTransitioning(true); setOffsetPx(0); setTimeout(() => setIsTransitioning(false), 300); }
     };
 
     // ФУНКЦИИ ВЫЗОВА И СОХРАНЕНИЯ ЦЕЛИ
     const openCreateModal = () => { 
         triggerHaptic('light'); 
         setEditingGoalId(null); 
-        setForm({title:'', description:'', type:'habit', deadline:'23:59', duration:'', ignoreHoliday:false, notifications: true, supportTone: 'soft'}); 
+        setForm(defaultForm); 
         setCreateStep('text');
         setIsModalOpen(true); 
     };
@@ -187,7 +212,7 @@ function App() {
     const saveGoal = () => {
         if (!form.title) {
             triggerHaptic('error');
-            setCreateStep('text'); // Перекидываем на первую вкладку, если нет названия
+            setCreateStep('text'); 
             return;
         }
         if (editingGoalId) setGoals(goals.map(g => g.id === editingGoalId ? { ...form, id: g.id, streak: g.streak, history: g.history, createdAt: g.createdAt } : g));
@@ -203,14 +228,12 @@ function App() {
         const actualToday = new Date(now); actualToday.setHours(0, 0, 0, 0);
         const isPast = viewingDate < actualToday;
         const isToday = viewingDate.getTime() === actualToday.getTime();
-
         let isDeadlinePassed = isPast;
         if (isToday) {
             const [h, m] = goal.deadline.split(':');
             const limit = new Date(now); limit.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
             if (now > limit) isDeadlinePassed = true;
         }
-
         return { canToggle: isToday && !isDeadlinePassed, canEdit: !isPast && !isDeadlinePassed };
     };
 
@@ -239,7 +262,6 @@ function App() {
         const { canEdit } = checkPermissions(goal, dateTarget);
         isLongPress.current = false;
         if (!canEdit) return;
-        
         pressTimer.current = setTimeout(() => {
             if (isLongPress.current === false) {
                 isLongPress.current = true;
@@ -280,11 +302,28 @@ function App() {
         }));
     };
 
+    // Авторасширение поля описания
+    const handleDescChange = (e) => {
+        setForm({...form, description: e.target.value});
+        e.target.style.height = 'auto'; 
+        e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'; 
+    };
+
+    // Данные для красивых чекбоксов
+    const typeInfo = {
+        once: { title: "Разовая", desc: "Сделать один раз и забыть. Без счетчика." },
+        habit: { title: "Привычка (∞)", desc: "Регулярная задача для выработки привычки." },
+        sprint: { title: "Спринт", desc: "Держись заданное количество дней без срывов." }
+    };
+    
+    const toneInfo = {
+        soft: { title: "Мягкий", desc: "Добрая и позитивная поддержка." },
+        hard: { title: "Жесткий", desc: "Суровая дисциплина и спартанский дух." }
+    };
+
     const renderDayCards = (renderDate) => {
         const dateKey = renderDate.toDateString();
-        if (goals.length === 0) {
-            return <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Список пуст. Нажми + внизу!</p>;
-        }
+        if (goals.length === 0) return <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Список пуст. Нажми + внизу!</p>;
         
         return goals.map(g => {
             const isDone = !!g.history[dateKey];
@@ -294,16 +333,7 @@ function App() {
             const timerData = getTimerData(g, isDone, renderDate);
             
             return (
-                <div 
-                    key={g.id} 
-                    className={`card ${isShaking ? 'shake' : ''}`} 
-                    onTouchStart={() => handleCardTouchStart(g, renderDate)} 
-                    onTouchEnd={handleCardTouchEnd} 
-                    onMouseDown={() => handleCardTouchStart(g, renderDate)} 
-                    onMouseUp={handleCardTouchEnd} 
-                    onClick={() => handleCardClick(g)} 
-                    style={{ opacity: isDone ? 0.6 : 1 }}
-                >
+                <div key={g.id} className={`card ${isShaking ? 'shake' : ''}`} onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
                     <div className="goal-info">
                         <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>{g.title}</div>
                         <div className="stats-row">
@@ -313,14 +343,10 @@ function App() {
                             <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
                         </div>
                         <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}>
-                            <div className="goal-desc-inner">
-                                <div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div>
-                            </div>
+                            <div className="goal-desc-inner"><div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div></div>
                         </div>
                     </div>
-                    <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g, renderDate)}>
-                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </button>
+                    <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g, renderDate)}><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
                 </div>
             );
         });
@@ -330,6 +356,9 @@ function App() {
 
     return (
         <div className="container">
+            {/* РАЗМЫТИЕ ФОНА ПРИ ОТКРЫТОМ ОКНЕ */}
+            {isModalOpen && <div className="glass-backdrop" onClick={closeCreateModal}></div>}
+
             <div className="header">
                 <div className="title-row">
                     <h1 className="main-title">MotivateMe</h1>
@@ -339,32 +368,20 @@ function App() {
             </div>
 
             {activeTab === 'home' && (
-                <div 
-                    className="swipe-area"
-                    style={{ position: 'relative', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-                    onTouchStart={onSwipeStart}
-                    onTouchMove={onSwipeMove}
-                    onTouchEnd={onSwipeEnd}
-                >
-                    <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '400px', display: 'flex', justifyContent: 'space-between', padding: '0 10px', boxSizing: 'border-box', zIndex: 10, pointerEvents: 'none' }}>
+                <div className="swipe-area" onTouchStart={onSwipeStart} onTouchMove={onSwipeMove} onTouchEnd={onSwipeEnd} style={{ pointerEvents: isModalOpen ? 'none' : 'auto' }}>
+                    <div style={{ position: 'absolute', top: '2px', left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '400px', display: 'flex', justifyContent: 'space-between', padding: '0 10px', boxSizing: 'border-box', zIndex: 10, pointerEvents: 'none' }}>
                         <button className="date-nav-btn" style={{ pointerEvents: 'auto' }} onClick={() => animateToDate(-1)}><Icons.ChevronLeft /></button>
                         <button className="date-nav-btn" style={{ pointerEvents: 'auto' }} onClick={() => animateToDate(1)}><Icons.ChevronRight /></button>
                     </div>
 
-                    <div className="cards-track" style={{
-                        display: 'flex', width: '300vw', alignItems: 'flex-start',
-                        transform: `translateX(calc(-100vw + ${offsetPx}px))`,
-                        transition: transitionStyle
-                    }}>
+                    <div className="cards-track" style={{ transform: `translateX(calc(-100vw + ${offsetPx}px))`, transition: transitionStyle }}>
                         {[-1, 0, 1].map(shift => {
                             const renderDate = getOffsetDate(currentDate, shift);
                             return (
-                                <div className="cards-pane" key={renderDate.toDateString()} style={{ width: '100vw', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 20px', boxSizing: 'border-box' }}>
-                                    
-                                    <div style={{ textAlign: 'center', fontSize: '16px', fontWeight: 'bold', color: '#fff', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '5px' }}>
+                                <div className="cards-pane" key={renderDate.toDateString()}>
+                                    <div style={{ textAlign: 'center', fontSize: '16px', fontWeight: 'bold', color: '#fff', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
                                         {renderDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
                                     </div>
-                                    
                                     {renderDayCards(renderDate)}
                                 </div>
                             );
@@ -380,9 +397,7 @@ function App() {
                     <div style={{ fontSize: '42px', fontWeight: 'bold', textAlign: 'center', margin: '20px 0', color: '#FF8C00' }}>
                         {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
                     </div>
-                    <button onClick={() => setIsTimerRunning(!isTimerRunning)} style={{ width: '100%', background: '#FF8C00', border: 'none', color: 'white', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>
-                        {isTimerRunning ? 'ПАУЗА' : 'СТАРТ'}
-                    </button>
+                    <button onClick={() => setIsTimerRunning(!isTimerRunning)} style={{ width: '100%', background: '#FF8C00', border: 'none', color: 'white', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>{isTimerRunning ? 'ПАУЗА' : 'СТАРТ'}</button>
                 </div>
             )}
 
@@ -397,14 +412,14 @@ function App() {
                 <div className="card" style={{ display: 'block', background: 'rgba(0,0,0,0.65)', maxWidth: '360px', margin: '0 auto' }}>
                     <h3 style={{ textAlign: 'center', color: '#fff', margin: '0 0 15px 0' }}>Настройки</h3>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px', color: '#fff' }}>Тон поддержки:</label>
-                    <select className="custom-select" value={motivationTone} onChange={e => setMotivationTone(e.target.value)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
+                    <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)}>
                         <option value="soft" style={{color: '#000'}}>Мягкий</option>
                         <option value="hard" style={{color: '#000'}}>Жесткий</option>
                     </select>
                 </div>
             )}
 
-            {/* МЕНЮ ДЕЙСТВИЙ С ЦЕЛЬЮ (Долгое нажатие) */}
+            {/* МЕНЮ ДЕЙСТВИЙ (Осталось классическим) */}
             {actionMenuGoal && (
                 <div className="modal-overlay" onClick={() => setActionMenuGoal(null)}>
                     <div className="modal-content" style={{ paddingBottom: '40px', display: 'block' }} onClick={e => e.stopPropagation()}>
@@ -434,49 +449,94 @@ function App() {
                 </div>
             )}
 
-            {/* НОВАЯ ВЫЕЗЖАЮЩАЯ ПАНЕЛЬ СОЗДАНИЯ ЦЕЛИ */}
+            {/* НОВАЯ ВЫЕЗЖАЮЩАЯ ПАНЕЛЬ (iOS Style) */}
             {isModalOpen && (
-                <div className="create-panel">
+                <div className="create-panel" style={{ display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{margin: '0 0 15px 0', textAlign: 'center', fontSize: '18px'}}>{editingGoalId ? 'Редактировать' : 'Новая цель'}</h3>
+                    
                     {createStep === 'text' && (
-                        <React.Fragment>
+                        <div className="panel-step">
                             <input placeholder="Название (например: Пробежка)" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="dark-input" />
-                            <textarea placeholder="Описание (зачем тебе это?)" rows="3" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="dark-input" />
-                        </React.Fragment>
+                            <textarea 
+                                placeholder="Описание (зачем тебе это?)" 
+                                value={form.description} 
+                                onChange={handleDescChange} 
+                                className="dark-input custom-scrollbar" 
+                                style={{ minHeight: '60px', maxHeight: '140px', resize: 'none', overflowY: 'auto' }}
+                            />
+                        </div>
                     )}
+
                     {createStep === 'time' && (
-                        <React.Fragment>
-                            <div style={{fontSize:'13px', marginBottom:'8px', fontWeight:'bold', color: '#fff'}}>Тип цели:</div>
-                            <select className="custom-select dark-input" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-                                <option value="once" style={{color:'#000'}}>Разовая (один раз)</option>
-                                <option value="habit" style={{color:'#000'}}>Постоянная (∞)</option>
-                                <option value="sprint" style={{color:'#000'}}>Спринт (на N дней)</option>
-                            </select>
-                            {form.type === 'sprint' && ( <input type="number" placeholder="Сколько дней соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="dark-input" /> )}
-                            <div style={{display:'flex', gap:'15px'}}>
-                                <div style={{flex:1}}>
-                                    <div style={{fontSize:'13px', marginBottom:'8px', fontWeight:'bold', color: '#fff'}}>Дедлайн:</div>
-                                    <input type="time" value={form.deadline} onChange={e => setForm({...form, deadline: e.target.value})} className="dark-input" />
+                        <div className="panel-step">
+                            {/* КАСТОМНЫЕ ЧЕКБОКСЫ ТИПА ЦЕЛИ */}
+                            <div className="radio-group">
+                                <div className={`radio-btn ${form.type === 'once' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'once'})}}>
+                                    <Icons.Target active={form.type === 'once'} />
                                 </div>
-                                <div style={{flex:1, display:'flex', alignItems:'center'}}>
-                                    <label style={{fontSize:'13px', display:'flex', alignItems:'center', gap:'8px', marginTop:'10px', fontWeight: 'bold', color: '#fff', cursor: 'pointer'}}>
-                                        <input type="checkbox" checked={form.ignoreHoliday} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} style={{width:'auto', margin:0, transform: 'scale(1.2)'}} /> Без выходных
-                                    </label>
+                                <div className={`radio-btn ${form.type === 'habit' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'habit'})}}>
+                                    <Icons.Infinity active={form.type === 'habit'} />
+                                </div>
+                                <div className={`radio-btn ${form.type === 'sprint' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'sprint'})}}>
+                                    <Icons.Hourglass active={form.type === 'sprint'} />
                                 </div>
                             </div>
-                        </React.Fragment>
+                            <div className="info-box">
+                                <div className="info-title">{typeInfo[form.type].title}</div>
+                                <div className="info-desc">{typeInfo[form.type].desc}</div>
+                            </div>
+
+                            {form.type === 'sprint' && ( <input type="number" placeholder="Количество дней" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="dark-input" style={{textAlign: 'center', marginTop: '10px'}} /> )}
+                            
+                            <hr className="divider" />
+                            
+                            {/* iOS ВЫБОР ВРЕМЕНИ */}
+                            <div style={{textAlign: 'center', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px'}}>Дедлайн</div>
+                            <div className="ios-time-picker">
+                                <TimeWheel items={hoursList} value={form.deadline.split(':')[0]} onChange={h => setForm({...form, deadline: `${h}:${form.deadline.split(':')[1]}`})} />
+                                <span className="time-colon">:</span>
+                                <TimeWheel items={minutesList} value={form.deadline.split(':')[1]} onChange={m => setForm({...form, deadline: `${form.deadline.split(':')[0]}:${m}`})} />
+                            </div>
+
+                            {/* ТУМБЛЕР БЕЗ ВЫХОДНЫХ */}
+                            <div className="setting-row">
+                                <span style={{fontSize: '15px', fontWeight: '500'}}>Без выходных</span>
+                                <label className="ios-switch">
+                                    <input type="checkbox" checked={form.ignoreHoliday} onChange={e => {triggerHaptic('light'); setForm({...form, ignoreHoliday: e.target.checked})}} />
+                                    <span className="slider"></span>
+                                </label>
+                            </div>
+                        </div>
                     )}
+
                     {createStep === 'notifs' && (
-                        <React.Fragment>
-                            <label style={{display:'flex', alignItems:'center', gap:'10px', color:'#fff', fontWeight:'bold', marginBottom:'15px'}}>
-                                <input type="checkbox" checked={form.notifications} onChange={e => setForm({...form, notifications: e.target.checked})} style={{width:'auto', margin:0, transform: 'scale(1.2)'}}/>
-                                Включить уведомления
-                            </label>
-                            <div style={{fontSize:'13px', marginBottom:'8px', fontWeight:'bold', color: '#fff'}}>Тон поддержки:</div>
-                            <select className="custom-select dark-input" value={form.supportTone} onChange={e => setForm({...form, supportTone: e.target.value})}>
-                                <option value="soft" style={{color:'#000'}}>Мягкий (поддержка)</option>
-                                <option value="hard" style={{color:'#000'}}>Жесткий (дисциплина)</option>
-                            </select>
-                        </React.Fragment>
+                        <div className="panel-step">
+                            {/* ТУМБЛЕР УВЕДОМЛЕНИЙ */}
+                            <div className="setting-row" style={{marginBottom: '20px'}}>
+                                <span style={{fontSize: '15px', fontWeight: '500'}}>Уведомления</span>
+                                <label className="ios-switch">
+                                    <input type="checkbox" checked={form.notifications} onChange={e => {triggerHaptic('light'); setForm({...form, notifications: e.target.checked})}} />
+                                    <span className="slider"></span>
+                                </label>
+                            </div>
+
+                            <hr className="divider" />
+
+                            {/* КАСТОМНЫЕ ЧЕКБОКСЫ ТОНА */}
+                            <div style={{textAlign: 'center', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px'}}>Тон поддержки</div>
+                            <div className="radio-group" style={{ maxWidth: '200px', margin: '0 auto 10px auto' }}>
+                                <div className={`radio-btn ${form.supportTone === 'soft' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, supportTone: 'soft'})}}>
+                                    <Icons.Heart active={form.supportTone === 'soft'} />
+                                </div>
+                                <div className={`radio-btn ${form.supportTone === 'hard' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, supportTone: 'hard'})}}>
+                                    <Icons.Fire active={form.supportTone === 'hard'} />
+                                </div>
+                            </div>
+                            <div className="info-box">
+                                <div className="info-title">{toneInfo[form.supportTone].title}</div>
+                                <div className="info-desc">{toneInfo[form.supportTone].desc}</div>
+                            </div>
+                        </div>
                     )}
                 </div>
             )}
@@ -496,7 +556,7 @@ function App() {
                         <div onClick={() => {triggerHaptic('light'); setCreateStep('text');}} className="tab-item"><Icons.Text active={createStep === 'text'} /></div>
                         <div onClick={() => {triggerHaptic('light'); setCreateStep('time');}} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
                         <div className="tab-add-wrapper" onClick={closeCreateModal}>
-                            <div className="tab-add-btn" style={{ background: '#333' }}>
+                            <div className="tab-add-btn" style={{ background: '#444' }}>
                                 {/* Иконка плюса крутится и становится крестиком */}
                                 <Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} />
                             </div>

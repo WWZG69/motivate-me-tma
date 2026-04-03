@@ -17,7 +17,12 @@ const Icons = {
     Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 8a4 4 0 1 0 0 8 4 4 0 0 0 4-4 4 4 0 0 1 4-4 4 4 0 1 1 0 8 4 4 0 0 1-4-4"/></svg>,
     Hourglass: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M8 2h8M8 22h8M10 10l-2-8h8l-2 8a2 2 0 0 0 0 4l2 8H8l2-8a2 2 0 0 0 0-4z"/></svg>,
     Heart: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
-    Fire: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.59 2 2 0 0 1 .6 1.51c-.08 1.33-.86 2.66-2.2 3.9a13 13 0 0 1-1.37 1 8.5 8.5 0 0 0-1.63-2c-.6-.5-1.2-.84-1.8-.84-.5 0-1 .3-1.4.88-.4.57-.6 1.25-.6 2.05 0 1 .3 2 .88 3.03.6.98 1.45 2.02 2.62 3.07a8.5 8.5 0 0 0 3.33 2.1c-1 .85-2.2 1.27-3.53 1.27-1.55 0-2.9-.5-4.05-1.5A5.5 5.5 0 0 1 5.5 15c0-1.45.6-2.95 1.7-4.4.9-1.2 2-2.14 3.3-2.8a10.5 10.5 0 0 1 1.6-1.74c1.1-1 1.83-2.15 2.2-3.46.2-.7.5-1.06.9-1.06.2 0 .4.08.6.22z"/></svg>
+    Fire: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.59 2 2 0 0 1 .6 1.51c-.08 1.33-.86 2.66-2.2 3.9a13 13 0 0 1-1.37 1 8.5 8.5 0 0 0-1.63-2c-.6-.5-1.2-.84-1.8-.84-.5 0-1 .3-1.4.88-.4.57-.6 1.25-.6 2.05 0 1 .3 2 .88 3.03.6.98 1.45 2.02 2.62 3.07a8.5 8.5 0 0 0 3.33 2.1c-1 .85-2.2 1.27-3.53 1.27-1.55 0-2.9-.5-4.05-1.5A5.5 5.5 0 0 1 5.5 15c0-1.45.6-2.95 1.7-4.4.9-1.2 2-2.14 3.3-2.8a10.5 10.5 0 0 1 1.6-1.74c1.1-1 1.83-2.15 2.2-3.46.2-.7.5-1.06.9-1.06.2 0 .4.08.6.22z"/></svg>,
+    
+    // ИКОНКИ ДЛЯ ТАЙМЕРА ФОКУСА
+    Play: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+    Pause: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
+    Refresh: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
 };
 
 const TimeWheel = ({ items, value, onChange }) => {
@@ -56,7 +61,6 @@ function App() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [now, setNow] = useState(new Date());
     
-    // СТЕЙТ ДЛЯ ПОЛНОГО ЭКРАНА
     const [isFullscreen, setIsFullscreen] = useState(false);
     
     const [offsetPx, setOffsetPx] = useState(0);
@@ -113,7 +117,6 @@ function App() {
         return () => { document.removeEventListener('touchstart', handleGlobalTouch); document.removeEventListener('mousedown', handleGlobalTouch); };
     }, [expandedGoalId]);
 
-    // ОТСЛЕДЖИВАНИЕ ПОЛНОГО ЭКРАНА (ДЛЯ ОТСТУПА)
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
         if (tg) { 
@@ -140,6 +143,12 @@ function App() {
         else if (timeLeft === 0) { setIsTimerRunning(false); triggerHaptic('success'); }
         return () => clearInterval(interval);
     }, [isTimerRunning, timeLeft]);
+
+    const resetTimer = () => {
+        setIsTimerRunning(false);
+        setTimeLeft(25 * 60);
+        triggerHaptic('light');
+    };
 
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
@@ -341,7 +350,6 @@ function App() {
     const transitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
 
     return (
-        // ДИНАМИЧЕСКИЙ ОТСТУП ДЛЯ ПОЛНОГО ЭКРАНА
         <div className="container" style={{ paddingTop: isFullscreen ? 'calc(20px + 7vh)' : '20px' }}>
             {isModalOpen && <div className="glass-backdrop" onClick={closeCreateModal}></div>}
 
@@ -376,13 +384,27 @@ function App() {
                 </div>
             )}
 
+            {/* НОВЫЙ ДИЗАЙН ТАЙМЕРА ФОКУСА */}
             {activeTab === 'progress' && (
-                <div className="card" style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.65)', maxWidth: '360px', margin: '0 auto' }}>
-                    <h3 style={{ textAlign: 'center', color: '#fff', margin: 0 }}>Таймер Фокуса</h3>
-                    <div style={{ fontSize: '42px', fontWeight: 'bold', textAlign: 'center', margin: '20px 0', color: '#FF8C00' }}>
+                <div className="timer-panel">
+                    <h3 style={{ textAlign: 'center', color: '#fff', margin: '0 0 20px 0', fontSize: '20px', fontWeight: '600' }}>Фокус</h3>
+                    <div className="timer-display">
                         {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
                     </div>
-                    <button onClick={() => setIsTimerRunning(!isTimerRunning)} style={{ width: '100%', background: '#FF8C00', border: 'none', color: 'white', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>{isTimerRunning ? 'ПАУЗА' : 'СТАРТ'}</button>
+                    <div className="timer-controls">
+                        {/* Кнопка сброса таймера (маленькая) */}
+                        <button className="btn-timer-reset" onClick={resetTimer}>
+                            <Icons.Refresh />
+                        </button>
+                        
+                        {/* Главная кнопка Старт/Пауза (большая) */}
+                        <button className="btn-timer-main" onClick={() => { setIsTimerRunning(!isTimerRunning); triggerHaptic('light'); }}>
+                            {isTimerRunning ? <Icons.Pause /> : <Icons.Play />}
+                        </button>
+                        
+                        {/* Пустой блок для симметрии (чтобы главная кнопка была ровно по центру) */}
+                        <div style={{ width: '48px' }}></div> 
+                    </div>
                 </div>
             )}
 
@@ -519,7 +541,6 @@ function App() {
                 </div>
             )}
 
-            {/* ЩИТ ОТ ЛОЖНЫХ НАЖАТИЙ ПРИ СВОРАЧИВАНИИ */}
             <div className="bottom-touch-shield" onTouchStart={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}></div>
 
             <div className="tab-bar">

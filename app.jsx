@@ -9,13 +9,10 @@ const Icons = {
     ChevronLeft: () => <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>,
     ChevronRight: () => <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>,
     
-    // ИКОНКИ НОВОЙ ПАНЕЛИ
     Text: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round"/><line x1="4" y1="12" x2="20" y2="12" strokeLinecap="round"/><line x1="4" y1="18" x2="14" y2="18" strokeLinecap="round"/></svg>,
     Clock: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     Save: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-    
-    // ТИПЫ И НАСТРОЙКИ
     Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
     Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 8a4 4 0 1 0 0 8 4 4 0 0 0 4-4 4 4 0 0 1 4-4 4 4 0 1 1 0 8 4 4 0 0 1-4-4"/></svg>,
     Hourglass: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M8 2h8M8 22h8M10 10l-2-8h8l-2 8a2 2 0 0 0 0 4l2 8H8l2-8a2 2 0 0 0 0-4z"/></svg>,
@@ -23,23 +20,19 @@ const Icons = {
     Fire: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.59 2 2 0 0 1 .6 1.51c-.08 1.33-.86 2.66-2.2 3.9a13 13 0 0 1-1.37 1 8.5 8.5 0 0 0-1.63-2c-.6-.5-1.2-.84-1.8-.84-.5 0-1 .3-1.4.88-.4.57-.6 1.25-.6 2.05 0 1 .3 2 .88 3.03.6.98 1.45 2.02 2.62 3.07a8.5 8.5 0 0 0 3.33 2.1c-1 .85-2.2 1.27-3.53 1.27-1.55 0-2.9-.5-4.05-1.5A5.5 5.5 0 0 1 5.5 15c0-1.45.6-2.95 1.7-4.4.9-1.2 2-2.14 3.3-2.8a10.5 10.5 0 0 1 1.6-1.74c1.1-1 1.83-2.15 2.2-3.46.2-.7.5-1.06.9-1.06.2 0 .4.08.6.22z"/></svg>
 };
 
-// КОМПОНЕНТ iOS-КОЛЕСИКА ВРЕМЕНИ
 const TimeWheel = ({ items, value, onChange }) => {
     const ref = useRef(null);
     const itemHeight = 44; 
     
     useEffect(() => {
         const idx = items.indexOf(value);
-        if(ref.current && idx !== -1) {
-            ref.current.scrollTop = idx * itemHeight;
-        }
+        if(ref.current && idx !== -1) ref.current.scrollTop = idx * itemHeight;
     }, [value, items]);
 
     const handleScroll = (e) => {
         const idx = Math.round(e.target.scrollTop / itemHeight);
         if (items[idx] && items[idx] !== value) {
             onChange(items[idx]);
-            // Легкая вибрация как в iOS при прокрутке барабана
             if (window.Telegram?.WebApp?.HapticFeedback) {
                 window.Telegram.WebApp.HapticFeedback.selectionChanged();
             }
@@ -72,6 +65,10 @@ function App() {
     const isDragging = useRef(false);
     const isSwipeValid = useRef(null); 
     
+    // ТАЙМЕРЫ ДЛЯ БЫСТРОГО СВАЙПА (БЕЗ БЛОКИРОВКИ)
+    const transitionTimer = useRef(null);
+    const pendingShiftRef = useRef(0);
+
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -99,28 +96,19 @@ function App() {
 
     const triggerHaptic = (type) => {
         if (window.Telegram?.WebApp?.HapticFeedback) {
-            if (type === 'success') {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
-                setTimeout(() => window.Telegram.WebApp.HapticFeedback.impactOccurred('rigid'), 150);
-            } else if (type === 'error') {
-                window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
-                setTimeout(() => window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'), 50);
-            } else window.Telegram.WebApp.HapticFeedback.impactOccurred(type);
+            if (type === 'success') { window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'); setTimeout(() => window.Telegram.WebApp.HapticFeedback.impactOccurred('rigid'), 150); }
+            else if (type === 'error') { window.Telegram.WebApp.HapticFeedback.notificationOccurred('error'); setTimeout(() => window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'), 50); }
+            else window.Telegram.WebApp.HapticFeedback.impactOccurred(type);
         }
     };
 
     useEffect(() => {
         const handleGlobalTouch = (e) => {
-            if (!e.target.closest('.card') && !e.target.closest('.modal-content') && expandedGoalId) {
-                setExpandedGoalId(null);
-            }
+            if (!e.target.closest('.card') && !e.target.closest('.modal-content') && expandedGoalId) setExpandedGoalId(null);
         };
         document.addEventListener('touchstart', handleGlobalTouch);
         document.addEventListener('mousedown', handleGlobalTouch);
-        return () => {
-            document.removeEventListener('touchstart', handleGlobalTouch);
-            document.removeEventListener('mousedown', handleGlobalTouch);
-        };
+        return () => { document.removeEventListener('touchstart', handleGlobalTouch); document.removeEventListener('mousedown', handleGlobalTouch); };
     }, [expandedGoalId]);
 
     useEffect(() => {
@@ -137,28 +125,46 @@ function App() {
 
     useEffect(() => {
         let interval = null;
-        if (isTimerRunning && timeLeft > 0) {
-            interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-        } else if (timeLeft === 0) {
-            setIsTimerRunning(false);
-            triggerHaptic('success');
-        }
+        if (isTimerRunning && timeLeft > 0) interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+        else if (timeLeft === 0) { setIsTimerRunning(false); triggerHaptic('success'); }
         return () => clearInterval(interval);
     }, [isTimerRunning, timeLeft]);
 
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
+    // УМНАЯ АНИМАЦИЯ: Позволяет моментально "докручивать" предыдущий свайп, если нажат новый
     const animateToDate = (daysShift) => {
-        if (isTransitioning) return;
-        setIsTransitioning(true);
+        if (transitionTimer.current) {
+            clearTimeout(transitionTimer.current);
+            setCurrentDate(prev => getOffsetDate(prev, pendingShiftRef.current));
+        }
+
+        pendingShiftRef.current = daysShift;
         setExpandedGoalId(null); 
+        setIsTransitioning(true);
         setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth);
         triggerHaptic('light');
-        setTimeout(() => { setIsTransitioning(false); setOffsetPx(0); setCurrentDate(prev => getOffsetDate(prev, daysShift)); }, 350);
+
+        transitionTimer.current = setTimeout(() => {
+            setIsTransitioning(false);
+            setOffsetPx(0);
+            setCurrentDate(prev => getOffsetDate(prev, daysShift));
+            transitionTimer.current = null;
+            pendingShiftRef.current = 0;
+        }, 200); // УСКОРЕНА АНИМАЦИЯ ДЛЯ БОЛЬШЕЙ ОТЗЫВЧИВОСТИ
     };
 
     const onSwipeStart = (e) => {
-        if (isTransitioning) return;
+        // ЕСЛИ АНИМАЦИЯ ЕЩЕ ИДЕТ - МОМЕНТАЛЬНО ЕЕ ЗАВЕРШАЕМ (разрешаем спамить свайпами)
+        if (transitionTimer.current) {
+            clearTimeout(transitionTimer.current);
+            transitionTimer.current = null;
+            setCurrentDate(prev => getOffsetDate(prev, pendingShiftRef.current));
+            setOffsetPx(0);
+            setIsTransitioning(false);
+            pendingShiftRef.current = 0;
+        }
+
         touchStartX.current = e.touches[0].clientX;
         touchStartY.current = e.touches[0].clientY;
         touchStartTime.current = Date.now(); 
@@ -186,39 +192,24 @@ function App() {
     const onSwipeEnd = () => {
         if (!isDragging.current || isSwipeValid.current !== true) { isDragging.current = false; return; }
         isDragging.current = false;
+        
         const swipeDuration = Date.now() - touchStartTime.current;
         const velocity = offsetPx / swipeDuration; 
         const threshold = window.innerWidth * 0.25; 
         
         if (offsetPx > threshold || velocity > 0.6) animateToDate(-1); 
         else if (offsetPx < -threshold || velocity < -0.6) animateToDate(1); 
-        else { setIsTransitioning(true); setOffsetPx(0); setTimeout(() => setIsTransitioning(false), 300); }
+        else { setIsTransitioning(true); setOffsetPx(0); setTimeout(() => setIsTransitioning(false), 200); }
     };
 
-    // ФУНКЦИИ ВЫЗОВА И СОХРАНЕНИЯ ЦЕЛИ
-    const openCreateModal = () => { 
-        triggerHaptic('light'); 
-        setEditingGoalId(null); 
-        setForm(defaultForm); 
-        setCreateStep('text');
-        setIsModalOpen(true); 
-    };
-
-    const closeCreateModal = () => {
-        triggerHaptic('light');
-        setIsModalOpen(false);
-    };
+    const openCreateModal = () => { triggerHaptic('light'); setEditingGoalId(null); setForm(defaultForm); setCreateStep('text'); setIsModalOpen(true); };
+    const closeCreateModal = () => { triggerHaptic('light'); setIsModalOpen(false); };
 
     const saveGoal = () => {
-        if (!form.title) {
-            triggerHaptic('error');
-            setCreateStep('text'); 
-            return;
-        }
+        if (!form.title) { triggerHaptic('error'); setCreateStep('text'); return; }
         if (editingGoalId) setGoals(goals.map(g => g.id === editingGoalId ? { ...form, id: g.id, streak: g.streak, history: g.history, createdAt: g.createdAt } : g));
         else setGoals([{ ...form, id: Date.now(), streak: 0, history: {}, createdAt: new Date().toDateString() }, ...goals]);
-        setIsModalOpen(false); 
-        triggerHaptic('success');
+        setIsModalOpen(false); triggerHaptic('success');
     };
     
     const deleteGoal = () => { setGoals(goals.filter(g => g.id !== confirmDeleteGoalId)); setConfirmDeleteGoalId(null); triggerHaptic('success'); };
@@ -263,33 +254,21 @@ function App() {
         isLongPress.current = false;
         if (!canEdit) return;
         pressTimer.current = setTimeout(() => {
-            if (isLongPress.current === false) {
-                isLongPress.current = true;
-                triggerHaptic('heavy');
-                setActionMenuGoal(goal);
-            }
+            if (isLongPress.current === false) { isLongPress.current = true; triggerHaptic('heavy'); setActionMenuGoal(goal); }
         }, 500); 
     };
     
     const handleCardTouchEnd = () => { if (pressTimer.current) clearTimeout(pressTimer.current); };
 
     const handleCardClick = (goal) => {
-        if (!isLongPress.current) {
-            setExpandedGoalId(prev => prev === goal.id ? null : goal.id);
-            triggerHaptic('light');
-        }
+        if (!isLongPress.current) { setExpandedGoalId(prev => prev === goal.id ? null : goal.id); triggerHaptic('light'); }
     };
 
     const toggleGoal = (e, goalObj, dateTarget) => {
         e.stopPropagation(); 
         const { canToggle } = checkPermissions(goalObj, dateTarget);
         
-        if (!canToggle) {
-            triggerHaptic('error');
-            setShakingGoalId(goalObj.id);
-            setTimeout(() => setShakingGoalId(null), 400); 
-            return;
-        }
+        if (!canToggle) { triggerHaptic('error'); setShakingGoalId(goalObj.id); setTimeout(() => setShakingGoalId(null), 400); return; }
 
         const dateStr = dateTarget.toDateString();
         const isCurrentlyDone = !!goalObj.history[dateStr];
@@ -302,14 +281,12 @@ function App() {
         }));
     };
 
-    // Авторасширение поля описания
     const handleDescChange = (e) => {
         setForm({...form, description: e.target.value});
         e.target.style.height = 'auto'; 
         e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'; 
     };
 
-    // Данные для красивых чекбоксов
     const typeInfo = {
         once: { title: "Разовая", desc: "Сделать один раз и забыть. Без счетчика." },
         habit: { title: "Привычка (∞)", desc: "Регулярная задача для выработки привычки." },
@@ -352,11 +329,11 @@ function App() {
         });
     };
 
-    const transitionStyle = isTransitioning ? 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
+    // Переход теперь всего 0.25с или 0с (чтобы не было залипаний)
+    const transitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
 
     return (
         <div className="container">
-            {/* РАЗМЫТИЕ ФОНА ПРИ ОТКРЫТОМ ОКНЕ */}
             {isModalOpen && <div className="glass-backdrop" onClick={closeCreateModal}></div>}
 
             <div className="header">
@@ -390,7 +367,6 @@ function App() {
                 </div>
             )}
 
-            {/* ОСТАЛЬНЫЕ ЭКРАНЫ */}
             {activeTab === 'progress' && (
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.65)', maxWidth: '360px', margin: '0 auto' }}>
                     <h3 style={{ textAlign: 'center', color: '#fff', margin: 0 }}>Таймер Фокуса</h3>
@@ -419,7 +395,6 @@ function App() {
                 </div>
             )}
 
-            {/* МЕНЮ ДЕЙСТВИЙ (Осталось классическим) */}
             {actionMenuGoal && (
                 <div className="modal-overlay" onClick={() => setActionMenuGoal(null)}>
                     <div className="modal-content" style={{ paddingBottom: '40px', display: 'block' }} onClick={e => e.stopPropagation()}>
@@ -449,7 +424,6 @@ function App() {
                 </div>
             )}
 
-            {/* НОВАЯ ВЫЕЗЖАЮЩАЯ ПАНЕЛЬ (iOS Style) */}
             {isModalOpen && (
                 <div className="create-panel" style={{ display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{margin: '0 0 15px 0', textAlign: 'center', fontSize: '18px'}}>{editingGoalId ? 'Редактировать' : 'Новая цель'}</h3>
@@ -469,7 +443,6 @@ function App() {
 
                     {createStep === 'time' && (
                         <div className="panel-step">
-                            {/* КАСТОМНЫЕ ЧЕКБОКСЫ ТИПА ЦЕЛИ */}
                             <div className="radio-group">
                                 <div className={`radio-btn ${form.type === 'once' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'once'})}}>
                                     <Icons.Target active={form.type === 'once'} />
@@ -490,7 +463,6 @@ function App() {
                             
                             <hr className="divider" />
                             
-                            {/* iOS ВЫБОР ВРЕМЕНИ */}
                             <div style={{textAlign: 'center', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px'}}>Дедлайн</div>
                             <div className="ios-time-picker">
                                 <TimeWheel items={hoursList} value={form.deadline.split(':')[0]} onChange={h => setForm({...form, deadline: `${h}:${form.deadline.split(':')[1]}`})} />
@@ -498,7 +470,6 @@ function App() {
                                 <TimeWheel items={minutesList} value={form.deadline.split(':')[1]} onChange={m => setForm({...form, deadline: `${form.deadline.split(':')[0]}:${m}`})} />
                             </div>
 
-                            {/* ТУМБЛЕР БЕЗ ВЫХОДНЫХ */}
                             <div className="setting-row">
                                 <span style={{fontSize: '15px', fontWeight: '500'}}>Без выходных</span>
                                 <label className="ios-switch">
@@ -511,7 +482,6 @@ function App() {
 
                     {createStep === 'notifs' && (
                         <div className="panel-step">
-                            {/* ТУМБЛЕР УВЕДОМЛЕНИЙ */}
                             <div className="setting-row" style={{marginBottom: '20px'}}>
                                 <span style={{fontSize: '15px', fontWeight: '500'}}>Уведомления</span>
                                 <label className="ios-switch">
@@ -522,7 +492,6 @@ function App() {
 
                             <hr className="divider" />
 
-                            {/* КАСТОМНЫЕ ЧЕКБОКСЫ ТОНА */}
                             <div style={{textAlign: 'center', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px'}}>Тон поддержки</div>
                             <div className="radio-group" style={{ maxWidth: '200px', margin: '0 auto 10px auto' }}>
                                 <div className={`radio-btn ${form.supportTone === 'soft' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, supportTone: 'soft'})}}>
@@ -541,7 +510,6 @@ function App() {
                 </div>
             )}
 
-            {/* НИЖНЯЯ ПАНЕЛЬ МЕНЯЕТ КОНТЕКСТ */}
             <div className="tab-bar">
                 {!isModalOpen ? (
                     <React.Fragment>
@@ -557,7 +525,6 @@ function App() {
                         <div onClick={() => {triggerHaptic('light'); setCreateStep('time');}} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
                         <div className="tab-add-wrapper" onClick={closeCreateModal}>
                             <div className="tab-add-btn" style={{ background: '#444' }}>
-                                {/* Иконка плюса крутится и становится крестиком */}
                                 <Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} />
                             </div>
                         </div>

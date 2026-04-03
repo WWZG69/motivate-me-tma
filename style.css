@@ -41,7 +41,7 @@ body::before {
 /* --- СЕТКА ЗОНЫ СВАЙПА --- */
 .swipe-area { width: 100vw; flex: 1; display: flex; flex-direction: column; overflow-x: hidden; position: relative; touch-action: pan-y; }
 
-/* СТЕКЛЯННЫЕ КНОПКИ-СТРЕЛКИ (ИСПРАВЛЕНО: Вдавливание без оранжевого цвета) */
+/* СТЕКЛЯННЫЕ КНОПКИ-СТРЕЛКИ (Без оранжевого, только вдавливание) */
 .date-nav-btn { background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 50%; color: white; width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 .date-nav-btn:active { transform: scale(0.85); background: rgba(0, 0, 0, 0.4); }
 .date-nav-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; }
@@ -50,15 +50,37 @@ body::before {
 .cards-track { display: flex; width: 300vw; will-change: transform; align-items: flex-start; }
 .cards-pane { width: 100vw; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 0 20px; box-sizing: border-box; }
 
-/* КАРТОЧКИ: Темное стекло */
-.card { background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 24px; padding: 18px 20px; color: white; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255, 255, 255, 0.15); transition: transform 0.15s ease, opacity 0.3s ease; cursor: pointer; user-select: none; }
-.card:active:not(.shake) { transform: scale(0.96); }
+/* КАРТОЧКИ: Темное стекло + GPU АППАРАТНОЕ УСКОРЕНИЕ (убирает рябь при скролле) */
+.card { 
+    background: rgba(0, 0, 0, 0.65); 
+    backdrop-filter: blur(15px); 
+    -webkit-backdrop-filter: blur(15px); 
+    border-radius: 24px; 
+    padding: 18px 20px; 
+    color: white; 
+    width: 100%; 
+    max-width: 360px; 
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3); 
+    margin-bottom: 12px; 
+    box-sizing: border-box; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    border: 1px solid rgba(255, 255, 255, 0.15); 
+    transition: transform 0.15s ease, opacity 0.3s ease; 
+    cursor: pointer; 
+    user-select: none; 
+    transform: translateZ(0); 
+    -webkit-transform: translateZ(0);
+    will-change: transform, opacity;
+}
+.card:active:not(.shake) { transform: scale(0.96) translateZ(0); }
 
 /* ТРЯСКА ОШИБКИ */
 .shake { animation: shakeCard 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-@keyframes shakeCard { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); } 20%, 40%, 60%, 80% { transform: translateX(4px); } }
+@keyframes shakeCard { 0%, 100% { transform: translateX(0) translateZ(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-4px) translateZ(0); } 20%, 40%, 60%, 80% { transform: translateX(4px) translateZ(0); } }
 
-/* ИНФОРМАЦИЯ И ТАЙМЕР (ИСПРАВЛЕНО: Переносы слов по слогам) */
+/* ИНФОРМАЦИЯ И ТАЙМЕР (С переносом по слогам) */
 .goal-info { flex: 1; padding-right: 15px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
 .goal-title { font-weight: 600; font-size: 17px; margin: 0; color: white; line-height: 1.2; letter-spacing: 0.3px; transition: color 0.3s; overflow-wrap: break-word; word-break: break-word; -webkit-hyphens: auto; hyphens: auto; }
 .stats-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
@@ -67,12 +89,11 @@ body::before {
 .urgent-timer { color: #ff3b30 !important; font-weight: 800 !important; animation: pulseUrgent 0.5s ease-in-out infinite; display: inline-block; }
 .failed-timer { color: #ff3b30 !important; font-weight: bold !important; }
 
-/* ОПИСАНИЕ (ИСПРАВЛЕНО: Увеличен лимит, скролл и переносы) */
+/* ОПИСАНИЕ (Ограничение в 3 карточки + скролл + перенос по слогам) */
 .goal-desc-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease, margin-top 0.3s ease, opacity 0.3s ease; opacity: 0; margin-top: 0; }
 .goal-desc-wrapper.expanded { grid-template-rows: 1fr; opacity: 1; margin-top: 8px; }
 .goal-desc-inner { overflow: hidden; }
 .goal-desc { font-size: 13px; color: rgba(255, 255, 255, 0.7); line-height: 1.5; margin: 0; padding-bottom: 4px; max-height: 260px; overflow-y: auto; overflow-wrap: break-word; word-break: break-word; -webkit-hyphens: auto; hyphens: auto; }
-/* Дизайн скроллбара для длинного описания */
 .goal-desc::-webkit-scrollbar { width: 4px; }
 .goal-desc::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
 

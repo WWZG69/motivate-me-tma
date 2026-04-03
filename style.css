@@ -91,8 +91,6 @@ body::before {
 .tab-add-btn { width: 48px; height: 48px; background: #FF8C00; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s; cursor: pointer; }
 .tab-add-btn:active { transform: scale(0.9); }
 .tab-add-icon { width: 26px; height: 26px; stroke: white; stroke-width: 2.5; }
-
-/* НЕВИДИМЫЙ ЩИТ ОТ ЛОЖНЫХ СВАЙПОВ СНИЗУ */
 .bottom-touch-shield { position: fixed; bottom: 0; left: 0; right: 0; height: 100px; z-index: 95; background: transparent; touch-action: none; }
 
 /* ВЫЕЗЖАЮЩАЯ ПАНЕЛЬ СОЗДАНИЯ ЦЕЛИ И БЛЮР */
@@ -108,7 +106,7 @@ body::before {
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
 
-/* КАСТОМНЫЕ РАДИО-КНОПКИ */
+/* КАСТОМНЫЕ РАДИО-КНОПКИ И iOS СВИТЧИ */
 .radio-group { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
 .radio-btn { width: 52px; height: 52px; border-radius: 16px; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: pointer; }
 .radio-btn svg { width: 26px; height: 26px; transition: all 0.2s ease; }
@@ -119,7 +117,6 @@ body::before {
 .info-desc { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.4; margin: 0; }
 .divider { border: 0; height: 1px; background: rgba(255,255,255,0.1); margin: 15px 0; width: 100%; }
 
-/* iOS БАРАБАН ВРЕМЕНИ */
 .ios-time-picker { display: flex; justify-content: center; align-items: center; height: 132px; overflow: hidden; position: relative; margin-bottom: 20px; background: rgba(255, 255, 255, 0.03); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
 .ios-time-picker::after { content: ''; position: absolute; top: 44px; left: 0; right: 0; height: 44px; border-top: 1px solid rgba(255, 255, 255, 0.1); border-bottom: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none; }
 .wheel-container { height: 100%; width: 60px; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; -ms-overflow-style: none; }
@@ -129,7 +126,6 @@ body::before {
 .wheel-spacer { height: 44px; }
 .time-colon { font-size: 24px; font-weight: bold; margin: 0 5px; padding-bottom: 5px; color: #fff; }
 
-/* iOS ТУМБЛЕР (SWITCH) */
 .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; }
 .ios-switch { position: relative; display: inline-block; width: 50px; height: 30px; }
 .ios-switch input { opacity: 0; width: 0; height: 0; }
@@ -137,6 +133,39 @@ body::before {
 .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
 input:checked + .slider { background-color: #34C759; }
 input:checked + .slider:before { transform: translateX(20px); }
+
+/* --- НОВЫЕ СТИЛИ ДЛЯ ТАЙМЕРА ФОКУСА --- */
+.timer-panel {
+    display: flex; flex-direction: column; align-items: center;
+    background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius: 28px; padding: 30px; width: 100%; max-width: 320px; margin: 20px auto;
+    border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+}
+.timer-display {
+    font-size: 64px; font-weight: 800; color: #FF8C00; font-variant-numeric: tabular-nums;
+    margin: 10px 0 30px 0; text-shadow: 0 4px 15px rgba(255, 140, 0, 0.3);
+}
+.timer-controls {
+    display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%;
+}
+.btn-timer-main {
+    width: 72px; height: 72px; border-radius: 50%; border: none;
+    background: linear-gradient(135deg, #FF8C00, #ff5e00); color: white;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: 0 8px 25px rgba(255, 140, 0, 0.5); 
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+}
+.btn-timer-main:active { transform: scale(0.9); box-shadow: 0 4px 10px rgba(255, 140, 0, 0.4); }
+.btn-timer-main svg { width: 32px; height: 32px; margin-left: 4px; /* Оптическая компенсация для треугольника Play */ }
+
+.btn-timer-reset {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.8);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
+}
+.btn-timer-reset:active { transform: scale(0.85); background: rgba(255, 255, 255, 0.2); color: white; }
+.btn-timer-reset svg { width: 22px; height: 22px; }
 
 /* СТАРЫЕ МОДАЛКИ (Редактирование/Удаление) */
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; justify-content: center; align-items: flex-end; animation: fadeIn 0.3s ease; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }

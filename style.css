@@ -32,7 +32,7 @@ body::before {
 }
 
 /* КОНТЕЙНЕРЫ */
-.container { padding: 20px 0 140px 0; display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; }
+.container { padding: 20px 0 140px 0; display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; transition: padding-top 0.3s ease; }
 .header { padding: 0 20px 20px 20px; text-align: center; width: 100%; box-sizing: border-box; }
 .title-row { display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
 .main-title { margin: 0; font-size: 28px; font-weight: bold; color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
@@ -41,7 +41,7 @@ body::before {
 /* --- СЕТКА ЗОНЫ СВАЙПА --- */
 .swipe-area { width: 100vw; flex: 1; display: flex; flex-direction: column; overflow-x: hidden; position: relative; touch-action: pan-y; }
 
-/* СТЕКЛЯННЫЕ КНОПКИ-СТРЕЛКИ (Без оранжевого, только вдавливание) */
+/* СТЕКЛЯННЫЕ КНОПКИ-СТРЕЛКИ */
 .date-nav-btn { background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 50%; color: white; width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 .date-nav-btn:active { transform: scale(0.85); background: rgba(0, 0, 0, 0.4); }
 .date-nav-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; }
@@ -50,37 +50,15 @@ body::before {
 .cards-track { display: flex; width: 300vw; will-change: transform; align-items: flex-start; }
 .cards-pane { width: 100vw; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 0 20px; box-sizing: border-box; }
 
-/* КАРТОЧКИ: Темное стекло + GPU АППАРАТНОЕ УСКОРЕНИЕ (убирает рябь при скролле) */
-.card { 
-    background: rgba(0, 0, 0, 0.65); 
-    backdrop-filter: blur(15px); 
-    -webkit-backdrop-filter: blur(15px); 
-    border-radius: 24px; 
-    padding: 18px 20px; 
-    color: white; 
-    width: 100%; 
-    max-width: 360px; 
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3); 
-    margin-bottom: 12px; 
-    box-sizing: border-box; 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between; 
-    border: 1px solid rgba(255, 255, 255, 0.15); 
-    transition: transform 0.15s ease, opacity 0.3s ease; 
-    cursor: pointer; 
-    user-select: none; 
-    transform: translateZ(0); 
-    -webkit-transform: translateZ(0);
-    will-change: transform, opacity;
-}
+/* КАРТОЧКИ: Темное стекло + GPU АППАРАТНОЕ УСКОРЕНИЕ */
+.card { background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 24px; padding: 18px 20px; color: white; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255, 255, 255, 0.15); transition: transform 0.15s ease, opacity 0.3s ease; cursor: pointer; user-select: none; transform: translateZ(0); -webkit-transform: translateZ(0); will-change: transform, opacity; }
 .card:active:not(.shake) { transform: scale(0.96) translateZ(0); }
 
 /* ТРЯСКА ОШИБКИ */
 .shake { animation: shakeCard 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes shakeCard { 0%, 100% { transform: translateX(0) translateZ(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-4px) translateZ(0); } 20%, 40%, 60%, 80% { transform: translateX(4px) translateZ(0); } }
 
-/* ИНФОРМАЦИЯ И ТАЙМЕР (С переносом по слогам) */
+/* ИНФОРМАЦИЯ И ТАЙМЕР */
 .goal-info { flex: 1; padding-right: 15px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
 .goal-title { font-weight: 600; font-size: 17px; margin: 0; color: white; line-height: 1.2; letter-spacing: 0.3px; transition: color 0.3s; overflow-wrap: break-word; word-break: break-word; -webkit-hyphens: auto; hyphens: auto; }
 .stats-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
@@ -89,7 +67,7 @@ body::before {
 .urgent-timer { color: #ff3b30 !important; font-weight: 800 !important; animation: pulseUrgent 0.5s ease-in-out infinite; display: inline-block; }
 .failed-timer { color: #ff3b30 !important; font-weight: bold !important; }
 
-/* ОПИСАНИЕ (Ограничение в 3 карточки + скролл + перенос по слогам) */
+/* ОПИСАНИЕ */
 .goal-desc-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease, margin-top 0.3s ease, opacity 0.3s ease; opacity: 0; margin-top: 0; }
 .goal-desc-wrapper.expanded { grid-template-rows: 1fr; opacity: 1; margin-top: 8px; }
 .goal-desc-inner { overflow: hidden; }
@@ -104,7 +82,7 @@ body::before {
 .btn-complete svg { width: 20px; height: 20px; stroke: white; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; opacity: 0; transform: scale(0.5); transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
 .btn-complete.done svg { opacity: 1; transform: scale(1); }
 
-/* ПАРЯЩАЯ ПАНЕЛЬ */
+/* ПАРЯЩАЯ ПАНЕЛЬ И ЩИТ ОТ НАЖАТИЙ */
 .tab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-evenly; padding: 10px 0; border-radius: 35px; border: 1px solid rgba(255, 255, 255, 0.15); z-index: 100; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
 .tab-item { text-align: center; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; height: 100%; }
 .tab-item:active { transform: scale(0.9); }
@@ -113,6 +91,9 @@ body::before {
 .tab-add-btn { width: 48px; height: 48px; background: #FF8C00; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s; cursor: pointer; }
 .tab-add-btn:active { transform: scale(0.9); }
 .tab-add-icon { width: 26px; height: 26px; stroke: white; stroke-width: 2.5; }
+
+/* НЕВИДИМЫЙ ЩИТ ОТ ЛОЖНЫХ СВАЙПОВ СНИЗУ */
+.bottom-touch-shield { position: fixed; bottom: 0; left: 0; right: 0; height: 100px; z-index: 95; background: transparent; touch-action: none; }
 
 /* ВЫЕЗЖАЮЩАЯ ПАНЕЛЬ СОЗДАНИЯ ЦЕЛИ И БЛЮР */
 .glass-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 80; animation: fadeIn 0.3s ease; }

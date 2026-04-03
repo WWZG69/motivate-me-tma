@@ -56,6 +56,9 @@ function App() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [now, setNow] = useState(new Date());
     
+    // СТЕЙТ ДЛЯ ПОЛНОГО ЭКРАНА
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    
     const [offsetPx, setOffsetPx] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     
@@ -65,7 +68,6 @@ function App() {
     const isDragging = useRef(false);
     const isSwipeValid = useRef(null); 
     
-    // ТАЙМЕРЫ ДЛЯ БЫСТРОГО СВАЙПА (БЕЗ БЛОКИРОВКИ)
     const transitionTimer = useRef(null);
     const pendingShiftRef = useRef(0);
 
@@ -111,9 +113,18 @@ function App() {
         return () => { document.removeEventListener('touchstart', handleGlobalTouch); document.removeEventListener('mousedown', handleGlobalTouch); };
     }, [expandedGoalId]);
 
+    // ОТСЛЕДЖИВАНИЕ ПОЛНОГО ЭКРАНА (ДЛЯ ОТСТУПА)
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
-        if (tg) { tg.ready(); tg.expand(); if (tg.initDataUnsafe?.user) setUserName(tg.initDataUnsafe.user.first_name); }
+        if (tg) { 
+            tg.ready(); 
+            tg.expand(); 
+            if (tg.initDataUnsafe?.user) setUserName(tg.initDataUnsafe.user.first_name); 
+            
+            const checkExpand = () => { setIsFullscreen(tg.isExpanded); };
+            checkExpand();
+            tg.onEvent('viewportChanged', checkExpand);
+        }
     }, []);
 
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_goals', JSON.stringify(goals)); } catch (e) {} }, [goals]);
@@ -132,7 +143,6 @@ function App() {
 
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
-    // УМНАЯ АНИМАЦИЯ: Позволяет моментально "докручивать" предыдущий свайп, если нажат новый
     const animateToDate = (daysShift) => {
         if (transitionTimer.current) {
             clearTimeout(transitionTimer.current);
@@ -151,11 +161,10 @@ function App() {
             setCurrentDate(prev => getOffsetDate(prev, daysShift));
             transitionTimer.current = null;
             pendingShiftRef.current = 0;
-        }, 200); // УСКОРЕНА АНИМАЦИЯ ДЛЯ БОЛЬШЕЙ ОТЗЫВЧИВОСТИ
+        }, 200); 
     };
 
     const onSwipeStart = (e) => {
-        // ЕСЛИ АНИМАЦИЯ ЕЩЕ ИДЕТ - МОМЕНТАЛЬНО ЕЕ ЗАВЕРШАЕМ (разрешаем спамить свайпами)
         if (transitionTimer.current) {
             clearTimeout(transitionTimer.current);
             transitionTimer.current = null;
@@ -329,11 +338,11 @@ function App() {
         });
     };
 
-    // Переход теперь всего 0.25с или 0с (чтобы не было залипаний)
     const transitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
 
     return (
-        <div className="container">
+        // ДИНАМИЧЕСКИЙ ОТСТУП ДЛЯ ПОЛНОГО ЭКРАНА
+        <div className="container" style={{ paddingTop: isFullscreen ? 'calc(20px + 7vh)' : '20px' }}>
             {isModalOpen && <div className="glass-backdrop" onClick={closeCreateModal}></div>}
 
             <div className="header">
@@ -509,6 +518,9 @@ function App() {
                     )}
                 </div>
             )}
+
+            {/* ЩИТ ОТ ЛОЖНЫХ НАЖАТИЙ ПРИ СВОРАЧИВАНИИ */}
+            <div className="bottom-touch-shield" onTouchStart={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}></div>
 
             <div className="tab-bar">
                 {!isModalOpen ? (

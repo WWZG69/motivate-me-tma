@@ -92,16 +92,13 @@ function App() {
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
         if (tg) { tg.ready(); tg.expand(); if (tg.initDataUnsafe?.user) setUserName(tg.initDataUnsafe.user.first_name); }
-        const h1 = setTimeout(() => triggerHaptic('light'), 1000); 
-        const h2 = setTimeout(() => triggerHaptic('light'), 1800); 
-        const h3 = setTimeout(() => triggerHaptic('rigid'), 2600); 
-        const h4 = setTimeout(() => triggerHaptic('heavy'), 3000); 
-        const h5 = setTimeout(() => triggerHaptic('success'), 3400); 
         
-        // УВЕЛИЧЕНО ВРЕМЯ ЗАСТАВКИ: Теперь 6.5 секунд (логотип виден дольше)
-        const endSplash = setTimeout(() => setShowSplash(false), 6500);
+        // ПРОСТОЙ МИНИМАЛИСТИЧНЫЙ СПЛЕШ-СКРИН (исчезает через 2 секунды)
+        const endSplash = setTimeout(() => {
+            setShowSplash(false);
+        }, 2000);
 
-        return () => { clearTimeout(h1); clearTimeout(h2); clearTimeout(h3); clearTimeout(h4); clearTimeout(h5); clearTimeout(endSplash); };
+        return () => clearTimeout(endSplash);
     }, []);
 
     useEffect(() => {
@@ -225,16 +222,14 @@ function App() {
 
     return (
         <React.Fragment>
+            {/* ПРОСТАЯ И СТРОГАЯ ЗАСТАВКА */}
             {showSplash && (
-                <div className="epic-splash-overlay">
-                    <div className="splash-sparkle"></div>
-                    <div className="splash-flash"></div>
-                    <div className="splash-logo-container">
-                        <img src="image_0.png" alt="Logo" className="splash-logo" onError={(e) => e.target.style.display='none'} />
-                        <h1 className="splash-title">MotivateMe</h1>
-                    </div>
+                <div className="simple-splash-overlay">
+                    <img src="image_0.png" alt="Logo" className="splash-logo" onError={(e) => e.target.style.display='none'} />
+                    <h1 className="splash-title">MotivateMe</h1>
                 </div>
             )}
+
             <div className="container" style={{ paddingTop: isFullscreen ? 'calc(20px + 7vh)' : '20px' }}>
                 {isModalOpen && <div className="glass-backdrop" onClick={closeCreateModal}></div>}
                 <div className="header">

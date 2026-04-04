@@ -46,13 +46,15 @@ body::before {
    МАКРО-ЦЕЛИ (ВИДЕНИЯ) - НАД ДАТАМИ
 ========================================= */
 .visions-scroll-track {
-    display: flex; gap: 15px; width: 100vw; padding: 0 20px 25px 20px; box-sizing: border-box;
-    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    display: flex; gap: 15px; width: 100vw; 
+    /* Математика для идеального центрирования на любом экране */
+    padding: 0 max(20px, calc(50vw - 180px)) 25px max(20px, calc(50vw - 180px));
+    box-sizing: border-box; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
 }
 .visions-scroll-track::-webkit-scrollbar { display: none; }
 
 .vision-card {
-    flex: 0 0 100%; max-width: 320px; 
+    flex: 0 0 100%; max-width: 360px; /* Сравняли по ширине с целями */
     background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
     border-radius: 28px; padding: 25px; display: flex; flex-direction: column; 
     border: 2px solid rgba(255, 255, 255, 0.1); scroll-snap-align: center;
@@ -60,7 +62,9 @@ body::before {
     min-height: 220px; box-sizing: border-box;
 }
 .vision-card.active {
-    border-color: #FF8C00; box-shadow: 0 15px 35px rgba(255, 140, 0, 0.4); transform: translateY(-5px);
+    border-color: #FF8C00; 
+    box-shadow: 0 0 18px rgba(255, 140, 0, 0.35); /* Строгое, концентрированное свечение */
+    /* Убрано подпрыгивание (transform) */
 }
 
 .vision-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
@@ -141,7 +145,6 @@ body::before {
 .panel-step { animation: fadeIn 0.3s ease; display: flex; flex-direction: column; }
 @keyframes slidePanelUp { from { transform: translateY(120%) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
-/* ПЕРЕКЛЮЧАТЕЛЬ МИКРО/МАКРО */
 .mode-switcher { display: flex; background: rgba(255, 255, 255, 0.05); border-radius: 16px; margin-bottom: 20px; padding: 4px; }
 .mode-btn { flex: 1; text-align: center; padding: 10px 0; border-radius: 12px; font-weight: bold; font-size: 14px; color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: all 0.2s; }
 .mode-btn.active { background: rgba(255, 140, 0, 0.15); color: #FF8C00; box-shadow: 0 2px 10px rgba(255, 140, 0, 0.1); border: 1px solid rgba(255,140,0,0.3); }

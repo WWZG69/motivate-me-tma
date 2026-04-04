@@ -79,7 +79,13 @@ function App() {
         try { const saved = localStorage.getItem('motivateMe_v20_goals'); return saved ? JSON.parse(saved) : []; } catch (e) { return []; }
     });
 
+    // СТЕЙТ ДЛЯ МАКРО-ЦЕЛЕЙ (ВИДЕНИЙ)
+    const [visions, setVisions] = useState(() => {
+        try { const saved = localStorage.getItem('motivateMe_v20_visions'); return saved ? JSON.parse(saved) : []; } catch (e) { return []; }
+    });
+
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [createMode, setCreateMode] = useState('micro'); // 'micro' или 'macro'
     const [createStep, setCreateStep] = useState('text'); 
     const [editingGoalId, setEditingGoalId] = useState(null);
     const [actionMenuGoal, setActionMenuGoal] = useState(null);
@@ -88,8 +94,11 @@ function App() {
     const [startMonth, setStartMonth] = useState(monthNames[new Date().getMonth()]);
     const [startDay, setStartDay] = useState(new Date().getDate().toString().padStart(2, '0'));
 
-    const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, supportTone: 'soft', startDate: null };
+    const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, supportTone: 'soft', startDate: null, visionId: '' };
+    const defaultVisionForm = { title: '', emoji: '🎯', description: '' };
+
     const [form, setForm] = useState(defaultForm);
+    const [visionForm, setVisionForm] = useState(defaultVisionForm);
 
     const hoursList = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'));
     const minutesList = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
@@ -102,9 +111,7 @@ function App() {
     }, [startMonth]);
 
     useEffect(() => {
-        if (daysInMonth && startDay && !daysInMonth.includes(startDay)) {
-            setStartDay('01');
-        }
+        if (daysInMonth && startDay && !daysInMonth.includes(startDay)) setStartDay('01');
     }, [daysInMonth, startDay]);
 
     const triggerHaptic = (type) => {
@@ -117,64 +124,37 @@ function App() {
         } catch(e) {}
     };
 
-    // --- ЛОГИКА СТАТИСТИКИ ---
     const statsData = useMemo(() => {
         const today = new Date();
-        let totalDone = 0;
-        let bestStreak = 0;
-        let completionByDate = {}; 
-
-        // Собираем сырые данные
+        let totalDone = 0; let bestStreak = 0; let completionByDate = {}; 
         goals.forEach(g => {
             if (!g || !g.history) return;
             const historyDates = Object.keys(g.history);
             totalDone += historyDates.length;
             if ((g.streak || 0) > bestStreak) bestStreak = g.streak;
-            
             historyDates.forEach(dStr => {
-                const d = new Date(dStr);
-                if (isNaN(d.getTime())) return;
+                const d = new Date(dStr); if (isNaN(d.getTime())) return;
                 const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
                 completionByDate[iso] = (completionByDate[iso] || 0) + 1;
             });
         });
-
-        // Данные за последние 7 дней (для Bar Chart)
-        const last7Days = [];
-        let maxDaily = 1; 
+        const last7Days = []; let maxDaily = 1; 
         for (let i = 6; i >= 0; i--) {
-            const d = new Date(today);
-            d.setDate(d.getDate() - i);
+            const d = new Date(today); d.setDate(d.getDate() - i);
             const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             const count = completionByDate[iso] || 0;
             if (count > maxDaily) maxDaily = count;
-            last7Days.push({ 
-                day: d.toLocaleDateString('ru-RU', { weekday: 'short' }), 
-                count, iso
-            });
+            last7Days.push({ day: d.toLocaleDateString('ru-RU', { weekday: 'short' }), count, iso });
         }
-
-        // Данные для Тепловой карты (91 день = 13 недель)
-        const heatmapCols = [];
-        let currentWeek = [];
+        const heatmapCols = []; let currentWeek = [];
         for (let i = 90; i >= 0; i--) {
-            const d = new Date(today);
-            d.setDate(d.getDate() - i);
+            const d = new Date(today); d.setDate(d.getDate() - i);
             const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             const count = completionByDate[iso] || 0;
-            
-            let level = 0;
-            if (count > 0) level = 1;
-            if (count > 2) level = 2;
-            if (count > 4) level = 3;
-
+            let level = 0; if (count > 0) level = 1; if (count > 2) level = 2; if (count > 4) level = 3;
             currentWeek.push({ iso, level, count });
-            if (currentWeek.length === 7 || i === 0) {
-                heatmapCols.push(currentWeek);
-                currentWeek = [];
-            }
+            if (currentWeek.length === 7 || i === 0) { heatmapCols.push(currentWeek); currentWeek = []; }
         }
-
         return { totalDone, bestStreak, last7Days, maxDaily, heatmapCols };
     }, [goals]);
 
@@ -189,6 +169,8 @@ function App() {
     }, []);
 
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_goals', JSON.stringify(goals)); } catch (e) {} }, [goals]);
+    useEffect(() => { try { localStorage.setItem('motivateMe_v20_visions', JSON.stringify(visions)); } catch (e) {} }, [visions]);
+    
     useEffect(() => { const timer = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(timer); }, []);
     
     useEffect(() => {
@@ -203,17 +185,14 @@ function App() {
 
     const animateToDate = (daysShift) => {
         if (transitionTimer.current) { clearTimeout(transitionTimer.current); setCurrentDate(prev => getOffsetDate(prev, pendingShiftRef.current)); }
-        pendingShiftRef.current = daysShift;
-        setExpandedGoalId(null); setIsTransitioning(true);
-        setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth);
-        triggerHaptic('light');
+        pendingShiftRef.current = daysShift; setExpandedGoalId(null); setIsTransitioning(true);
+        setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth); triggerHaptic('light');
         transitionTimer.current = setTimeout(() => { setIsTransitioning(false); setOffsetPx(0); setCurrentDate(prev => getOffsetDate(prev, daysShift)); transitionTimer.current = null; pendingShiftRef.current = 0; }, 200); 
     };
 
     const onSwipeStart = (e) => {
         if (transitionTimer.current) { clearTimeout(transitionTimer.current); transitionTimer.current = null; setCurrentDate(prev => getOffsetDate(prev, pendingShiftRef.current)); setOffsetPx(0); setIsTransitioning(false); pendingShiftRef.current = 0; }
-        touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY; touchStartTime.current = Date.now(); 
-        isDragging.current = true; isSwipeValid.current = null; 
+        touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY; touchStartTime.current = Date.now(); isDragging.current = true; isSwipeValid.current = null; 
     };
     const onSwipeMove = (e) => {
         if (!isDragging.current) return;
@@ -231,33 +210,31 @@ function App() {
     };
 
     const openCreateModal = () => { 
-        triggerHaptic('light'); 
-        setEditingGoalId(null); 
-        setForm(defaultForm); 
-        setStartMonth(monthNames[new Date().getMonth()]);
-        setStartDay(new Date().getDate().toString().padStart(2, '0'));
-        setCreateStep('text'); 
-        setIsModalOpen(true); 
+        triggerHaptic('light'); setEditingGoalId(null); setForm(defaultForm); setVisionForm(defaultVisionForm);
+        setStartMonth(monthNames[new Date().getMonth()]); setStartDay(new Date().getDate().toString().padStart(2, '0'));
+        setCreateMode('micro'); setCreateStep('text'); setIsModalOpen(true); 
     };
     const closeCreateModal = () => { triggerHaptic('light'); setIsModalOpen(false); };
 
     const saveGoal = () => {
+        if (createMode === 'macro') {
+            if (!visionForm.title) { triggerHaptic('error'); return; }
+            setVisions([{ ...visionForm, id: Date.now() }, ...visions]);
+            setIsModalOpen(false); triggerHaptic('success');
+            return;
+        }
+
         if (!form.title) { triggerHaptic('error'); setCreateStep('text'); return; }
         try {
-            const nowObj = new Date();
-            const currentYear = nowObj.getFullYear();
-            const selectedMonthIdx = monthNames.indexOf(startMonth);
-            const selectedDayNum = parseInt(startDay, 10);
+            const nowObj = new Date(); const currentYear = nowObj.getFullYear();
+            const selectedMonthIdx = monthNames.indexOf(startMonth); const selectedDayNum = parseInt(startDay, 10);
             let targetYear = currentYear;
-            if (selectedMonthIdx < nowObj.getMonth() || (selectedMonthIdx === nowObj.getMonth() && selectedDayNum < nowObj.getDate())) {
-                targetYear = currentYear + 1;
-            }
-            const finalStartDate = new Date(targetYear, selectedMonthIdx, selectedDayNum);
-            finalStartDate.setHours(0, 0, 0, 0);
+            if (selectedMonthIdx < nowObj.getMonth() || (selectedMonthIdx === nowObj.getMonth() && selectedDayNum < nowObj.getDate())) targetYear = currentYear + 1;
+            const finalStartDate = new Date(targetYear, selectedMonthIdx, selectedDayNum); finalStartDate.setHours(0, 0, 0, 0);
             const goalData = { ...form, startDate: finalStartDate.toISOString() };
             if (editingGoalId) setGoals(goals.map(g => g.id === editingGoalId ? { ...goalData, id: g.id, streak: g.streak || 0, history: g.history || {}, createdAt: g.createdAt } : g));
             else setGoals([{ ...goalData, id: Date.now(), streak: 0, history: {}, createdAt: new Date().toDateString() }, ...goals]);
-        } catch(e) { console.error("Save error", e); }
+        } catch(e) {}
         setIsModalOpen(false); triggerHaptic('success');
     };
     
@@ -265,14 +242,11 @@ function App() {
     
     const checkPermissions = (goal, checkDate) => {
         try {
-            const viewingDate = new Date(checkDate); viewingDate.setHours(0, 0, 0, 0);
-            const actualToday = new Date(now); actualToday.setHours(0, 0, 0, 0);
-            const isPast = viewingDate < actualToday;
-            const isToday = viewingDate.getTime() === actualToday.getTime();
+            const viewingDate = new Date(checkDate); viewingDate.setHours(0, 0, 0, 0); const actualToday = new Date(now); actualToday.setHours(0, 0, 0, 0);
+            const isPast = viewingDate < actualToday; const isToday = viewingDate.getTime() === actualToday.getTime();
             let isDeadlinePassed = isPast;
             if (isToday) { 
-                const safeDeadline = goal.deadline || '23:59';
-                const [h, m] = safeDeadline.split(':'); 
+                const safeDeadline = goal.deadline || '23:59'; const [h, m] = safeDeadline.split(':'); 
                 const limit = new Date(now); limit.setHours(parseInt(h, 10) || 23, parseInt(m, 10) || 59, 0, 0); 
                 if (now > limit) isDeadlinePassed = true; 
             }
@@ -286,8 +260,7 @@ function App() {
             const safeDeadline = goal.deadline || '23:59';
             if (view > today) return { text: `до ${safeDeadline}`, className: 'badge', style: {color: 'white'} };
             if (view < today) return { text: "00:00:00", className: 'badge failed-timer', style: {} };
-            const [h, m] = safeDeadline.split(':'); 
-            const limit = new Date(now); limit.setHours(parseInt(h, 10)||23, parseInt(m, 10)||59, 0, 0); 
+            const [h, m] = safeDeadline.split(':'); const limit = new Date(now); limit.setHours(parseInt(h, 10)||23, parseInt(m, 10)||59, 0, 0); 
             const diffMs = limit - now;
             if (diffMs <= 0) return { text: "00:00:00", className: 'badge failed-timer', style: {} };
             const hours = Math.floor(diffMs / (1000 * 60 * 60)); const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)); const secs = Math.floor((diffMs % (1000 * 60)) / 1000);
@@ -296,21 +269,24 @@ function App() {
     };
 
     const renderDayCards = (renderDate) => {
-        const dateKey = renderDate.toDateString();
-        const renderTime = renderDate.getTime();
+        const dateKey = renderDate.toDateString(); const renderTime = renderDate.getTime();
         const activeGoals = goals.filter(g => { try { if (!g || !g.startDate) return true; return new Date(g.startDate).getTime() <= renderTime; } catch(e) { return true; } });
         if (activeGoals.length === 0) return <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Задач на этот день нет.</p>;
         
         return activeGoals.map(g => {
-            const isDone = !!(g.history && g.history[dateKey]); 
-            const isExpanded = expandedGoalId === g.id; 
-            const isShaking = shakingGoalId === g.id; 
-            const { canToggle } = checkPermissions(g, renderDate); 
-            const timerData = getTimerData(g, isDone, renderDate);
+            const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; const isShaking = shakingGoalId === g.id; 
+            const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
             
+            // Ищем привязанную Макро-цель
+            const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
+
             return (
                 <div key={g.id} className={`card ${isShaking ? 'shake' : ''}`} onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
                     <div className="goal-info">
+                        {/* ЕСЛИ ЕСТЬ МАКРО ЦЕЛЬ - ВЫВОДИМ МЕЛКИМ ТЕКСТОМ СВЕРХУ */}
+                        {linkedVision && (
+                            <div className="vision-badge">{linkedVision.emoji} {linkedVision.title}</div>
+                        )}
                         <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>{g.title}</div>
                         <div className="stats-row">
                             {g.type !== 'once' && <span className="badge">{g.streak || 0} 🔥</span>}
@@ -336,8 +312,7 @@ function App() {
     const toggleGoal = (e, goalObj, dateTarget) => {
         e.stopPropagation(); const { canToggle } = checkPermissions(goalObj, dateTarget);
         if (!canToggle) { triggerHaptic('error'); setShakingGoalId(goalObj.id); setTimeout(() => setShakingGoalId(null), 400); return; }
-        const dateStr = dateTarget.toDateString(); 
-        const isCurrentlyDone = !!(goalObj.history && goalObj.history[dateStr]);
+        const dateStr = dateTarget.toDateString(); const isCurrentlyDone = !!(goalObj.history && goalObj.history[dateStr]);
         setGoals(goals.map(g => {
             if (g.id !== goalObj.id) return g;
             const newHistory = { ...(g.history || {}) };
@@ -346,7 +321,6 @@ function App() {
         }));
     };
 
-    const handleDescChange = (e) => { setForm({...form, description: e.target.value}); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'; };
     const transitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
 
     return (
@@ -368,6 +342,26 @@ function App() {
 
                 {activeTab === 'home' && (
                     <div className="swipe-area" onTouchStart={onSwipeStart} onTouchMove={onSwipeMove} onTouchEnd={onSwipeEnd} style={{ pointerEvents: isModalOpen ? 'none' : 'auto' }}>
+                        
+                        {/* ГОРИЗОНТАЛЬНАЯ ЛЕНТА МАКРО-ЦЕЛЕЙ */}
+                        {visions.length > 0 && (
+                            <div className="visions-scroll-track">
+                                {visions.map(v => {
+                                    const linkedGoals = goals.filter(g => g.visionId == v.id);
+                                    const totalStreak = linkedGoals.reduce((sum, g) => sum + (g.streak || 0), 0);
+                                    return (
+                                        <div key={v.id} className="vision-card-mini">
+                                            <div className="vision-icon">{v.emoji}</div>
+                                            <div className="vision-meta">
+                                                <div className="vision-name">{v.title}</div>
+                                                <div className="vision-score">{totalStreak} 🔥</div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
                         <div className="date-nav-container">
                             <button className="date-nav-btn" onClick={() => animateToDate(-1)}><Icons.ChevronLeft /></button>
                             <button className="date-nav-btn" onClick={() => animateToDate(1)}><Icons.ChevronRight /></button>
@@ -398,7 +392,6 @@ function App() {
                     </div>
                 )}
 
-                {/* НОВАЯ ВКЛАДКА: СТАТИСТИКА */}
                 {activeTab === 'social' && (
                     <div className="stats-wrapper">
                         <div className="stats-row-cards">
@@ -417,9 +410,7 @@ function App() {
                             <div className="bar-chart">
                                 {statsData.last7Days.map(day => (
                                     <div key={day.iso} className="bar-col">
-                                        <div className="bar-track">
-                                            <div className="bar-fill" style={{ height: `${(day.count / statsData.maxDaily) * 100}%` }}></div>
-                                        </div>
+                                        <div className="bar-track"><div className="bar-fill" style={{ height: `${(day.count / statsData.maxDaily) * 100}%` }}></div></div>
                                         <div className="bar-label">{day.day}</div>
                                     </div>
                                 ))}
@@ -432,9 +423,7 @@ function App() {
                                 <div className="heatmap-grid">
                                     {statsData.heatmapCols.map((col, cIdx) => (
                                         <div key={cIdx} className="heatmap-col">
-                                            {col.map(cell => (
-                                                <div key={cell.iso} className={`heatmap-cell level-${cell.level}`}></div>
-                                            ))}
+                                            {col.map(cell => (<div key={cell.iso} className={`heatmap-cell level-${cell.level}`}></div>))}
                                         </div>
                                     ))}
                                 </div>
@@ -447,10 +436,7 @@ function App() {
                     <div className="card" style={{ display: 'block', background: 'rgba(0,0,0,0.65)', maxWidth: '360px', margin: '0 auto' }}>
                         <h3 style={{ textAlign: 'center', color: '#fff', margin: '0 0 15px 0' }}>Настройки</h3>
                         <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px', color: '#fff' }}>Тон поддержки:</label>
-                        <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)}>
-                            <option value="soft" style={{color: '#000'}}>Мягкий</option>
-                            <option value="hard" style={{color: '#000'}}>Жесткий</option>
-                        </select>
+                        <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)}><option value="soft" style={{color: '#000'}}>Мягкий</option><option value="hard" style={{color: '#000'}}>Жесткий</option></select>
                     </div>
                 )}
 
@@ -458,7 +444,7 @@ function App() {
                     <div className="modal-overlay" onClick={() => setActionMenuGoal(null)}>
                         <div className="modal-content" style={{ paddingBottom: '40px', display: 'block' }} onClick={e => e.stopPropagation()}>
                             <h2 style={{margin:'0 0 5px 0', textAlign: 'center', color: '#000'}}>{actionMenuGoal.title}</h2><p style={{textAlign: 'center', color: '#777', marginTop: 0, marginBottom: '25px'}}>Выберите действие</p>
-                            <button className="btn-save" style={{background: '#000', marginBottom: '10px'}} onClick={() => { setForm({...actionMenuGoal}); setEditingGoalId(actionMenuGoal.id); setActionMenuGoal(null); setCreateStep('text'); setIsModalOpen(true); }}>✏️ Редактировать</button>
+                            <button className="btn-save" style={{background: '#000', marginBottom: '10px'}} onClick={() => { setForm({...actionMenuGoal}); setEditingGoalId(actionMenuGoal.id); setActionMenuGoal(null); setCreateMode('micro'); setCreateStep('text'); setIsModalOpen(true); }}>✏️ Редактировать</button>
                             <button className="btn-danger" onClick={() => { setConfirmDeleteGoalId(actionMenuGoal.id); setActionMenuGoal(null); }}>🗑 Удалить цель</button>
                             <button className="btn-cancel" onClick={() => setActionMenuGoal(null)}>Закрыть</button>
                         </div>
@@ -468,53 +454,88 @@ function App() {
 
                 {isModalOpen && (
                     <div className="create-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-                        <h3 style={{margin: '0 0 15px 0', textAlign: 'center', fontSize: '18px'}}>{editingGoalId ? 'Редактировать' : 'Новая цель'}</h3>
-                        {createStep === 'text' && (<div className="panel-step"><input placeholder="Название" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="dark-input" /><textarea placeholder="Описание" value={form.description} onChange={handleDescChange} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none', overflowY: 'auto' }} /></div>)}
-                        
-                        {createStep === 'time' && (
-                            <div className="panel-step">
-                                <div className="radio-group">
-                                    <div className={`radio-btn ${(form.type || 'habit') === 'once' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'once'})}}><Icons.Target active={(form.type || 'habit') === 'once'} /></div>
-                                    <div className={`radio-btn ${(form.type || 'habit') === 'habit' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'habit'})}}><Icons.Infinity active={(form.type || 'habit') === 'habit'} /></div>
-                                    <div className={`radio-btn ${(form.type || 'habit') === 'sprint' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'sprint'})}}><Icons.Sprint active={(form.type || 'habit') === 'sprint'} /></div>
-                                </div>
-                                <div className="info-box"><div className="info-title">{typeInfo[form.type || 'habit'].title}</div><div className="info-desc">{typeInfo[form.type || 'habit'].desc}</div></div>
-                                {(form.type || 'habit') === 'sprint' && (<input type="number" placeholder="Дней соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="dark-input" style={{textAlign: 'center', marginTop: '10px'}} />)}
-                                
-                                <hr className="divider" />
-                                
-                                <div className="wheels-grid">
-                                    <div className="wheel-section">
-                                        <div className="wheel-label">Дедлайн</div>
-                                        <div className="ios-time-picker mini">
-                                            <TimeWheel items={hoursList} value={(form.deadline || '23:59').split(':')[0]} onChange={h => setForm({...form, deadline: `${h}:${(form.deadline || '23:59').split(':')[1]}`})} width="40px" />
-                                            <span className="time-colon">:</span>
-                                            <TimeWheel items={minutesList} value={(form.deadline || '23:59').split(':')[1]} onChange={m => setForm({...form, deadline: `${(form.deadline || '23:59').split(':')[0]}:${m}`})} width="40px" />
-                                        </div>
-                                    </div>
-                                    <div className="wheel-section">
-                                        <div className="wheel-label">Начало</div>
-                                        <div className="ios-time-picker mini">
-                                            <TimeWheel items={monthNames} value={startMonth} onChange={setStartMonth} width="85px" />
-                                            <TimeWheel items={daysInMonth} value={startDay} onChange={setStartDay} width="40px" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="setting-row"><span style={{fontSize: '15px', fontWeight: '500'}}>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => {triggerHaptic('light'); setForm({...form, ignoreHoliday: e.target.checked})}} /><span className="slider"></span></label></div>
+                        {/* ПЕРЕКЛЮЧАТЕЛЬ МИКРО/МАКРО */}
+                        {!editingGoalId && (
+                            <div className="mode-switcher">
+                                <div className={`mode-btn ${createMode === 'micro' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setCreateMode('micro');}}>Задача</div>
+                                <div className={`mode-btn ${createMode === 'macro' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setCreateMode('macro');}}>Видение</div>
                             </div>
                         )}
+
+                        <h3 style={{margin: '0 0 15px 0', textAlign: 'center', fontSize: '18px'}}>{editingGoalId ? 'Редактировать' : (createMode === 'macro' ? 'Новое Видение' : 'Новая цель')}</h3>
                         
-                        {createStep === 'notifs' && (
+                        {createMode === 'macro' ? (
                             <div className="panel-step">
-                                <div className="setting-row" style={{marginBottom: '20px'}}><span style={{fontSize: '15px', fontWeight: '500'}}>Уведомления</span><label className="ios-switch"><input type="checkbox" checked={form.notifications !== false} onChange={e => {triggerHaptic('light'); setForm({...form, notifications: e.target.checked})}} /><span className="slider"></span></label></div><hr className="divider" />
-                                <div style={{textAlign: 'center', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px'}}>Тон поддержки</div>
-                                <div className="radio-group" style={{ maxWidth: '200px', margin: '0 auto 10px auto' }}>
-                                    <div className={`radio-btn ${(form.supportTone || 'soft') === 'soft' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, supportTone: 'soft'})}}><Icons.Soft active={(form.supportTone || 'soft') === 'soft'} /></div>
-                                    <div className={`radio-btn ${(form.supportTone || 'soft') === 'hard' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, supportTone: 'hard'})}}><Icons.Hard active={(form.supportTone || 'soft') === 'hard'} /></div>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <input type="text" maxLength="2" value={visionForm.emoji} onChange={e => setVisionForm({...visionForm, emoji: e.target.value})} className="dark-input" style={{ width: '60px', textAlign: 'center', fontSize: '20px', padding: '14px 0' }} />
+                                    <input placeholder="Глобальная цель (Бизнес, Здоровье...)" value={visionForm.title} onChange={e => setVisionForm({...visionForm, title: e.target.value})} className="dark-input" style={{ flex: 1 }} />
                                 </div>
-                                <div className="info-box"><div className="info-title">{toneInfo[form.supportTone || 'soft'].title}</div><div className="info-desc">{toneInfo[form.supportTone || 'soft'].desc}</div></div>
+                                <textarea placeholder="Почему для тебя это важно?" value={visionForm.description} onChange={e => setVisionForm({...visionForm, description: e.target.value})} className="dark-input custom-scrollbar" style={{ minHeight: '80px', resize: 'none' }} />
                             </div>
+                        ) : (
+                            <React.Fragment>
+                                {createStep === 'text' && (
+                                    <div className="panel-step">
+                                        <input placeholder="Название (например: Пробежка)" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="dark-input" />
+                                        
+                                        {/* ВЫБОР МАКРО-ЦЕЛИ */}
+                                        {visions.length > 0 && (
+                                            <select className="custom-select dark-input" value={form.visionId || ''} onChange={e => setForm({...form, visionId: e.target.value})}>
+                                                <option value="">Без глобальной цели</option>
+                                                {visions.map(v => <option key={v.id} value={v.id}>{v.emoji} {v.title}</option>)}
+                                            </select>
+                                        )}
+
+                                        <textarea placeholder="Опиши конкретные шаги" value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none', overflowY: 'auto' }} />
+                                    </div>
+                                )}
+                                
+                                {createStep === 'time' && (
+                                    <div className="panel-step">
+                                        <div className="radio-group">
+                                            <div className={`radio-btn ${(form.type || 'habit') === 'once' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'once'})}}><Icons.Target active={(form.type || 'habit') === 'once'} /></div>
+                                            <div className={`radio-btn ${(form.type || 'habit') === 'habit' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'habit'})}}><Icons.Infinity active={(form.type || 'habit') === 'habit'} /></div>
+                                            <div className={`radio-btn ${(form.type || 'habit') === 'sprint' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'sprint'})}}><Icons.Sprint active={(form.type || 'habit') === 'sprint'} /></div>
+                                        </div>
+                                        <div className="info-box"><div className="info-title">{typeInfo[form.type || 'habit'].title}</div><div className="info-desc">{typeInfo[form.type || 'habit'].desc}</div></div>
+                                        {(form.type || 'habit') === 'sprint' && (<input type="number" placeholder="Дней соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="dark-input" style={{textAlign: 'center', marginTop: '10px'}} />)}
+                                        
+                                        <hr className="divider" />
+                                        
+                                        <div className="wheels-grid">
+                                            <div className="wheel-section">
+                                                <div className="wheel-label">Дедлайн</div>
+                                                <div className="ios-time-picker mini">
+                                                    <TimeWheel items={hoursList} value={(form.deadline || '23:59').split(':')[0]} onChange={h => setForm({...form, deadline: `${h}:${(form.deadline || '23:59').split(':')[1]}`})} width="40px" />
+                                                    <span className="time-colon">:</span>
+                                                    <TimeWheel items={minutesList} value={(form.deadline || '23:59').split(':')[1]} onChange={m => setForm({...form, deadline: `${(form.deadline || '23:59').split(':')[0]}:${m}`})} width="40px" />
+                                                </div>
+                                            </div>
+                                            <div className="wheel-section">
+                                                <div className="wheel-label">Начало</div>
+                                                <div className="ios-time-picker mini">
+                                                    <TimeWheel items={monthNames} value={startMonth} onChange={setStartMonth} width="85px" />
+                                                    <TimeWheel items={daysInMonth} value={startDay} onChange={setStartDay} width="40px" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="setting-row"><span style={{fontSize: '15px', fontWeight: '500'}}>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => {triggerHaptic('light'); setForm({...form, ignoreHoliday: e.target.checked})}} /><span className="slider"></span></label></div>
+                                    </div>
+                                )}
+                                
+                                {createStep === 'notifs' && (
+                                    <div className="panel-step">
+                                        <div className="setting-row" style={{marginBottom: '20px'}}><span style={{fontSize: '15px', fontWeight: '500'}}>Уведомления</span><label className="ios-switch"><input type="checkbox" checked={form.notifications !== false} onChange={e => {triggerHaptic('light'); setForm({...form, notifications: e.target.checked})}} /><span className="slider"></span></label></div><hr className="divider" />
+                                        <div style={{textAlign: 'center', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px'}}>Тон поддержки</div>
+                                        <div className="radio-group" style={{ maxWidth: '200px', margin: '0 auto 10px auto' }}>
+                                            <div className={`radio-btn ${(form.supportTone || 'soft') === 'soft' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, supportTone: 'soft'})}}><Icons.Soft active={(form.supportTone || 'soft') === 'soft'} /></div>
+                                            <div className={`radio-btn ${(form.supportTone || 'soft') === 'hard' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, supportTone: 'hard'})}}><Icons.Hard active={(form.supportTone || 'soft') === 'hard'} /></div>
+                                        </div>
+                                        <div className="info-box"><div className="info-title">{toneInfo[form.supportTone || 'soft'].title}</div><div className="info-desc">{toneInfo[form.supportTone || 'soft'].desc}</div></div>
+                                    </div>
+                                )}
+                            </React.Fragment>
                         )}
                     </div>
                 )}
@@ -529,10 +550,21 @@ function App() {
                         </React.Fragment>
                     ) : (
                         <React.Fragment>
-                            <div onClick={() => {triggerHaptic('light'); setCreateStep('text');}} className="tab-item"><Icons.Text active={createStep === 'text'} /></div><div onClick={() => {triggerHaptic('light'); setCreateStep('time');}} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
-                            <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: '#444' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
-                            <div onClick={() => {triggerHaptic('light'); setCreateStep('notifs');}} className="tab-item"><Icons.Bell active={createStep === 'notifs'} /></div>
-                            <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
+                            {createMode === 'micro' ? (
+                                <React.Fragment>
+                                    <div onClick={() => {triggerHaptic('light'); setCreateStep('text');}} className="tab-item"><Icons.Text active={createStep === 'text'} /></div><div onClick={() => {triggerHaptic('light'); setCreateStep('time');}} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
+                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: '#444' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
+                                    <div onClick={() => {triggerHaptic('light'); setCreateStep('notifs');}} className="tab-item"><Icons.Bell active={createStep === 'notifs'} /></div>
+                                    <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
+                                </React.Fragment>
+                            ) : (
+                                <React.Fragment>
+                                    <div style={{flex: 1}}></div>
+                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: '#444' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
+                                    <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
+                                    <div style={{flex: 1}}></div>
+                                </React.Fragment>
+                            )}
                         </React.Fragment>
                     )}
                 </div>

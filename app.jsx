@@ -93,10 +93,10 @@ function App() {
         const tg = window.Telegram?.WebApp;
         if (tg) { tg.ready(); tg.expand(); if (tg.initDataUnsafe?.user) setUserName(tg.initDataUnsafe.user.first_name); }
         
-        // ПРОСТОЙ МИНИМАЛИСТИЧНЫЙ СПЛЕШ-СКРИН (исчезает через 2 секунды)
+        // ЗАСТАВКА ТЕПЕРЬ ЖИВЕТ 4 СЕКУНДЫ
         const endSplash = setTimeout(() => {
             setShowSplash(false);
-        }, 2000);
+        }, 4000);
 
         return () => clearTimeout(endSplash);
     }, []);

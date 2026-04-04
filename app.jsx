@@ -75,17 +75,19 @@ function App() {
     const isLongPress = useRef(false);
     const pressTimer = useRef(null);
     
+    // СТЕЙТ ФИЛЬТРАЦИИ ПО ВИДЕНИЮ
+    const [activeVisionId, setActiveVisionId] = useState(null);
+    
     const [goals, setGoals] = useState(() => {
         try { const saved = localStorage.getItem('motivateMe_v20_goals'); return saved ? JSON.parse(saved) : []; } catch (e) { return []; }
     });
 
-    // СТЕЙТ ДЛЯ МАКРО-ЦЕЛЕЙ (ВИДЕНИЙ)
     const [visions, setVisions] = useState(() => {
         try { const saved = localStorage.getItem('motivateMe_v20_visions'); return saved ? JSON.parse(saved) : []; } catch (e) { return []; }
     });
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [createMode, setCreateMode] = useState('micro'); // 'micro' или 'macro'
+    const [createMode, setCreateMode] = useState('micro');
     const [createStep, setCreateStep] = useState('text'); 
     const [editingGoalId, setEditingGoalId] = useState(null);
     const [actionMenuGoal, setActionMenuGoal] = useState(null);
@@ -185,8 +187,10 @@ function App() {
 
     const animateToDate = (daysShift) => {
         if (transitionTimer.current) { clearTimeout(transitionTimer.current); setCurrentDate(prev => getOffsetDate(prev, pendingShiftRef.current)); }
-        pendingShiftRef.current = daysShift; setExpandedGoalId(null); setIsTransitioning(true);
-        setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth); triggerHaptic('light');
+        pendingShiftRef.current = daysShift;
+        setExpandedGoalId(null); setIsTransitioning(true);
+        setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth);
+        triggerHaptic('light');
         transitionTimer.current = setTimeout(() => { setIsTransitioning(false); setOffsetPx(0); setCurrentDate(prev => getOffsetDate(prev, daysShift)); transitionTimer.current = null; pendingShiftRef.current = 0; }, 200); 
     };
 
@@ -210,8 +214,13 @@ function App() {
     };
 
     const openCreateModal = () => { 
-        triggerHaptic('light'); setEditingGoalId(null); setForm(defaultForm); setVisionForm(defaultVisionForm);
-        setStartMonth(monthNames[new Date().getMonth()]); setStartDay(new Date().getDate().toString().padStart(2, '0'));
+        triggerHaptic('light'); 
+        setEditingGoalId(null); 
+        // Подставляем активное Видение по умолчанию, если оно выбрано
+        setForm({...defaultForm, visionId: activeVisionId || ''}); 
+        setVisionForm(defaultVisionForm);
+        setStartMonth(monthNames[new Date().getMonth()]);
+        setStartDay(new Date().getDate().toString().padStart(2, '0'));
         setCreateMode('micro'); setCreateStep('text'); setIsModalOpen(true); 
     };
     const closeCreateModal = () => { triggerHaptic('light'); setIsModalOpen(false); };
@@ -270,23 +279,24 @@ function App() {
 
     const renderDayCards = (renderDate) => {
         const dateKey = renderDate.toDateString(); const renderTime = renderDate.getTime();
-        const activeGoals = goals.filter(g => { try { if (!g || !g.startDate) return true; return new Date(g.startDate).getTime() <= renderTime; } catch(e) { return true; } });
+        
+        // ФИЛЬТРАЦИЯ С УЧЕТОМ АКТИВНОГО ВИДЕНИЯ
+        const activeGoals = goals.filter(g => { 
+            if (activeVisionId && g.visionId != activeVisionId) return false;
+            try { if (!g || !g.startDate) return true; return new Date(g.startDate).getTime() <= renderTime; } catch(e) { return true; } 
+        });
+
         if (activeGoals.length === 0) return <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Задач на этот день нет.</p>;
         
         return activeGoals.map(g => {
             const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; const isShaking = shakingGoalId === g.id; 
             const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
-            
-            // Ищем привязанную Макро-цель
             const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
 
             return (
                 <div key={g.id} className={`card ${isShaking ? 'shake' : ''}`} onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
                     <div className="goal-info">
-                        {/* ЕСЛИ ЕСТЬ МАКРО ЦЕЛЬ - ВЫВОДИМ МЕЛКИМ ТЕКСТОМ СВЕРХУ */}
-                        {linkedVision && (
-                            <div className="vision-badge">{linkedVision.emoji} {linkedVision.title}</div>
-                        )}
+                        {linkedVision && (<div className="vision-badge">{linkedVision.emoji} {linkedVision.title}</div>)}
                         <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>{g.title}</div>
                         <div className="stats-row">
                             {g.type !== 'once' && <span className="badge">{g.streak || 0} 🔥</span>}
@@ -321,6 +331,7 @@ function App() {
         }));
     };
 
+    const handleDescChange = (e) => { setForm({...form, description: e.target.value}); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'; };
     const transitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
 
     return (
@@ -341,20 +352,29 @@ function App() {
                 </div>
 
                 {activeTab === 'home' && (
-                    <div className="swipe-area" onTouchStart={onSwipeStart} onTouchMove={onSwipeMove} onTouchEnd={onSwipeEnd} style={{ pointerEvents: isModalOpen ? 'none' : 'auto' }}>
-                        
-                        {/* ГОРИЗОНТАЛЬНАЯ ЛЕНТА МАКРО-ЦЕЛЕЙ */}
+                    <React.Fragment>
+                        {/* КРУПНЫЕ КАРТОЧКИ ВИДЕНИЙ ВНЕ ЗОНЫ СВАЙПА */}
                         {visions.length > 0 && (
                             <div className="visions-scroll-track">
                                 {visions.map(v => {
                                     const linkedGoals = goals.filter(g => g.visionId == v.id);
                                     const totalStreak = linkedGoals.reduce((sum, g) => sum + (g.streak || 0), 0);
+                                    let totalDone = 0;
+                                    linkedGoals.forEach(g => { if(g.history) totalDone += Object.keys(g.history).length; });
+                                    const isActive = activeVisionId === v.id;
+
                                     return (
-                                        <div key={v.id} className="vision-card-mini">
-                                            <div className="vision-icon">{v.emoji}</div>
-                                            <div className="vision-meta">
-                                                <div className="vision-name">{v.title}</div>
-                                                <div className="vision-score">{totalStreak} 🔥</div>
+                                        <div key={v.id} className={`vision-card ${isActive ? 'active' : ''}`} onClick={() => { triggerHaptic('light'); setActiveVisionId(isActive ? null : v.id); }}>
+                                            <div className="vision-card-header">
+                                                <div className="vision-emoji-large">{v.emoji}</div>
+                                                {isActive && <div className="vision-active-badge">Выбрано</div>}
+                                            </div>
+                                            <div className="vision-card-title">{v.title}</div>
+                                            <div className="vision-card-desc">{v.description || 'Нет описания'}</div>
+                                            <div className="vision-card-stats">
+                                                <div className="v-stat"><span className="v-stat-val">{totalStreak}</span><span className="v-stat-label">Огонь 🔥</span></div>
+                                                <div className="v-stat"><span className="v-stat-val">{totalDone}</span><span className="v-stat-label">Шагов 🎯</span></div>
+                                                <div className="v-stat"><span className="v-stat-val">{linkedGoals.length}</span><span className="v-stat-label">Целей 📋</span></div>
                                             </div>
                                         </div>
                                     );
@@ -362,22 +382,24 @@ function App() {
                             </div>
                         )}
 
-                        <div className="date-nav-container">
-                            <button className="date-nav-btn" onClick={() => animateToDate(-1)}><Icons.ChevronLeft /></button>
-                            <button className="date-nav-btn" onClick={() => animateToDate(1)}><Icons.ChevronRight /></button>
+                        <div className="swipe-area" onTouchStart={onSwipeStart} onTouchMove={onSwipeMove} onTouchEnd={onSwipeEnd} style={{ pointerEvents: isModalOpen ? 'none' : 'auto' }}>
+                            <div className="date-nav-container">
+                                <button className="date-nav-btn" onClick={() => animateToDate(-1)}><Icons.ChevronLeft /></button>
+                                <button className="date-nav-btn" onClick={() => animateToDate(1)}><Icons.ChevronRight /></button>
+                            </div>
+                            <div className="cards-track" style={{ transform: `translateX(calc(-100vw + ${offsetPx}px))`, transition: transitionStyle }}>
+                                {[-1, 0, 1].map(shift => {
+                                    const renderDate = getOffsetDate(currentDate, shift);
+                                    return (
+                                        <div className="cards-pane" key={renderDate.toDateString()}>
+                                            <div className="date-display-row">{renderDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</div>
+                                            {renderDayCards(renderDate)}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
-                        <div className="cards-track" style={{ transform: `translateX(calc(-100vw + ${offsetPx}px))`, transition: transitionStyle }}>
-                            {[-1, 0, 1].map(shift => {
-                                const renderDate = getOffsetDate(currentDate, shift);
-                                return (
-                                    <div className="cards-pane" key={renderDate.toDateString()}>
-                                        <div className="date-display-row">{renderDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</div>
-                                        {renderDayCards(renderDate)}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    </React.Fragment>
                 )}
                 
                 {activeTab === 'progress' && (
@@ -454,8 +476,8 @@ function App() {
 
                 {isModalOpen && (
                     <div className="create-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-                        {/* ПЕРЕКЛЮЧАТЕЛЬ МИКРО/МАКРО */}
-                        {!editingGoalId && (
+                        {/* ПЕРЕКЛЮЧАТЕЛЬ МИКРО/МАКРО ТОЛЬКО НА 1 ВКАЛДКЕ */}
+                        {!editingGoalId && createStep === 'text' && (
                             <div className="mode-switcher">
                                 <div className={`mode-btn ${createMode === 'micro' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setCreateMode('micro');}}>Задача</div>
                                 <div className={`mode-btn ${createMode === 'macro' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setCreateMode('macro');}}>Видение</div>
@@ -478,7 +500,6 @@ function App() {
                                     <div className="panel-step">
                                         <input placeholder="Название (например: Пробежка)" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="dark-input" />
                                         
-                                        {/* ВЫБОР МАКРО-ЦЕЛИ */}
                                         {visions.length > 0 && (
                                             <select className="custom-select dark-input" value={form.visionId || ''} onChange={e => setForm({...form, visionId: e.target.value})}>
                                                 <option value="">Без глобальной цели</option>

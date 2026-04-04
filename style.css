@@ -1,13 +1,23 @@
 /* =========================================
-   БАЗОВЫЕ СТИЛИ И ФОН (С ЗАЩИТОЙ ОТ МЕРЦАНИЯ)
+   БАЗОВЫЕ СТИЛИ И ФОН (БЕЗ МЕРЦАНИЯ + БЛОКИРОВКА ВЫДЕЛЕНИЯ)
 ========================================= */
 body { 
     margin: 0; padding: 0; 
     background-color: #000; 
     font-family: -apple-system, system-ui, sans-serif; 
-    color: white; -webkit-tap-highlight-color: transparent; 
+    color: white; 
+    -webkit-tap-highlight-color: transparent; 
+    -webkit-touch-callout: none; /* Запрет контекстного меню iOS */
+    -webkit-user-select: none; /* Запрет выделения текста */
+    user-select: none; 
     min-height: 100vh; overflow-x: hidden; 
     animation: bodyBgReveal 0.4s ease 3.6s forwards; 
+}
+
+/* Разрешаем выделение и копирование только в полях ввода */
+input, textarea, select {
+    -webkit-user-select: auto !important;
+    user-select: auto !important;
 }
 
 body::before {
@@ -47,25 +57,20 @@ body::before {
 ========================================= */
 .visions-scroll-track {
     display: flex; gap: 15px; width: 100vw; 
-    /* Математика для идеального центрирования на любом экране */
     padding: 0 max(20px, calc(50vw - 180px)) 25px max(20px, calc(50vw - 180px));
     box-sizing: border-box; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
 }
 .visions-scroll-track::-webkit-scrollbar { display: none; }
 
 .vision-card {
-    flex: 0 0 100%; max-width: 360px; /* Сравняли по ширине с целями */
+    flex: 0 0 100%; max-width: 360px; 
     background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
     border-radius: 28px; padding: 25px; display: flex; flex-direction: column; 
     border: 2px solid rgba(255, 255, 255, 0.1); scroll-snap-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4); transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); cursor: pointer;
     min-height: 220px; box-sizing: border-box;
 }
-.vision-card.active {
-    border-color: #FF8C00; 
-    box-shadow: 0 0 18px rgba(255, 140, 0, 0.35); /* Строгое, концентрированное свечение */
-    /* Убрано подпрыгивание (transform) */
-}
+.vision-card.active { border-color: #FF8C00; box-shadow: 0 0 18px rgba(255, 140, 0, 0.35); }
 
 .vision-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
 .vision-emoji-large { font-size: 48px; line-height: 1; background: rgba(255,255,255,0.05); border-radius: 20px; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; }
@@ -96,11 +101,11 @@ body::before {
 /* =========================================
    КАРТОЧКИ ЦЕЛЕЙ
 ========================================= */
-.card { background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 24px; padding: 18px 20px; color: white; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255, 255, 255, 0.15); transition: transform 0.15s ease, opacity 0.3s ease; cursor: pointer; user-select: none; transform: translateZ(0); will-change: transform, opacity; }
+.card { background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 24px; padding: 18px 20px; color: white; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255, 255, 255, 0.15); transition: transform 0.15s ease, opacity 0.3s ease; cursor: pointer; transform: translateZ(0); will-change: transform, opacity; }
 .card:active:not(.shake) { transform: scale(0.96) translateZ(0); }
 .shake { animation: shakeCard 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes shakeCard { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); } 20%, 40%, 60%, 80% { transform: translateX(4px); } }
-.goal-info { flex: 1; padding-right: 15px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.goal-info { flex: 1; padding-right: 15px; display: flex; flex-direction: column; justify-content: center; gap: 4px; pointer-events: none; /* Защита от случайных тапов по тексту */ }
 .goal-title { font-weight: 600; font-size: 17px; margin: 0; color: white; line-height: 1.2; word-break: break-word; hyphens: auto; }
 .stats-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 2px; }
 .badge { color: rgba(255, 255, 255, 0.8); font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 4px; }
@@ -109,7 +114,7 @@ body::before {
 @keyframes pulseUrgent { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 .goal-desc-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease, opacity 0.3s ease; opacity: 0; }
 .goal-desc-wrapper.expanded { grid-template-rows: 1fr; opacity: 1; margin-top: 8px; }
-.goal-desc-inner { overflow: hidden; }
+.goal-desc-inner { overflow: hidden; pointer-events: auto; /* Возвращаем скролл для текста внутри */ }
 .goal-desc { font-size: 13px; color: rgba(255, 255, 255, 0.7); line-height: 1.5; margin: 0; padding-bottom: 4px; max-height: 260px; overflow-y: auto; word-break: break-word; hyphens: auto; }
 .goal-desc::-webkit-scrollbar { width: 4px; }
 .goal-desc::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
@@ -136,6 +141,52 @@ body::before {
 .tab-item-save svg { background: #FF8C00; border-radius: 50%; padding: 8px; width: 26px; height: 26px; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.5); stroke: white; stroke-width: 3; transition: transform 0.2s; fill: none; }
 .tab-item-save:active svg { transform: scale(0.9); }
 .bottom-touch-shield { position: fixed; bottom: 0; left: 0; right: 0; height: 100px; z-index: 95; background: transparent; touch-action: none; }
+
+/* =========================================
+   СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ (LONG PRESS & CONFIRM)
+========================================= */
+.glass-overlay-centered {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    z-index: 1000;
+    display: flex; justify-content: center; align-items: center;
+    animation: fadeIn 0.2s ease;
+}
+
+.action-buttons-container {
+    display: flex; gap: 24px; /* Расстояние между кнопками */
+    animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-btn-circle {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 0;
+}
+.glass-btn-circle:active {
+    transform: scale(0.85); background: rgba(255, 255, 255, 0.2);
+}
+.glass-btn-circle svg {
+    width: 32px; height: 32px; stroke: white; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Цветовые акценты для кнопок */
+.glass-btn-circle.danger {
+    background: rgba(255, 59, 48, 0.15); border-color: rgba(255, 59, 48, 0.4);
+}
+.glass-btn-circle.danger svg { stroke: #ff3b30; }
+.glass-btn-circle.danger:active { background: rgba(255, 59, 48, 0.3); }
+
+.glass-btn-circle.success {
+    background: rgba(52, 199, 89, 0.15); border-color: rgba(52, 199, 89, 0.4);
+}
+.glass-btn-circle.success svg { stroke: #34C759; }
+.glass-btn-circle.success:active { background: rgba(52, 199, 89, 0.3); }
 
 /* =========================================
    ПАНЕЛЬ СОЗДАНИЯ ЦЕЛИ И ИНПУТЫ
@@ -225,21 +276,9 @@ input:checked + .slider:before { transform: translateX(20px); }
 .heatmap-cell.level-2 { background: rgba(255, 140, 0, 0.6); box-shadow: 0 0 5px rgba(255, 140, 0, 0.3); }
 .heatmap-cell.level-3 { background: #FF8C00; box-shadow: 0 0 8px rgba(255, 140, 0, 0.6); }
 
-/* =========================================
-   МОДАЛКИ (МЕНЮ РЕДАКТИРОВАНИЯ/УДАЛЕНИЯ)
-========================================= */
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; justify-content: center; align-items: flex-end; animation: fadeIn 0.3s ease; backdrop-filter: blur(5px); }
-.modal-center { align-items: center; }
-.modal-content { background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px; color: #000; box-sizing: border-box; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90vh; overflow-y: auto; border-top: 2px solid #000; }
-.modal-content-center { background: white; border-radius: 25px; width: 90%; max-width: 320px; padding: 25px; text-align: center; color: #000; box-sizing: border-box; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-
+/* ДЛЯ НАСТРОЕК */
 select.custom-select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 15px center; background-size: 16px; color: #000; padding-right: 40px; }
 select.custom-select.dark-input { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); color: white !important; }
 select.custom-select.dark-input option { color: #000; }
 
-.btn-save { background: linear-gradient(90deg, #FF8C00, #ff5e00); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; box-sizing: border-box; margin-bottom: 10px; }
-.btn-cancel { background: #eee; color: #555; border: none; padding: 16px; border-radius: 16px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; box-sizing: border-box; }
-.btn-danger { background: #ff3b30; color: white; border: none; padding: 16px; border-radius: 16px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; margin-bottom: 10px; box-sizing: border-box; }
-
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }

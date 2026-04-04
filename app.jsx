@@ -24,8 +24,6 @@ const Icons = {
     Play: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
     Pause: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
     Refresh: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>,
-    
-    // НОВЫЕ ИКОНКИ ДЛЯ СТЕКЛЯННОГО МЕНЮ
     Pencil: () => <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
     Trash: () => <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
     Check: () => <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
@@ -94,9 +92,8 @@ function App() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [createMode, setCreateMode] = useState('micro');
     const [createStep, setCreateStep] = useState('text'); 
-    const [editingId, setEditingId] = useState(null); // Единый ID для редактирования и целей, и видений
+    const [editingId, setEditingId] = useState(null); 
     
-    // СТЕЙТЫ МЕНЮ ДЕЙСТВИЙ (СТЕКЛЯННЫЕ)
     const [actionMenuGoal, setActionMenuGoal] = useState(null);
     const [confirmDeleteGoalId, setConfirmDeleteGoalId] = useState(null);
     
@@ -262,10 +259,8 @@ function App() {
     
     const deleteGoal = () => { setGoals(goals.filter(g => g.id !== confirmDeleteGoalId)); setConfirmDeleteGoalId(null); triggerHaptic('success'); };
     
-    // ФУНКЦИЯ УДАЛЕНИЯ ВИДЕНИЯ
     const deleteVision = () => {
         setVisions(visions.filter(v => v.id !== confirmDeleteVisionId));
-        // Отвязываем задачи от удаленного видения
         setGoals(goals.map(g => g.visionId === confirmDeleteVisionId ? { ...g, visionId: null } : g));
         if (activeVisionId === confirmDeleteVisionId) setActiveVisionId(null);
         setConfirmDeleteVisionId(null); 
@@ -341,7 +336,6 @@ function App() {
     const handleCardTouchEnd = () => { if (pressTimer.current) clearTimeout(pressTimer.current); };
     const handleCardClick = (goal) => { if (!isLongPress.current) { setExpandedGoalId(prev => prev === goal.id ? null : goal.id); triggerHaptic('light'); } };
     
-    // ДОЛГОЕ НАЖАТИЕ НА ВИДЕНИЯ
     const handleVisionTouchStart = (vision) => {
         isLongPress.current = false;
         pressTimer.current = setTimeout(() => {
@@ -503,7 +497,7 @@ function App() {
                 {actionMenuGoal && (
                     <div className="glass-overlay-centered" onClick={() => setActionMenuGoal(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
-                            <button className="glass-btn-circle" onClick={() => { setForm({...actionMenuGoal}); setEditingId(actionMenuGoal.id); setCreateMode('micro'); setActionMenuGoal(null); setCreateStep('text'); setIsModalOpen(true); }}>
+                            <button className="glass-btn-circle edit" onClick={() => { setForm({...actionMenuGoal}); setEditingId(actionMenuGoal.id); setCreateMode('micro'); setActionMenuGoal(null); setCreateStep('text'); setIsModalOpen(true); }}>
                                 <Icons.Pencil />
                             </button>
                             <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteGoalId(actionMenuGoal.id); setActionMenuGoal(null); }}>
@@ -516,7 +510,7 @@ function App() {
                 {actionMenuVision && (
                     <div className="glass-overlay-centered" onClick={() => setActionMenuVision(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
-                            <button className="glass-btn-circle" onClick={() => { setVisionForm({...actionMenuVision}); setEditingId(actionMenuVision.id); setCreateMode('macro'); setActionMenuVision(null); setCreateStep('text'); setIsModalOpen(true); }}>
+                            <button className="glass-btn-circle edit" onClick={() => { setVisionForm({...actionMenuVision}); setEditingId(actionMenuVision.id); setCreateMode('macro'); setActionMenuVision(null); setCreateStep('text'); setIsModalOpen(true); }}>
                                 <Icons.Pencil />
                             </button>
                             <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteVisionId(actionMenuVision.id); setActionMenuVision(null); }}>
@@ -533,7 +527,7 @@ function App() {
                             <button className="glass-btn-circle success" onClick={deleteGoal}>
                                 <Icons.Check />
                             </button>
-                            <button className="glass-btn-circle" onClick={() => setConfirmDeleteGoalId(null)}>
+                            <button className="glass-btn-circle cancel" onClick={() => setConfirmDeleteGoalId(null)}>
                                 <Icons.Close />
                             </button>
                         </div>
@@ -546,7 +540,7 @@ function App() {
                             <button className="glass-btn-circle success" onClick={deleteVision}>
                                 <Icons.Check />
                             </button>
-                            <button className="glass-btn-circle" onClick={() => setConfirmDeleteVisionId(null)}>
+                            <button className="glass-btn-circle cancel" onClick={() => setConfirmDeleteVisionId(null)}>
                                 <Icons.Close />
                             </button>
                         </div>

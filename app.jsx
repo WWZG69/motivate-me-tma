@@ -493,7 +493,6 @@ function App() {
                     </div>
                 )}
 
-                {/* НОВЫЕ СТЕКЛЯННЫЕ МЕНЮ ДЕЙСТВИЙ (ЦЕЛИ И ВИДЕНИЯ) */}
                 {actionMenuGoal && (
                     <div className="glass-overlay-centered" onClick={() => setActionMenuGoal(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
@@ -520,7 +519,6 @@ function App() {
                     </div>
                 )}
 
-                {/* НОВЫЕ СТЕКЛЯННЫЕ ОКНА ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ */}
                 {confirmDeleteGoalId && (
                     <div className="glass-overlay-centered" onClick={() => setConfirmDeleteGoalId(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>

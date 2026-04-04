@@ -1,5 +1,5 @@
 /* =========================================
-   БАЗОВЫЕ СТИЛИ И ФОН (БЕЗ МЕРЦАНИЯ + БЛОКИРОВКА ВЫДЕЛЕНИЯ)
+   БАЗОВЫЕ СТИЛИ (ЗАЩИТА ОТ МЕРЦАНИЯ И ВЫДЕЛЕНИЯ)
 ========================================= */
 body { 
     margin: 0; padding: 0; 
@@ -7,14 +7,13 @@ body {
     font-family: -apple-system, system-ui, sans-serif; 
     color: white; 
     -webkit-tap-highlight-color: transparent; 
-    -webkit-touch-callout: none; /* Запрет контекстного меню iOS */
-    -webkit-user-select: none; /* Запрет выделения текста */
+    -webkit-touch-callout: none; 
+    -webkit-user-select: none; 
     user-select: none; 
     min-height: 100vh; overflow-x: hidden; 
     animation: bodyBgReveal 0.4s ease 3.6s forwards; 
 }
 
-/* Разрешаем выделение и копирование только в полях ввода */
 input, textarea, select {
     -webkit-user-select: auto !important;
     user-select: auto !important;
@@ -30,7 +29,6 @@ body::before {
 
 @keyframes bodyBgReveal { to { background-color: #FF8C00; } }
 @keyframes fadeInGradient { to { opacity: 1; } }
-
 @keyframes liquidGpuWobble { 0% { transform: translate(0, 0) scale(1, 0.85) rotate(0deg); } 33% { transform: translate(4vw, 5vh) scale(0.95, 1.1) rotate(120deg); } 66% { transform: translate(-3vw, 8vh) scale(1.05, 0.9) rotate(240deg); } 100% { transform: translate(0, 0) scale(1, 0.85) rotate(360deg); } }
 
 /* =========================================
@@ -53,7 +51,7 @@ body::before {
 .main-title-small { margin: 0; font-size: 22px; font-weight: 800; color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
 
 /* =========================================
-   МАКРО-ЦЕЛИ (ВИДЕНИЯ) - НАД ДАТАМИ
+   МАКРО-ЦЕЛИ (ВИДЕНИЯ)
 ========================================= */
 .visions-scroll-track {
     display: flex; gap: 15px; width: 100vw; 
@@ -64,13 +62,17 @@ body::before {
 
 .vision-card {
     flex: 0 0 100%; max-width: 360px; 
-    background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border-radius: 28px; padding: 25px; display: flex; flex-direction: column; 
     border: 2px solid rgba(255, 255, 255, 0.1); scroll-snap-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4); transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); cursor: pointer;
-    min-height: 220px; box-sizing: border-box;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
+    transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s, border-color 0.3s; 
+    cursor: pointer; min-height: 220px; box-sizing: border-box; transform: translateZ(0); will-change: transform;
 }
+/* Анимация нажатия и свечения */
+.vision-card:active { transform: scale(0.96) translateZ(0); }
 .vision-card.active { border-color: #FF8C00; box-shadow: 0 0 18px rgba(255, 140, 0, 0.35); }
+.vision-card.active:active { transform: scale(0.96) translateZ(0); }
 
 .vision-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
 .vision-emoji-large { font-size: 48px; line-height: 1; background: rgba(255,255,255,0.05); border-radius: 20px; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; }
@@ -101,11 +103,11 @@ body::before {
 /* =========================================
    КАРТОЧКИ ЦЕЛЕЙ
 ========================================= */
-.card { background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 24px; padding: 18px 20px; color: white; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255, 255, 255, 0.15); transition: transform 0.15s ease, opacity 0.3s ease; cursor: pointer; transform: translateZ(0); will-change: transform, opacity; }
+.card { background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 24px; padding: 18px 20px; color: white; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255, 255, 255, 0.15); transition: transform 0.15s ease, opacity 0.3s ease; cursor: pointer; transform: translateZ(0); will-change: transform, opacity; }
 .card:active:not(.shake) { transform: scale(0.96) translateZ(0); }
 .shake { animation: shakeCard 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes shakeCard { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); } 20%, 40%, 60%, 80% { transform: translateX(4px); } }
-.goal-info { flex: 1; padding-right: 15px; display: flex; flex-direction: column; justify-content: center; gap: 4px; pointer-events: none; /* Защита от случайных тапов по тексту */ }
+.goal-info { flex: 1; padding-right: 15px; display: flex; flex-direction: column; justify-content: center; gap: 4px; pointer-events: none; }
 .goal-title { font-weight: 600; font-size: 17px; margin: 0; color: white; line-height: 1.2; word-break: break-word; hyphens: auto; }
 .stats-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 2px; }
 .badge { color: rgba(255, 255, 255, 0.8); font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 4px; }
@@ -114,12 +116,12 @@ body::before {
 @keyframes pulseUrgent { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 .goal-desc-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease, opacity 0.3s ease; opacity: 0; }
 .goal-desc-wrapper.expanded { grid-template-rows: 1fr; opacity: 1; margin-top: 8px; }
-.goal-desc-inner { overflow: hidden; pointer-events: auto; /* Возвращаем скролл для текста внутри */ }
+.goal-desc-inner { overflow: hidden; pointer-events: auto; }
 .goal-desc { font-size: 13px; color: rgba(255, 255, 255, 0.7); line-height: 1.5; margin: 0; padding-bottom: 4px; max-height: 260px; overflow-y: auto; word-break: break-word; hyphens: auto; }
 .goal-desc::-webkit-scrollbar { width: 4px; }
 .goal-desc::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
 
-.btn-complete { width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.25); background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; cursor: pointer; }
+.btn-complete { width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.25); background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; cursor: pointer; pointer-events: auto; }
 .btn-complete.disabled { opacity: 0.2; cursor: not-allowed; border-color: rgba(255,255,255,0.1); }
 .btn-complete.done { background: #FF8C00; border-color: #FF8C00; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.5); transform: scale(1.05); }
 .btn-complete svg { width: 20px; height: 20px; stroke: white; stroke-width: 3; fill: none; opacity: 0; transform: scale(0.5); transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -128,7 +130,7 @@ body::before {
 /* =========================================
    НИЖНИЙ БАР И ЩИТ ОТ НАЖАТИЙ
 ========================================= */
-.tab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-evenly; padding: 10px 0; border-radius: 35px; border: 1px solid rgba(255, 255, 255, 0.15); z-index: 100; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+.tab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); display: flex; align-items: center; justify-content: space-evenly; padding: 10px 0; border-radius: 35px; border: 1px solid rgba(255, 255, 255, 0.15); z-index: 100; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
 .tab-item { text-align: center; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; height: 100%; }
 .tab-item:active { transform: scale(0.9); }
 .tab-icon { width: 28px; height: 28px; stroke-width: 1.8; fill: none; transition: all 0.3s ease; }
@@ -147,52 +149,60 @@ body::before {
 ========================================= */
 .glass-overlay-centered {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    z-index: 1000;
-    display: flex; justify-content: center; align-items: center;
+    background: rgba(0, 0, 0, 0.5); /* Более легкий фон для кристального эффекта */
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    z-index: 1000; display: flex; justify-content: center; align-items: center;
     animation: fadeIn 0.2s ease;
 }
 
 .action-buttons-container {
-    display: flex; gap: 24px; /* Расстояние между кнопками */
-    animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex; gap: 24px; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-btn-circle {
     width: 72px; height: 72px; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(30, 30, 30, 0.6);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     display: flex; justify-content: center; align-items: center;
-    cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    padding: 0;
+    cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); padding: 0;
 }
-.glass-btn-circle:active {
-    transform: scale(0.85); background: rgba(255, 255, 255, 0.2);
-}
-.glass-btn-circle svg {
-    width: 32px; height: 32px; stroke: white; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round;
-}
+.glass-btn-circle:active { transform: scale(0.9); }
+.glass-btn-circle svg { width: 30px; height: 30px; stroke: white; stroke-width: 2; fill: none; }
 
-/* Цветовые акценты для кнопок */
+/* Неоновые темы для кнопок */
+.glass-btn-circle.edit {
+    background: rgba(255, 140, 0, 0.1); border-color: rgba(255, 140, 0, 0.3);
+    box-shadow: 0 4px 15px rgba(255, 140, 0, 0.2), inset 0 0 15px rgba(255, 140, 0, 0.1);
+}
+.glass-btn-circle.edit svg { stroke: #FF8C00; }
+.glass-btn-circle.edit:active { background: rgba(255, 140, 0, 0.25); box-shadow: 0 0 20px rgba(255, 140, 0, 0.4); }
+
 .glass-btn-circle.danger {
-    background: rgba(255, 59, 48, 0.15); border-color: rgba(255, 59, 48, 0.4);
+    background: rgba(255, 59, 48, 0.1); border-color: rgba(255, 59, 48, 0.3);
+    box-shadow: 0 4px 15px rgba(255, 59, 48, 0.2), inset 0 0 15px rgba(255, 59, 48, 0.1);
 }
 .glass-btn-circle.danger svg { stroke: #ff3b30; }
-.glass-btn-circle.danger:active { background: rgba(255, 59, 48, 0.3); }
+.glass-btn-circle.danger:active { background: rgba(255, 59, 48, 0.25); box-shadow: 0 0 20px rgba(255, 59, 48, 0.4); }
 
 .glass-btn-circle.success {
-    background: rgba(52, 199, 89, 0.15); border-color: rgba(52, 199, 89, 0.4);
+    background: rgba(52, 199, 89, 0.1); border-color: rgba(52, 199, 89, 0.3);
+    box-shadow: 0 4px 15px rgba(52, 199, 89, 0.2), inset 0 0 15px rgba(52, 199, 89, 0.1);
 }
 .glass-btn-circle.success svg { stroke: #34C759; }
-.glass-btn-circle.success:active { background: rgba(52, 199, 89, 0.3); }
+.glass-btn-circle.success:active { background: rgba(52, 199, 89, 0.25); box-shadow: 0 0 20px rgba(52, 199, 89, 0.4); }
+
+.glass-btn-circle.cancel { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.15); }
+.glass-btn-circle.cancel:active { background: rgba(255, 255, 255, 0.15); }
+
+@keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
 
 /* =========================================
    ПАНЕЛЬ СОЗДАНИЯ ЦЕЛИ И ИНПУТЫ
 ========================================= */
-.glass-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(6px); z-index: 80; animation: fadeIn 0.3s ease; }
-.create-panel { position: fixed; bottom: 105px; left: 20px; right: 20px; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-radius: 28px; padding: 25px 20px 15px 20px; box-sizing: border-box; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 20px 40px rgba(0,0,0,0.6); animation: slidePanelUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 90; display: flex; flex-direction: column; max-height: calc(100vh - 140px); overflow-y: auto; }
+.glass-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 80; animation: fadeIn 0.3s ease; }
+.create-panel { position: fixed; bottom: 105px; left: 20px; right: 20px; background: rgba(15, 15, 15, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-radius: 28px; padding: 25px 20px 15px 20px; box-sizing: border-box; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 20px 40px rgba(0,0,0,0.6); animation: slidePanelUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 90; display: flex; flex-direction: column; max-height: calc(100vh - 140px); overflow-y: auto; }
 .panel-step { animation: fadeIn 0.3s ease; display: flex; flex-direction: column; }
 @keyframes slidePanelUp { from { transform: translateY(120%) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
@@ -237,9 +247,9 @@ input:checked + .slider { background-color: #FF8C00; }
 input:checked + .slider:before { transform: translateX(20px); }
 
 /* =========================================
-   ТАЙМЕР ФОКУСА
+   ТАЙМЕР ФОКУСА И СТАТИСТИКА
 ========================================= */
-.timer-panel { display: flex; flex-direction: column; align-items: center; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(20px); border-radius: 28px; padding: 30px; width: 100%; max-width: 320px; margin: 20px auto; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 15px 35px rgba(0,0,0,0.4); box-sizing: border-box; }
+.timer-panel { display: flex; flex-direction: column; align-items: center; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(20px); border-radius: 28px; padding: 30px; width: 100%; max-width: 320px; margin: 20px auto; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 15px 35px rgba(0,0,0,0.4); box-sizing: border-box; }
 .timer-display { font-size: 64px; font-weight: 800; color: #FF8C00; font-variant-numeric: tabular-nums; margin: 10px 0 30px 0; text-shadow: 0 4px 15px rgba(255, 140, 0, 0.3); }
 .timer-controls { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; }
 .btn-timer-main { width: 72px; height: 72px; border-radius: 50%; border: none; background: linear-gradient(135deg, #FF8C00, #ff5e00); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 8px 25px rgba(255, 140, 0, 0.5); transition: transform 0.2s; }
@@ -249,12 +259,9 @@ input:checked + .slider:before { transform: translateX(20px); }
 .btn-timer-reset:active { transform: scale(0.85); background: rgba(255,255,255,0.2); color: white;}
 .btn-timer-reset svg { width: 22px; height: 22px; }
 
-/* =========================================
-   СТАТИСТИКА
-========================================= */
 .stats-wrapper { width: 100%; max-width: 360px; margin: 0 auto; display: flex; flex-direction: column; animation: fadeIn 0.4s ease; }
 .stats-row-cards { display: flex; gap: 12px; margin-bottom: 12px; width: 100%; }
-.stat-card { flex: 1; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); border-radius: 24px; padding: 20px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.stat-card { flex: 1; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(20px); border-radius: 24px; padding: 20px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 .stat-value { font-size: 32px; font-weight: 800; color: #FF8C00; text-shadow: 0 2px 10px rgba(255, 140, 0, 0.2); }
 .stat-label { font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 5px; font-weight: 500; }
 
@@ -276,9 +283,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 .heatmap-cell.level-2 { background: rgba(255, 140, 0, 0.6); box-shadow: 0 0 5px rgba(255, 140, 0, 0.3); }
 .heatmap-cell.level-3 { background: #FF8C00; box-shadow: 0 0 8px rgba(255, 140, 0, 0.6); }
 
-/* ДЛЯ НАСТРОЕК */
 select.custom-select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 15px center; background-size: 16px; color: #000; padding-right: 40px; }
 select.custom-select.dark-input { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); color: white !important; }
 select.custom-select.dark-input option { color: #000; }
-
-@keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }

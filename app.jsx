@@ -23,7 +23,13 @@ const Icons = {
     Hard: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>,
     Play: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
     Pause: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
-    Refresh: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+    Refresh: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>,
+    
+    // НОВЫЕ ИКОНКИ ДЛЯ СТЕКЛЯННОГО МЕНЮ
+    Pencil: () => <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
+    Trash: () => <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
+    Check: () => <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
+    Close: () => <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
 };
 
 const TimeWheel = ({ items, value, onChange, width }) => {
@@ -75,7 +81,6 @@ function App() {
     const isLongPress = useRef(false);
     const pressTimer = useRef(null);
     
-    // СТЕЙТ ФИЛЬТРАЦИИ ПО ВИДЕНИЮ
     const [activeVisionId, setActiveVisionId] = useState(null);
     
     const [goals, setGoals] = useState(() => {
@@ -89,9 +94,14 @@ function App() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [createMode, setCreateMode] = useState('micro');
     const [createStep, setCreateStep] = useState('text'); 
-    const [editingGoalId, setEditingGoalId] = useState(null);
+    const [editingId, setEditingId] = useState(null); // Единый ID для редактирования и целей, и видений
+    
+    // СТЕЙТЫ МЕНЮ ДЕЙСТВИЙ (СТЕКЛЯННЫЕ)
     const [actionMenuGoal, setActionMenuGoal] = useState(null);
     const [confirmDeleteGoalId, setConfirmDeleteGoalId] = useState(null);
+    
+    const [actionMenuVision, setActionMenuVision] = useState(null);
+    const [confirmDeleteVisionId, setConfirmDeleteVisionId] = useState(null);
     
     const [startMonth, setStartMonth] = useState(monthNames[new Date().getMonth()]);
     const [startDay, setStartDay] = useState(new Date().getDate().toString().padStart(2, '0'));
@@ -215,8 +225,7 @@ function App() {
 
     const openCreateModal = () => { 
         triggerHaptic('light'); 
-        setEditingGoalId(null); 
-        // Подставляем активное Видение по умолчанию, если оно выбрано
+        setEditingId(null); 
         setForm({...defaultForm, visionId: activeVisionId || ''}); 
         setVisionForm(defaultVisionForm);
         setStartMonth(monthNames[new Date().getMonth()]);
@@ -228,7 +237,11 @@ function App() {
     const saveGoal = () => {
         if (createMode === 'macro') {
             if (!visionForm.title) { triggerHaptic('error'); return; }
-            setVisions([{ ...visionForm, id: Date.now() }, ...visions]);
+            if (editingId) {
+                setVisions(visions.map(v => v.id === editingId ? { ...visionForm, id: v.id } : v));
+            } else {
+                setVisions([{ ...visionForm, id: Date.now() }, ...visions]);
+            }
             setIsModalOpen(false); triggerHaptic('success');
             return;
         }
@@ -241,13 +254,23 @@ function App() {
             if (selectedMonthIdx < nowObj.getMonth() || (selectedMonthIdx === nowObj.getMonth() && selectedDayNum < nowObj.getDate())) targetYear = currentYear + 1;
             const finalStartDate = new Date(targetYear, selectedMonthIdx, selectedDayNum); finalStartDate.setHours(0, 0, 0, 0);
             const goalData = { ...form, startDate: finalStartDate.toISOString() };
-            if (editingGoalId) setGoals(goals.map(g => g.id === editingGoalId ? { ...goalData, id: g.id, streak: g.streak || 0, history: g.history || {}, createdAt: g.createdAt } : g));
+            if (editingId) setGoals(goals.map(g => g.id === editingId ? { ...goalData, id: g.id, streak: g.streak || 0, history: g.history || {}, createdAt: g.createdAt } : g));
             else setGoals([{ ...goalData, id: Date.now(), streak: 0, history: {}, createdAt: new Date().toDateString() }, ...goals]);
         } catch(e) {}
         setIsModalOpen(false); triggerHaptic('success');
     };
     
     const deleteGoal = () => { setGoals(goals.filter(g => g.id !== confirmDeleteGoalId)); setConfirmDeleteGoalId(null); triggerHaptic('success'); };
+    
+    // ФУНКЦИЯ УДАЛЕНИЯ ВИДЕНИЯ
+    const deleteVision = () => {
+        setVisions(visions.filter(v => v.id !== confirmDeleteVisionId));
+        // Отвязываем задачи от удаленного видения
+        setGoals(goals.map(g => g.visionId === confirmDeleteVisionId ? { ...g, visionId: null } : g));
+        if (activeVisionId === confirmDeleteVisionId) setActiveVisionId(null);
+        setConfirmDeleteVisionId(null); 
+        triggerHaptic('success');
+    };
     
     const checkPermissions = (goal, checkDate) => {
         try {
@@ -280,7 +303,6 @@ function App() {
     const renderDayCards = (renderDate) => {
         const dateKey = renderDate.toDateString(); const renderTime = renderDate.getTime();
         
-        // ФИЛЬТРАЦИЯ С УЧЕТОМ АКТИВНОГО ВИДЕНИЯ
         const activeGoals = goals.filter(g => { 
             if (activeVisionId && g.visionId != activeVisionId) return false;
             try { if (!g || !g.startDate) return true; return new Date(g.startDate).getTime() <= renderTime; } catch(e) { return true; } 
@@ -319,6 +341,17 @@ function App() {
     const handleCardTouchEnd = () => { if (pressTimer.current) clearTimeout(pressTimer.current); };
     const handleCardClick = (goal) => { if (!isLongPress.current) { setExpandedGoalId(prev => prev === goal.id ? null : goal.id); triggerHaptic('light'); } };
     
+    // ДОЛГОЕ НАЖАТИЕ НА ВИДЕНИЯ
+    const handleVisionTouchStart = (vision) => {
+        isLongPress.current = false;
+        pressTimer.current = setTimeout(() => {
+            if (isLongPress.current === false) { isLongPress.current = true; triggerHaptic('heavy'); setActionMenuVision(vision); }
+        }, 500);
+    };
+    const handleVisionClick = (vision) => {
+        if (!isLongPress.current) { triggerHaptic('light'); setActiveVisionId(activeVisionId === vision.id ? null : vision.id); }
+    };
+
     const toggleGoal = (e, goalObj, dateTarget) => {
         e.stopPropagation(); const { canToggle } = checkPermissions(goalObj, dateTarget);
         if (!canToggle) { triggerHaptic('error'); setShakingGoalId(goalObj.id); setTimeout(() => setShakingGoalId(null), 400); return; }
@@ -353,7 +386,6 @@ function App() {
 
                 {activeTab === 'home' && (
                     <React.Fragment>
-                        {/* КРУПНЫЕ КАРТОЧКИ ВИДЕНИЙ ВНЕ ЗОНЫ СВАЙПА */}
                         {visions.length > 0 && (
                             <div className="visions-scroll-track">
                                 {visions.map(v => {
@@ -364,7 +396,12 @@ function App() {
                                     const isActive = activeVisionId === v.id;
 
                                     return (
-                                        <div key={v.id} className={`vision-card ${isActive ? 'active' : ''}`} onClick={() => { triggerHaptic('light'); setActiveVisionId(isActive ? null : v.id); }}>
+                                        <div key={v.id} className={`vision-card ${isActive ? 'active' : ''}`} 
+                                             onTouchStart={() => handleVisionTouchStart(v)} 
+                                             onTouchEnd={handleCardTouchEnd} 
+                                             onMouseDown={() => handleVisionTouchStart(v)} 
+                                             onMouseUp={handleCardTouchEnd} 
+                                             onClick={() => handleVisionClick(v)}>
                                             <div className="vision-card-header">
                                                 <div className="vision-emoji-large">{v.emoji}</div>
                                                 {isActive && <div className="vision-active-badge">Выбрано</div>}
@@ -462,29 +499,70 @@ function App() {
                     </div>
                 )}
 
+                {/* НОВЫЕ СТЕКЛЯННЫЕ МЕНЮ ДЕЙСТВИЙ (ЦЕЛИ И ВИДЕНИЯ) */}
                 {actionMenuGoal && (
-                    <div className="modal-overlay" onClick={() => setActionMenuGoal(null)}>
-                        <div className="modal-content" style={{ paddingBottom: '40px', display: 'block' }} onClick={e => e.stopPropagation()}>
-                            <h2 style={{margin:'0 0 5px 0', textAlign: 'center', color: '#000'}}>{actionMenuGoal.title}</h2><p style={{textAlign: 'center', color: '#777', marginTop: 0, marginBottom: '25px'}}>Выберите действие</p>
-                            <button className="btn-save" style={{background: '#000', marginBottom: '10px'}} onClick={() => { setForm({...actionMenuGoal}); setEditingGoalId(actionMenuGoal.id); setActionMenuGoal(null); setCreateMode('micro'); setCreateStep('text'); setIsModalOpen(true); }}>✏️ Редактировать</button>
-                            <button className="btn-danger" onClick={() => { setConfirmDeleteGoalId(actionMenuGoal.id); setActionMenuGoal(null); }}>🗑 Удалить цель</button>
-                            <button className="btn-cancel" onClick={() => setActionMenuGoal(null)}>Закрыть</button>
+                    <div className="glass-overlay-centered" onClick={() => setActionMenuGoal(null)}>
+                        <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
+                            <button className="glass-btn-circle" onClick={() => { setForm({...actionMenuGoal}); setEditingId(actionMenuGoal.id); setCreateMode('micro'); setActionMenuGoal(null); setCreateStep('text'); setIsModalOpen(true); }}>
+                                <Icons.Pencil />
+                            </button>
+                            <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteGoalId(actionMenuGoal.id); setActionMenuGoal(null); }}>
+                                <Icons.Trash />
+                            </button>
                         </div>
                     </div>
                 )}
-                {confirmDeleteGoalId && (<div className="modal-overlay modal-center" onClick={() => setConfirmDeleteGoalId(null)}><div className="modal-content-center" style={{ display: 'block' }} onClick={e => e.stopPropagation()}><h2>Удалить цель?</h2><p style={{color: '#777', marginBottom: '25px'}}>История будет стерта.</p><button className="btn-danger" onClick={deleteGoal}>Удалить</button><button className="btn-cancel" onClick={() => setConfirmDeleteGoalId(null)}>Отмена</button></div></div>)}
+                
+                {actionMenuVision && (
+                    <div className="glass-overlay-centered" onClick={() => setActionMenuVision(null)}>
+                        <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
+                            <button className="glass-btn-circle" onClick={() => { setVisionForm({...actionMenuVision}); setEditingId(actionMenuVision.id); setCreateMode('macro'); setActionMenuVision(null); setCreateStep('text'); setIsModalOpen(true); }}>
+                                <Icons.Pencil />
+                            </button>
+                            <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteVisionId(actionMenuVision.id); setActionMenuVision(null); }}>
+                                <Icons.Trash />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* НОВЫЕ СТЕКЛЯННЫЕ ОКНА ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ */}
+                {confirmDeleteGoalId && (
+                    <div className="glass-overlay-centered" onClick={() => setConfirmDeleteGoalId(null)}>
+                        <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
+                            <button className="glass-btn-circle success" onClick={deleteGoal}>
+                                <Icons.Check />
+                            </button>
+                            <button className="glass-btn-circle" onClick={() => setConfirmDeleteGoalId(null)}>
+                                <Icons.Close />
+                            </button>
+                        </div>
+                    </div>
+                )}
+                
+                {confirmDeleteVisionId && (
+                    <div className="glass-overlay-centered" onClick={() => setConfirmDeleteVisionId(null)}>
+                        <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
+                            <button className="glass-btn-circle success" onClick={deleteVision}>
+                                <Icons.Check />
+                            </button>
+                            <button className="glass-btn-circle" onClick={() => setConfirmDeleteVisionId(null)}>
+                                <Icons.Close />
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {isModalOpen && (
                     <div className="create-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-                        {/* ПЕРЕКЛЮЧАТЕЛЬ МИКРО/МАКРО ТОЛЬКО НА 1 ВКАЛДКЕ */}
-                        {!editingGoalId && createStep === 'text' && (
+                        {!editingId && createStep === 'text' && (
                             <div className="mode-switcher">
                                 <div className={`mode-btn ${createMode === 'micro' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setCreateMode('micro');}}>Задача</div>
                                 <div className={`mode-btn ${createMode === 'macro' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setCreateMode('macro');}}>Видение</div>
                             </div>
                         )}
 
-                        <h3 style={{margin: '0 0 15px 0', textAlign: 'center', fontSize: '18px'}}>{editingGoalId ? 'Редактировать' : (createMode === 'macro' ? 'Новое Видение' : 'Новая цель')}</h3>
+                        <h3 style={{margin: '0 0 15px 0', textAlign: 'center', fontSize: '18px'}}>{editingId ? 'Редактировать' : (createMode === 'macro' ? 'Новое Видение' : 'Новая цель')}</h3>
                         
                         {createMode === 'macro' ? (
                             <div className="panel-step">

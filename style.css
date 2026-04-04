@@ -65,7 +65,7 @@ body::before {
     background: rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
     border-radius: 28px; padding: 25px; display: flex; flex-direction: column; 
-    border: 1px solid rgba(255, 255, 255, 0.05); /* Легкий блик */
+    border: 1px solid rgba(255, 255, 255, 0.05);
     scroll-snap-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
     transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s, border-color 0.3s; 
     cursor: pointer; min-height: 220px; box-sizing: border-box; transform: translateZ(0); will-change: transform;
@@ -102,7 +102,7 @@ body::before {
 /* =========================================
    КАРТОЧКИ ЦЕЛЕЙ
 ========================================= */
-.card { background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 24px; padding: 18px 20px; color: white; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255, 255, 255, 0.05); /* Легкий блик */ transition: transform 0.15s ease, opacity 0.3s ease; cursor: pointer; transform: translateZ(0); will-change: transform, opacity; }
+.card { background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 24px; padding: 18px 20px; color: white; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255, 255, 255, 0.05); transition: transform 0.15s ease, opacity 0.3s ease; cursor: pointer; transform: translateZ(0); will-change: transform, opacity; }
 .card:active:not(.shake) { transform: scale(0.96) translateZ(0); }
 .shake { animation: shakeCard 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes shakeCard { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); } 20%, 40%, 60%, 80% { transform: translateX(4px); } }
@@ -144,18 +144,18 @@ body::before {
 .bottom-touch-shield { position: fixed; bottom: 0; left: 0; right: 0; height: 100px; z-index: 95; background: transparent; touch-action: none; }
 
 /* =========================================
-   РАЗМЫТЫЙ ФОН ДЛЯ ОКОН (ЧИСТЫЙ БЛЮР)
+   ИДЕАЛЬНЫЙ РАЗМЫТЫЙ ФОН (ОКНО СОЗДАНИЯ И МЕНЮ)
 ========================================= */
 .glass-backdrop { 
     position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
     background: rgba(0, 0, 0, 0.4); 
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); 
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); 
     z-index: 80; animation: fadeIn 0.3s ease; 
 }
 .glass-overlay-centered {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.4); 
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    background: rgba(0, 0, 0, 0.6); 
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
     z-index: 1000; display: flex; justify-content: center; align-items: center;
     animation: fadeIn 0.2s ease;
 }
@@ -169,7 +169,7 @@ body::before {
     width: 72px; height: 72px; border-radius: 50%;
     background: rgba(30, 30, 30, 0.6);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.05); /* Мягкий блик */
+    border: 1px solid rgba(255, 255, 255, 0.05);
     display: flex; justify-content: center; align-items: center;
     cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.5);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); padding: 0;
@@ -177,19 +177,19 @@ body::before {
 .glass-btn-circle:active { transform: scale(0.9); }
 .glass-btn-circle svg { width: 30px; height: 30px; stroke: white; stroke-width: 2; fill: none; }
 
-.glass-btn-circle.edit { background: rgba(255, 140, 0, 0.1); border-color: rgba(255, 140, 0, 0.2); box-shadow: 0 4px 15px rgba(255, 140, 0, 0.2), inset 0 0 15px rgba(255, 140, 0, 0.1); }
+.glass-btn-circle.edit { background: rgba(255, 140, 0, 0.1); border-color: rgba(255, 140, 0, 0.3); box-shadow: 0 4px 15px rgba(255, 140, 0, 0.2), inset 0 0 15px rgba(255, 140, 0, 0.1); }
 .glass-btn-circle.edit svg { stroke: #FF8C00; }
 .glass-btn-circle.edit:active { background: rgba(255, 140, 0, 0.25); box-shadow: 0 0 20px rgba(255, 140, 0, 0.4); }
 
-.glass-btn-circle.danger { background: rgba(255, 59, 48, 0.1); border-color: rgba(255, 59, 48, 0.2); box-shadow: 0 4px 15px rgba(255, 59, 48, 0.2), inset 0 0 15px rgba(255, 59, 48, 0.1); }
+.glass-btn-circle.danger { background: rgba(255, 59, 48, 0.1); border-color: rgba(255, 59, 48, 0.3); box-shadow: 0 4px 15px rgba(255, 59, 48, 0.2), inset 0 0 15px rgba(255, 59, 48, 0.1); }
 .glass-btn-circle.danger svg { stroke: #ff3b30; }
 .glass-btn-circle.danger:active { background: rgba(255, 59, 48, 0.25); box-shadow: 0 0 20px rgba(255, 59, 48, 0.4); }
 
-.glass-btn-circle.success { background: rgba(52, 199, 89, 0.1); border-color: rgba(52, 199, 89, 0.2); box-shadow: 0 4px 15px rgba(52, 199, 89, 0.2), inset 0 0 15px rgba(52, 199, 89, 0.1); }
+.glass-btn-circle.success { background: rgba(52, 199, 89, 0.1); border-color: rgba(52, 199, 89, 0.3); box-shadow: 0 4px 15px rgba(52, 199, 89, 0.2), inset 0 0 15px rgba(52, 199, 89, 0.1); }
 .glass-btn-circle.success svg { stroke: #34C759; }
 .glass-btn-circle.success:active { background: rgba(52, 199, 89, 0.25); box-shadow: 0 0 20px rgba(52, 199, 89, 0.4); }
 
-.glass-btn-circle.cancel { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.05); }
+.glass-btn-circle.cancel { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
 .glass-btn-circle.cancel:active { background: rgba(255, 255, 255, 0.15); }
 
 @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }

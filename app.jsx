@@ -9,24 +9,18 @@ const Icons = {
     Focus: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="3" /></svg> ),
     Add: (props) => ( <svg viewBox="0 0 24 24" className="tab-add-icon" {...props}><line x1="12" y1="5" x2="12" y2="19" strokeLinecap="round" /><line x1="5" y1="12" x2="19" y2="12" strokeLinecap="round" /></svg> ),
     Stats: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><circle cx="4" cy="17" r="1.5" fill={props.active ? "#FF8C00" : "#fff"} /><circle cx="12" cy="7" r="1.5" fill={props.active ? "#FF8C00" : "#fff"} /><circle cx="20" cy="14" r="1.5" fill={props.active ? "#FF8C00" : "#fff"} /><path d="M5.5 16l5-7.5M13.5 8l5 4.5" strokeLinecap="round" /></svg> ),
-    
-    // ПОЧИНЕННАЯ ШЕСТЕРЕНКА
     Settings: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> ),
-    
     ChevronLeft: () => <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>,
     ChevronRight: () => <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>,
     Text: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round"/><line x1="4" y1="12" x2="20" y2="12" strokeLinecap="round"/><line x1="4" y1="18" x2="14" y2="18" strokeLinecap="round"/></svg>,
     Clock: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     Save: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke="#fff" {...props}><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-    
-    // НОВЫЕ МИНИМАЛИСТИЧНЫЕ ИКОНКИ ДЛЯ ТИПА ЗАДАЧ И ТОНА
     Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>,
     Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4z"/></svg>,
-    Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>, // Молния
-    Soft: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>, // Смайл
-    Hard: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>, // Контурное пламя
-    
+    Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+    Soft: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>,
+    Hard: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>,
     Play: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
     Pause: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
     Refresh: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
@@ -122,6 +116,67 @@ function App() {
             }
         } catch(e) {}
     };
+
+    // --- ЛОГИКА СТАТИСТИКИ ---
+    const statsData = useMemo(() => {
+        const today = new Date();
+        let totalDone = 0;
+        let bestStreak = 0;
+        let completionByDate = {}; 
+
+        // Собираем сырые данные
+        goals.forEach(g => {
+            if (!g || !g.history) return;
+            const historyDates = Object.keys(g.history);
+            totalDone += historyDates.length;
+            if ((g.streak || 0) > bestStreak) bestStreak = g.streak;
+            
+            historyDates.forEach(dStr => {
+                const d = new Date(dStr);
+                if (isNaN(d.getTime())) return;
+                const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                completionByDate[iso] = (completionByDate[iso] || 0) + 1;
+            });
+        });
+
+        // Данные за последние 7 дней (для Bar Chart)
+        const last7Days = [];
+        let maxDaily = 1; 
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const count = completionByDate[iso] || 0;
+            if (count > maxDaily) maxDaily = count;
+            last7Days.push({ 
+                day: d.toLocaleDateString('ru-RU', { weekday: 'short' }), 
+                count, iso
+            });
+        }
+
+        // Данные для Тепловой карты (91 день = 13 недель)
+        const heatmapCols = [];
+        let currentWeek = [];
+        for (let i = 90; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const count = completionByDate[iso] || 0;
+            
+            let level = 0;
+            if (count > 0) level = 1;
+            if (count > 2) level = 2;
+            if (count > 4) level = 3;
+
+            currentWeek.push({ iso, level, count });
+            if (currentWeek.length === 7 || i === 0) {
+                heatmapCols.push(currentWeek);
+                currentWeek = [];
+            }
+        }
+
+        return { totalDone, bestStreak, last7Days, maxDaily, heatmapCols };
+    }, [goals]);
 
     useEffect(() => {
         try { const tg = window.Telegram?.WebApp; if (tg) { tg.ready(); tg.expand(); } } catch(e) {}
@@ -340,6 +395,62 @@ function App() {
                             <button className="btn-timer-main" onClick={() => { setIsTimerRunning(!isTimerRunning); triggerHaptic('light'); }}>{isTimerRunning ? <Icons.Pause /> : <Icons.Play />}</button>
                             <div style={{ width: '48px' }}></div> 
                         </div>
+                    </div>
+                )}
+
+                {/* НОВАЯ ВКЛАДКА: СТАТИСТИКА */}
+                {activeTab === 'social' && (
+                    <div className="stats-wrapper">
+                        <div className="stats-row-cards">
+                            <div className="stat-card">
+                                <div className="stat-value">{statsData.totalDone}</div>
+                                <div className="stat-label">Задач завершено</div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-value">{statsData.bestStreak} <span style={{fontSize:'18px'}}>🔥</span></div>
+                                <div className="stat-label">Лучший стрик</div>
+                            </div>
+                        </div>
+
+                        <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto' }}>
+                            <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#fff' }}>Активность за 7 дней</h3>
+                            <div className="bar-chart">
+                                {statsData.last7Days.map(day => (
+                                    <div key={day.iso} className="bar-col">
+                                        <div className="bar-track">
+                                            <div className="bar-fill" style={{ height: `${(day.count / statsData.maxDaily) * 100}%` }}></div>
+                                        </div>
+                                        <div className="bar-label">{day.day}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto' }}>
+                            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#fff' }}>Пульс (90 дней)</h3>
+                            <div className="heatmap-scroll">
+                                <div className="heatmap-grid">
+                                    {statsData.heatmapCols.map((col, cIdx) => (
+                                        <div key={cIdx} className="heatmap-col">
+                                            {col.map(cell => (
+                                                <div key={cell.iso} className={`heatmap-cell level-${cell.level}`}></div>
+                                            ))}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'settings' && (
+                    <div className="card" style={{ display: 'block', background: 'rgba(0,0,0,0.65)', maxWidth: '360px', margin: '0 auto' }}>
+                        <h3 style={{ textAlign: 'center', color: '#fff', margin: '0 0 15px 0' }}>Настройки</h3>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px', color: '#fff' }}>Тон поддержки:</label>
+                        <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)}>
+                            <option value="soft" style={{color: '#000'}}>Мягкий</option>
+                            <option value="hard" style={{color: '#000'}}>Жесткий</option>
+                        </select>
                     </div>
                 )}
 

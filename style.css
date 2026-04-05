@@ -51,6 +51,21 @@ body::before {
 .main-title-small { margin: 0; font-size: 22px; font-weight: 800; color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
 
 /* =========================================
+   ШКАЛА НАГРУЗКИ (БАТАРЕЯ ДНЯ)
+========================================= */
+.daily-load-container { width: 100vw; max-width: 400px; padding: 0 20px; box-sizing: border-box; margin-bottom: 20px; animation: fadeIn 0.5s ease; }
+.load-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; }
+.load-title { font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 0.5px; }
+.load-count { font-size: 14px; font-weight: 800; color: #fff; }
+.load-bar { display: flex; gap: 4px; height: 6px; width: 100%; }
+.load-segment { flex: 1; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease, box-shadow 0.3s ease; }
+
+/* Цвета индикации нагрузки */
+.load-segment.safe { background: #34C759; box-shadow: 0 0 8px rgba(52, 199, 89, 0.4); }
+.load-segment.warning { background: #FF8C00; box-shadow: 0 0 8px rgba(255, 140, 0, 0.4); }
+.load-segment.danger { background: #ff3b30; box-shadow: 0 0 8px rgba(255, 59, 48, 0.4); }
+
+/* =========================================
    МАКРО-ЦЕЛИ (ВИДЕНИЯ)
 ========================================= */
 .visions-scroll-track {
@@ -99,9 +114,6 @@ body::before {
 .cards-pane { width: 100vw; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 0 20px; box-sizing: border-box; }
 .date-display-row { text-align: center; font-size: 16px; font-weight: bold; color: #fff; height: 44px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; text-transform: capitalize; }
 
-/* ПРЕДУПРЕЖДЕНИЕ О ВЫГОРАНИИ */
-.burnout-warning { display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.3); color: #ff3b30; padding: 10px 15px; border-radius: 16px; margin: 0 auto 15px auto; max-width: 360px; width: 100%; box-sizing: border-box; font-size: 13px; font-weight: 600; animation: fadeIn 0.3s ease; }
-
 /* =========================================
    КАРТОЧКИ ЦЕЛЕЙ
 ========================================= */
@@ -147,24 +159,24 @@ body::before {
 .bottom-touch-shield { position: fixed; bottom: 0; left: 0; right: 0; height: 100px; z-index: 95; background: transparent; touch-action: none; }
 
 /* =========================================
-   ИДЕАЛЬНЫЙ РАЗМЫТЫЙ ФОН (ОКНО СОЗДАНИЯ И МЕНЮ)
+   КРИСТАЛЬНЫЙ РАЗМЫТЫЙ ФОН (ОКНА И МЕНЮ)
 ========================================= */
 .glass-backdrop { 
     position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-    background: rgba(0, 0, 0, 0.6); 
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
+    background: rgba(255, 255, 255, 0.03); 
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); 
     z-index: 80; animation: fadeIn 0.3s ease; 
 }
 .glass-overlay-centered {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.6); 
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.03); 
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     z-index: 1000; display: flex; justify-content: center; align-items: center;
     animation: fadeIn 0.2s ease;
 }
 
 /* =========================================
-   СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ (БЕЗ СВЕЧЕНИЯ)
+   СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ
 ========================================= */
 .action-buttons-container { display: flex; gap: 24px; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 
@@ -180,20 +192,16 @@ body::before {
 .glass-btn-circle:active { transform: scale(0.9); }
 .glass-btn-circle svg { width: 30px; height: 30px; stroke: white; stroke-width: 2; fill: none; }
 
-.glass-btn-circle.edit { background: rgba(255, 140, 0, 0.1); border-color: rgba(255, 140, 0, 0.3); }
+.glass-btn-circle.edit { border-color: rgba(255, 140, 0, 0.3); }
 .glass-btn-circle.edit svg { stroke: #FF8C00; }
-.glass-btn-circle.edit:active { background: rgba(255, 140, 0, 0.25); }
 
-.glass-btn-circle.danger { background: rgba(255, 59, 48, 0.1); border-color: rgba(255, 59, 48, 0.3); }
+.glass-btn-circle.danger { border-color: rgba(255, 59, 48, 0.3); }
 .glass-btn-circle.danger svg { stroke: #ff3b30; }
-.glass-btn-circle.danger:active { background: rgba(255, 59, 48, 0.25); }
 
-.glass-btn-circle.success { background: rgba(52, 199, 89, 0.1); border-color: rgba(52, 199, 89, 0.3); }
+.glass-btn-circle.success { border-color: rgba(52, 199, 89, 0.3); }
 .glass-btn-circle.success svg { stroke: #34C759; }
-.glass-btn-circle.success:active { background: rgba(52, 199, 89, 0.25); }
 
-.glass-btn-circle.cancel { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
-.glass-btn-circle.cancel:active { background: rgba(255, 255, 255, 0.15); }
+.glass-btn-circle.cancel { border-color: rgba(255, 255, 255, 0.1); }
 
 @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
 
@@ -211,22 +219,24 @@ body::before {
 .panel-step { animation: fadeIn 0.3s ease; display: flex; flex-direction: column; }
 @keyframes slidePanelUp { from { transform: translateY(120%) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
-.mode-switcher { display: flex; background: rgba(255, 255, 255, 0.05); border-radius: 16px; margin-bottom: 20px; padding: 4px; }
+/* Переключатели без фона */
+.mode-switcher { display: flex; background: transparent; border-radius: 16px; margin-bottom: 20px; padding: 4px; border: 1px solid rgba(255,255,255,0.1); }
 .mode-btn { flex: 1; text-align: center; padding: 10px 0; border-radius: 12px; font-weight: bold; font-size: 14px; color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: all 0.2s; }
-.mode-btn.active { background: rgba(255, 140, 0, 0.15); color: #FF8C00; border: 1px solid rgba(255,140,0,0.3); }
+.mode-btn.active { background: transparent; color: #FF8C00; border: 1px solid #FF8C00; }
 
 .dark-input { background: rgba(255, 255, 255, 0.08) !important; border: 1px solid rgba(255, 255, 255, 0.05) !important; color: white !important; backdrop-filter: blur(10px); transition: all 0.3s ease; border-radius: 12px; padding: 14px; margin-bottom: 15px; width: 100%; box-sizing: border-box; font-size: 16px; outline: none; }
 .dark-input::placeholder { color: rgba(255, 255, 255, 0.3); }
 .dark-input:focus { background: rgba(255, 255, 255, 0.15) !important; border-color: #FF8C00 !important; }
 
-/* ДНИ НЕДЕЛИ */
+/* ДНИ НЕДЕЛИ (без заливки, только контур) */
 .weekdays-selector { display: flex; justify-content: space-between; gap: 4px; }
-.weekday-btn { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); font-size: 14px; font-weight: bold; color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s; }
-.weekday-btn.active { background: rgba(255,140,0,0.15); border-color: #FF8C00; color: #FF8C00; }
+.weekday-btn { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid rgba(255,255,255,0.15); font-size: 14px; font-weight: bold; color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s; }
+.weekday-btn.active { background: transparent; border-color: #FF8C00; color: #FF8C00; }
 
+/* РАДИОКНОПКИ (без заливки, только контур) */
 .radio-group { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
-.radio-btn { width: 52px; height: 52px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: pointer; }
-.radio-btn.active { background: rgba(255, 140, 0, 0.15); border-color: #FF8C00; transform: scale(1.1); }
+.radio-btn { width: 52px; height: 52px; border-radius: 50%; background: transparent; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: pointer; }
+.radio-btn.active { background: transparent; border-color: #FF8C00; transform: scale(1.1); }
 
 .info-box { text-align: center; margin-bottom: 20px; min-height: 44px; }
 .info-title { font-weight: bold; color: #FF8C00; font-size: 16px; margin-bottom: 4px; }

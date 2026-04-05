@@ -4,6 +4,11 @@ const monthNames = ["Январь", "Февраль", "Март", "Апрель"
 const typeInfo = { once: { title: "Разовая", desc: "Сделать один раз." }, habit: { title: "Привычка", desc: "Регулярная задача." }, sprint: { title: "Спринт", desc: "Держись без срывов." } };
 const toneInfo = { soft: { title: "Мягкий", desc: "Позитивная поддержка." }, hard: { title: "Жесткий", desc: "Суровая дисциплина." } };
 
+const weekDaysArr = [
+    { val: 1, label: 'Пн' }, { val: 2, label: 'Вт' }, { val: 3, label: 'Ср' },
+    { val: 4, label: 'Чт' }, { val: 5, label: 'Пт' }, { val: 6, label: 'Сб' }, { val: 0, label: 'Вс' }
+];
+
 const Icons = {
     Goals: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><circle cx="12" cy="12" r="9" /><line x1="12" y1="2" x2="12" y2="5" strokeLinecap="round"/><line x1="12" y1="19" x2="12" y2="22" strokeLinecap="round"/><line x1="2" y1="12" x2="5" y2="12" strokeLinecap="round"/><line x1="19" y1="12" x2="22" y2="12" strokeLinecap="round"/><circle cx="12" cy="12" r="0.5" fill={props.active ? "#FF8C00" : "#fff"} /></svg> ),
     Focus: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="3" /></svg> ),
@@ -27,7 +32,8 @@ const Icons = {
     Pencil: () => <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
     Trash: () => <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
     Check: () => <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
-    Close: () => <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+    Close: () => <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+    Alert: () => <svg viewBox="0 0 24 24" fill="none" stroke="#ff3b30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
 };
 
 const TimeWheel = ({ items, value, onChange, width }) => {
@@ -103,7 +109,8 @@ function App() {
     const [startMonth, setStartMonth] = useState(monthNames[new Date().getMonth()]);
     const [startDay, setStartDay] = useState(new Date().getDate().toString().padStart(2, '0'));
 
-    const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, supportTone: 'soft', startDate: null, visionId: '' };
+    // ДОБАВЛЕНО: weekDays по умолчанию выбраны все (0-6)
+    const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, supportTone: 'soft', startDate: null, visionId: '', weekDays: [0,1,2,3,4,5,6] };
     const defaultVisionForm = { title: '', emoji: '🎯', description: '' };
 
     const [form, setForm] = useState(defaultForm);
@@ -133,13 +140,12 @@ function App() {
         } catch(e) {}
     };
 
+    // ... (статистика и другие useEffect остаются без изменений)
     const statsData = useMemo(() => {
-        const today = new Date();
-        let totalDone = 0; let bestStreak = 0; let completionByDate = {}; 
+        const today = new Date(); let totalDone = 0; let bestStreak = 0; let completionByDate = {}; 
         goals.forEach(g => {
             if (!g || !g.history) return;
-            const historyDates = Object.keys(g.history);
-            totalDone += historyDates.length;
+            const historyDates = Object.keys(g.history); totalDone += historyDates.length;
             if ((g.streak || 0) > bestStreak) bestStreak = g.streak;
             historyDates.forEach(dStr => {
                 const d = new Date(dStr); if (isNaN(d.getTime())) return;
@@ -167,21 +173,11 @@ function App() {
         return { totalDone, bestStreak, last7Days, maxDaily, heatmapCols };
     }, [goals]);
 
-    useEffect(() => {
-        try { const tg = window.Telegram?.WebApp; if (tg) { tg.ready(); tg.expand(); } } catch(e) {}
-        const endSplash = setTimeout(() => setShowSplash(false), 4000);
-        return () => clearTimeout(endSplash);
-    }, []);
-
-    useEffect(() => {
-        try { const tg = window.Telegram?.WebApp; if (tg) { const checkExpand = () => { setIsFullscreen(tg.isExpanded); }; checkExpand(); tg.onEvent('viewportChanged', checkExpand); } } catch(e) {}
-    }, []);
-
+    useEffect(() => { try { const tg = window.Telegram?.WebApp; if (tg) { tg.ready(); tg.expand(); } } catch(e) {} const endSplash = setTimeout(() => setShowSplash(false), 4000); return () => clearTimeout(endSplash); }, []);
+    useEffect(() => { try { const tg = window.Telegram?.WebApp; if (tg) { const checkExpand = () => { setIsFullscreen(tg.isExpanded); }; checkExpand(); tg.onEvent('viewportChanged', checkExpand); } } catch(e) {} }, []);
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_goals', JSON.stringify(goals)); } catch (e) {} }, [goals]);
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_visions', JSON.stringify(visions)); } catch (e) {} }, [visions]);
-    
     useEffect(() => { const timer = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(timer); }, []);
-    
     useEffect(() => {
         let interval = null;
         if (isTimerRunning && timeLeft > 0) interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
@@ -196,8 +192,7 @@ function App() {
         if (transitionTimer.current) { clearTimeout(transitionTimer.current); setCurrentDate(prev => getOffsetDate(prev, pendingShiftRef.current)); }
         pendingShiftRef.current = daysShift;
         setExpandedGoalId(null); setIsTransitioning(true);
-        setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth);
-        triggerHaptic('light');
+        setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth); triggerHaptic('light');
         transitionTimer.current = setTimeout(() => { setIsTransitioning(false); setOffsetPx(0); setCurrentDate(prev => getOffsetDate(prev, daysShift)); transitionTimer.current = null; pendingShiftRef.current = 0; }, 200); 
     };
 
@@ -221,26 +216,30 @@ function App() {
     };
 
     const openCreateModal = () => { 
-        triggerHaptic('light'); 
-        setEditingId(null); 
-        setForm({...defaultForm, visionId: activeVisionId || ''}); 
+        triggerHaptic('light'); setEditingId(null); 
+        setForm({...defaultForm, visionId: activeVisionId || '', weekDays: [0,1,2,3,4,5,6]}); 
         setVisionForm(defaultVisionForm);
-        setStartMonth(monthNames[new Date().getMonth()]);
-        setStartDay(new Date().getDate().toString().padStart(2, '0'));
+        setStartMonth(monthNames[new Date().getMonth()]); setStartDay(new Date().getDate().toString().padStart(2, '0'));
         setCreateMode('micro'); setCreateStep('text'); setIsModalOpen(true); 
     };
     const closeCreateModal = () => { triggerHaptic('light'); setIsModalOpen(false); };
 
+    // ФУНКЦИЯ ДЛЯ ВЫБОРА ДНЕЙ НЕДЕЛИ
+    const toggleWeekDay = (dayVal) => {
+        triggerHaptic('light');
+        setForm(prev => {
+            const arr = prev.weekDays || [];
+            if (arr.includes(dayVal)) return { ...prev, weekDays: arr.filter(d => d !== dayVal) };
+            return { ...prev, weekDays: [...arr, dayVal] };
+        });
+    };
+
     const saveGoal = () => {
         if (createMode === 'macro') {
             if (!visionForm.title) { triggerHaptic('error'); return; }
-            if (editingId) {
-                setVisions(visions.map(v => v.id === editingId ? { ...visionForm, id: v.id } : v));
-            } else {
-                setVisions([{ ...visionForm, id: Date.now() }, ...visions]);
-            }
-            setIsModalOpen(false); triggerHaptic('success');
-            return;
+            if (editingId) { setVisions(visions.map(v => v.id === editingId ? { ...visionForm, id: v.id } : v)); } 
+            else { setVisions([{ ...visionForm, id: Date.now() }, ...visions]); }
+            setIsModalOpen(false); triggerHaptic('success'); return;
         }
 
         if (!form.title) { triggerHaptic('error'); setCreateStep('text'); return; }
@@ -250,7 +249,11 @@ function App() {
             let targetYear = currentYear;
             if (selectedMonthIdx < nowObj.getMonth() || (selectedMonthIdx === nowObj.getMonth() && selectedDayNum < nowObj.getDate())) targetYear = currentYear + 1;
             const finalStartDate = new Date(targetYear, selectedMonthIdx, selectedDayNum); finalStartDate.setHours(0, 0, 0, 0);
-            const goalData = { ...form, startDate: finalStartDate.toISOString() };
+            
+            // Сохраняем weekDays (если нет, по умолчанию все)
+            const safeWeekDays = form.weekDays && form.weekDays.length > 0 ? form.weekDays : [0,1,2,3,4,5,6];
+            const goalData = { ...form, startDate: finalStartDate.toISOString(), weekDays: safeWeekDays };
+            
             if (editingId) setGoals(goals.map(g => g.id === editingId ? { ...goalData, id: g.id, streak: g.streak || 0, history: g.history || {}, createdAt: g.createdAt } : g));
             else setGoals([{ ...goalData, id: Date.now(), streak: 0, history: {}, createdAt: new Date().toDateString() }, ...goals]);
         } catch(e) {}
@@ -258,13 +261,11 @@ function App() {
     };
     
     const deleteGoal = () => { setGoals(goals.filter(g => g.id !== confirmDeleteGoalId)); setConfirmDeleteGoalId(null); triggerHaptic('success'); };
-    
     const deleteVision = () => {
         setVisions(visions.filter(v => v.id !== confirmDeleteVisionId));
         setGoals(goals.map(g => g.visionId === confirmDeleteVisionId ? { ...g, visionId: null } : g));
         if (activeVisionId === confirmDeleteVisionId) setActiveVisionId(null);
-        setConfirmDeleteVisionId(null); 
-        triggerHaptic('success');
+        setConfirmDeleteVisionId(null); triggerHaptic('success');
     };
     
     const checkPermissions = (goal, checkDate) => {
@@ -300,33 +301,53 @@ function App() {
         
         const activeGoals = goals.filter(g => { 
             if (activeVisionId && g.visionId != activeVisionId) return false;
-            try { if (!g || !g.startDate) return true; return new Date(g.startDate).getTime() <= renderTime; } catch(e) { return true; } 
+            try { 
+                if (g.startDate && new Date(g.startDate).getTime() > renderTime) return false; 
+                // ФИЛЬТРАЦИЯ ПО ДНЯМ НЕДЕЛИ ДЛЯ ПРИВЫЧЕК
+                if (g.type === 'habit' && g.weekDays && g.weekDays.length > 0) {
+                    if (!g.weekDays.includes(renderDate.getDay())) return false;
+                }
+                return true; 
+            } catch(e) { return true; } 
         });
+
+        // ПРЕДУПРЕЖДЕНИЕ О ВЫГОРАНИИ (Если задач больше 5)
+        const overloadWarning = activeGoals.length > 5 ? (
+            <div className="burnout-warning">
+                <Icons.Alert style={{width: '16px', height: '16px', flexShrink: 0}} />
+                <span>Высокая нагрузка ({activeGoals.length} задач). Риск выгорания!</span>
+            </div>
+        ) : null;
 
         if (activeGoals.length === 0) return <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Задач на этот день нет.</p>;
         
-        return activeGoals.map(g => {
-            const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; const isShaking = shakingGoalId === g.id; 
-            const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
-            const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
+        return (
+            <React.Fragment>
+                {overloadWarning}
+                {activeGoals.map(g => {
+                    const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; const isShaking = shakingGoalId === g.id; 
+                    const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
+                    const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
 
-            return (
-                <div key={g.id} className={`card ${isShaking ? 'shake' : ''}`} onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
-                    <div className="goal-info">
-                        {linkedVision && (<div className="vision-badge">{linkedVision.emoji} {linkedVision.title}</div>)}
-                        <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>{g.title}</div>
-                        <div className="stats-row">
-                            {g.type !== 'once' && <span className="badge">{g.streak || 0} 🔥</span>}
-                            {g.type === 'habit' && <span className="badge">∞</span>}
-                            {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - (g.streak || 0))} ⏳</span>}
-                            <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
+                    return (
+                        <div key={g.id} className={`card ${isShaking ? 'shake' : ''}`} onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
+                            <div className="goal-info">
+                                {linkedVision && (<div className="vision-badge">{linkedVision.emoji} {linkedVision.title}</div>)}
+                                <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>{g.title}</div>
+                                <div className="stats-row">
+                                    {g.type !== 'once' && <span className="badge">{g.streak || 0} 🔥</span>}
+                                    {g.type === 'habit' && <span className="badge">∞</span>}
+                                    {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - (g.streak || 0))} ⏳</span>}
+                                    <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
+                                </div>
+                                <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}><div className="goal-desc-inner"><div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div></div></div>
+                            </div>
+                            <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g, renderDate)}><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
                         </div>
-                        <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}><div className="goal-desc-inner"><div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div></div></div>
-                    </div>
-                    <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g, renderDate)}><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
-                </div>
-            );
-        });
+                    );
+                })}
+            </React.Fragment>
+        );
     };
 
     const handleCardTouchStart = (goal, dateTarget) => {
@@ -493,6 +514,7 @@ function App() {
                     </div>
                 )}
 
+                {/* Окна действий */}
                 {actionMenuGoal && (
                     <div className="glass-overlay-centered" onClick={() => setActionMenuGoal(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
@@ -522,12 +544,8 @@ function App() {
                 {confirmDeleteGoalId && (
                     <div className="glass-overlay-centered" onClick={() => setConfirmDeleteGoalId(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
-                            <button className="glass-btn-circle success" onClick={deleteGoal}>
-                                <Icons.Check />
-                            </button>
-                            <button className="glass-btn-circle cancel" onClick={() => setConfirmDeleteGoalId(null)}>
-                                <Icons.Close />
-                            </button>
+                            <button className="glass-btn-circle success" onClick={deleteGoal}><Icons.Check /></button>
+                            <button className="glass-btn-circle cancel" onClick={() => setConfirmDeleteGoalId(null)}><Icons.Close /></button>
                         </div>
                     </div>
                 )}
@@ -535,12 +553,8 @@ function App() {
                 {confirmDeleteVisionId && (
                     <div className="glass-overlay-centered" onClick={() => setConfirmDeleteVisionId(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
-                            <button className="glass-btn-circle success" onClick={deleteVision}>
-                                <Icons.Check />
-                            </button>
-                            <button className="glass-btn-circle cancel" onClick={() => setConfirmDeleteVisionId(null)}>
-                                <Icons.Close />
-                            </button>
+                            <button className="glass-btn-circle success" onClick={deleteVision}><Icons.Check /></button>
+                            <button className="glass-btn-circle cancel" onClick={() => setConfirmDeleteVisionId(null)}><Icons.Close /></button>
                         </div>
                     </div>
                 )}
@@ -589,6 +603,24 @@ function App() {
                                             <div className={`radio-btn ${(form.type || 'habit') === 'sprint' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'sprint'})}}><Icons.Sprint active={(form.type || 'habit') === 'sprint'} /></div>
                                         </div>
                                         <div className="info-box"><div className="info-title">{typeInfo[form.type || 'habit'].title}</div><div className="info-desc">{typeInfo[form.type || 'habit'].desc}</div></div>
+                                        
+                                        {/* НОВЫЙ БЛОК: Выбор дней недели (только для привычек) */}
+                                        {(form.type || 'habit') === 'habit' && (
+                                            <div style={{marginBottom: '20px'}}>
+                                                <div style={{textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px'}}>Активные дни:</div>
+                                                <div className="weekdays-selector">
+                                                    {weekDaysArr.map(d => {
+                                                        const isActive = form.weekDays && form.weekDays.includes(d.val);
+                                                        return (
+                                                            <div key={d.val} className={`weekday-btn ${isActive ? 'active' : ''}`} onClick={() => toggleWeekDay(d.val)}>
+                                                                {d.label}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {(form.type || 'habit') === 'sprint' && (<input type="number" placeholder="Дней соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="dark-input" style={{textAlign: 'center', marginTop: '10px'}} />)}
                                         
                                         <hr className="divider" />

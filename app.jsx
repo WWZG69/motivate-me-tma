@@ -32,8 +32,7 @@ const Icons = {
     Pencil: () => <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
     Trash: () => <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
     Check: () => <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
-    Close: () => <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
-    Alert: () => <svg viewBox="0 0 24 24" fill="none" stroke="#ff3b30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Close: () => <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
 };
 
 const TimeWheel = ({ items, value, onChange, width }) => {
@@ -109,7 +108,6 @@ function App() {
     const [startMonth, setStartMonth] = useState(monthNames[new Date().getMonth()]);
     const [startDay, setStartDay] = useState(new Date().getDate().toString().padStart(2, '0'));
 
-    // ДОБАВЛЕНО: weekDays по умолчанию выбраны все (0-6)
     const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, supportTone: 'soft', startDate: null, visionId: '', weekDays: [0,1,2,3,4,5,6] };
     const defaultVisionForm = { title: '', emoji: '🎯', description: '' };
 
@@ -140,7 +138,6 @@ function App() {
         } catch(e) {}
     };
 
-    // ... (статистика и другие useEffect остаются без изменений)
     const statsData = useMemo(() => {
         const today = new Date(); let totalDone = 0; let bestStreak = 0; let completionByDate = {}; 
         goals.forEach(g => {
@@ -224,7 +221,6 @@ function App() {
     };
     const closeCreateModal = () => { triggerHaptic('light'); setIsModalOpen(false); };
 
-    // ФУНКЦИЯ ДЛЯ ВЫБОРА ДНЕЙ НЕДЕЛИ
     const toggleWeekDay = (dayVal) => {
         triggerHaptic('light');
         setForm(prev => {
@@ -250,7 +246,6 @@ function App() {
             if (selectedMonthIdx < nowObj.getMonth() || (selectedMonthIdx === nowObj.getMonth() && selectedDayNum < nowObj.getDate())) targetYear = currentYear + 1;
             const finalStartDate = new Date(targetYear, selectedMonthIdx, selectedDayNum); finalStartDate.setHours(0, 0, 0, 0);
             
-            // Сохраняем weekDays (если нет, по умолчанию все)
             const safeWeekDays = form.weekDays && form.weekDays.length > 0 ? form.weekDays : [0,1,2,3,4,5,6];
             const goalData = { ...form, startDate: finalStartDate.toISOString(), weekDays: safeWeekDays };
             
@@ -296,58 +291,53 @@ function App() {
         } catch(e) { return { text: "00:00", className: 'badge failed-timer', style: {} }; }
     };
 
-    const renderDayCards = (renderDate) => {
-        const dateKey = renderDate.toDateString(); const renderTime = renderDate.getTime();
-        
-        const activeGoals = goals.filter(g => { 
+    // Функция получения активных целей для конкретной даты
+    const getActiveGoalsForDate = (dateTarget) => {
+        const renderTime = dateTarget.getTime();
+        return goals.filter(g => { 
             if (activeVisionId && g.visionId != activeVisionId) return false;
             try { 
                 if (g.startDate && new Date(g.startDate).getTime() > renderTime) return false; 
-                // ФИЛЬТРАЦИЯ ПО ДНЯМ НЕДЕЛИ ДЛЯ ПРИВЫЧЕК
                 if (g.type === 'habit' && g.weekDays && g.weekDays.length > 0) {
-                    if (!g.weekDays.includes(renderDate.getDay())) return false;
+                    if (!g.weekDays.includes(dateTarget.getDay())) return false;
                 }
                 return true; 
             } catch(e) { return true; } 
         });
+    };
 
-        // ПРЕДУПРЕЖДЕНИЕ О ВЫГОРАНИИ (Если задач больше 5)
-        const overloadWarning = activeGoals.length > 5 ? (
-            <div className="burnout-warning">
-                <Icons.Alert style={{width: '16px', height: '16px', flexShrink: 0}} />
-                <span>Высокая нагрузка ({activeGoals.length} задач). Риск выгорания!</span>
-            </div>
-        ) : null;
+    // Подсчет нагрузки для текущего отображаемого дня
+    const activeGoalsToday = getActiveGoalsForDate(currentDate);
+    const loadCount = activeGoalsToday.length;
+
+    const renderDayCards = (renderDate) => {
+        const dateKey = renderDate.toDateString(); 
+        const activeGoals = getActiveGoalsForDate(renderDate);
 
         if (activeGoals.length === 0) return <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Задач на этот день нет.</p>;
         
-        return (
-            <React.Fragment>
-                {overloadWarning}
-                {activeGoals.map(g => {
-                    const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; const isShaking = shakingGoalId === g.id; 
-                    const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
-                    const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
+        return activeGoals.map(g => {
+            const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; const isShaking = shakingGoalId === g.id; 
+            const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
+            const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
 
-                    return (
-                        <div key={g.id} className={`card ${isShaking ? 'shake' : ''}`} onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
-                            <div className="goal-info">
-                                {linkedVision && (<div className="vision-badge">{linkedVision.emoji} {linkedVision.title}</div>)}
-                                <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>{g.title}</div>
-                                <div className="stats-row">
-                                    {g.type !== 'once' && <span className="badge">{g.streak || 0} 🔥</span>}
-                                    {g.type === 'habit' && <span className="badge">∞</span>}
-                                    {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - (g.streak || 0))} ⏳</span>}
-                                    <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
-                                </div>
-                                <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}><div className="goal-desc-inner"><div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div></div></div>
-                            </div>
-                            <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g, renderDate)}><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+            return (
+                <div key={g.id} className={`card ${isShaking ? 'shake' : ''}`} onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
+                    <div className="goal-info">
+                        {linkedVision && (<div className="vision-badge">{linkedVision.emoji} {linkedVision.title}</div>)}
+                        <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>{g.title}</div>
+                        <div className="stats-row">
+                            {g.type !== 'once' && <span className="badge">{g.streak || 0} 🔥</span>}
+                            {g.type === 'habit' && <span className="badge">∞</span>}
+                            {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - (g.streak || 0))} ⏳</span>}
+                            <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
                         </div>
-                    );
-                })}
-            </React.Fragment>
-        );
+                        <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}><div className="goal-desc-inner"><div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div></div></div>
+                    </div>
+                    <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g, renderDate)}><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                </div>
+            );
+        });
     };
 
     const handleCardTouchStart = (goal, dateTarget) => {
@@ -401,6 +391,26 @@ function App() {
 
                 {activeTab === 'home' && (
                     <React.Fragment>
+                        
+                        {/* ИНДИКАТОР НАГРУЗКИ (БАТАРЕЯ ДНЯ) */}
+                        <div className="daily-load-container">
+                            <div className="load-header">
+                                <span className="load-title">Нагрузка дня</span>
+                                <span className="load-count">{loadCount} {loadCount === 1 ? 'задача' : (loadCount > 1 && loadCount < 5) ? 'задачи' : 'задач'}</span>
+                            </div>
+                            <div className="load-bar">
+                                {[1, 2, 3, 4, 5, 6].map(i => {
+                                    let fillClass = '';
+                                    if (loadCount >= i || (i === 6 && loadCount >= 6)) {
+                                        if (loadCount <= 3) fillClass = 'safe';
+                                        else if (loadCount <= 5) fillClass = 'warning';
+                                        else fillClass = 'danger';
+                                    }
+                                    return <div key={i} className={`load-segment ${fillClass}`}></div>;
+                                })}
+                            </div>
+                        </div>
+
                         {visions.length > 0 && (
                             <div className="visions-scroll-track">
                                 {visions.map(v => {
@@ -514,7 +524,6 @@ function App() {
                     </div>
                 )}
 
-                {/* Окна действий */}
                 {actionMenuGoal && (
                     <div className="glass-overlay-centered" onClick={() => setActionMenuGoal(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
@@ -604,7 +613,6 @@ function App() {
                                         </div>
                                         <div className="info-box"><div className="info-title">{typeInfo[form.type || 'habit'].title}</div><div className="info-desc">{typeInfo[form.type || 'habit'].desc}</div></div>
                                         
-                                        {/* НОВЫЙ БЛОК: Выбор дней недели (только для привычек) */}
                                         {(form.type || 'habit') === 'habit' && (
                                             <div style={{marginBottom: '20px'}}>
                                                 <div style={{textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px'}}>Активные дни:</div>

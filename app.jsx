@@ -66,7 +66,6 @@ function App() {
     const [offsetPx, setOffsetPx] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     
-    // Инициализация темы
     const [isLightTheme, setIsLightTheme] = useState(() => localStorage.getItem('motivateMe_theme') === 'light');
     
     const touchStartX = useRef(0);
@@ -132,7 +131,6 @@ function App() {
         localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
     }, [isLightTheme]);
 
-    // ИДЕАЛЬНАЯ АНИМАЦИЯ: РАСШИРЕНИЕ ДЛЯ СВЕТЛОЙ / СУЖЕНИЕ ДЛЯ ТЕМНОЙ
     const toggleTheme = (e) => {
         const x = e.clientX;
         const y = e.clientY;
@@ -142,33 +140,22 @@ function App() {
         ripple.className = 'theme-ripple-effect';
         ripple.style.left = `${x}px`;
         ripple.style.top = `${y}px`;
-        
-        // Волна ВСЕГДА светлого цвета (цвета светлой подложки)
         ripple.style.backgroundColor = '#F2F2F7'; 
         
         triggerHaptic('medium');
 
         if (goingToLight) {
-            // Темная -> Светлая (Волна расширяется от кнопки)
             ripple.style.animation = 'rippleExpand 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards';
             document.body.appendChild(ripple);
-            
-            // Ровно в момент когда волна закрыла экран (0.9с), меняем тему и растворяем волну
             setTimeout(() => {
                 setIsLightTheme(true);
                 ripple.classList.add('fade-out');
             }, 900);
-
             setTimeout(() => ripple.remove(), 1200);
         } else {
-            // Светлая -> Темная (Волна "всасывается" в кнопку)
-            // Моментально делаем интерфейс темным под волной
             setIsLightTheme(false);
-            
-            // Волна начинает огромной и сжимается до нуля
             ripple.style.animation = 'rippleCollapse 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards';
             document.body.appendChild(ripple);
-            
             setTimeout(() => ripple.remove(), 900);
         }
     };
@@ -230,24 +217,37 @@ function App() {
     const resetTimer = () => { setIsTimerRunning(false); setTimeLeft(25 * 60); triggerHaptic('light'); };
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
+    // ИСПРАВЛЕННЫЙ БАГ #3: Захват значения счетчика перед обнулением
     const animateToDate = (daysShift) => {
         targetShiftRef.current += daysShift;
         setExpandedGoalId(null); setIsTransitioning(true);
         setOffsetPx(targetShiftRef.current > 0 ? -window.innerWidth : window.innerWidth);
         triggerHaptic('light');
+        
         if (transitionTimer.current) clearTimeout(transitionTimer.current);
+        
         transitionTimer.current = setTimeout(() => {
-            setIsTransitioning(false); setOffsetPx(0);
-            setCurrentDate(prev => getOffsetDate(prev, targetShiftRef.current));
-            targetShiftRef.current = 0; transitionTimer.current = null;
+            setIsTransitioning(false); 
+            setOffsetPx(0);
+            
+            // Запоминаем сдвиг ДО сброса
+            const shiftToApply = targetShiftRef.current;
+            targetShiftRef.current = 0; 
+            transitionTimer.current = null;
+            
+            setCurrentDate(prev => getOffsetDate(prev, shiftToApply));
         }, 200); 
     };
 
     const onSwipeStart = (e) => {
         if (transitionTimer.current) { 
-            clearTimeout(transitionTimer.current); transitionTimer.current = null; 
-            setCurrentDate(prev => getOffsetDate(prev, targetShiftRef.current)); 
-            targetShiftRef.current = 0; setOffsetPx(0); setIsTransitioning(false); 
+            clearTimeout(transitionTimer.current); 
+            transitionTimer.current = null; 
+            const shiftToApply = targetShiftRef.current;
+            setCurrentDate(prev => getOffsetDate(prev, shiftToApply)); 
+            targetShiftRef.current = 0; 
+            setOffsetPx(0); 
+            setIsTransitioning(false); 
         }
         touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY; touchStartTime.current = Date.now(); isDragging.current = true; isSwipeValid.current = null; 
     };
@@ -667,6 +667,12 @@ function App() {
                                         <div className="setting-row"><span>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} /><span className="slider"></span></label></div>
                                     </div>
                                 )}
+                                {/* ВОЗВРАЩЕННЫЙ КОЛОКОЛЬЧИК И ШАГ УВЕДОМЛЕНИЙ */}
+                                {createStep === 'notifs' && (
+                                    <div className="panel-step">
+                                        <div className="setting-row"><span style={{fontWeight: 'bold'}}>Уведомления</span><label className="ios-switch"><input type="checkbox" checked={form.notifications !== false} onChange={e => setForm({...form, notifications: e.target.checked})} /><span className="slider"></span></label></div>
+                                    </div>
+                                )}
                             </React.Fragment>
                         )}
                     </div>
@@ -684,9 +690,10 @@ function App() {
                         <React.Fragment>
                             {createMode === 'micro' ? (
                                 <React.Fragment>
-                                    <div onClick={() => setCreateStep('text')} className="tab-item"><Icons.Text active={createStep === 'text'} /></div><div onClick={() => setCreateStep('time')} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
+                                    <div onClick={() => setCreateStep('text')} className="tab-item"><Icons.Text active={createStep === 'text'} /></div>
+                                    <div onClick={() => setCreateStep('time')} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
                                     <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: 'var(--text-muted)', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
-                                    <div style={{flex: 1}}></div>
+                                    <div onClick={() => setCreateStep('notifs')} className="tab-item"><Icons.Bell active={createStep === 'notifs'} /></div>
                                     <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
                                 </React.Fragment>
                             ) : (

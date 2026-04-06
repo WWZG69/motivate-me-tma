@@ -50,7 +50,7 @@
 /* ПЛАВНЫЙ ПЕРЕХОД ПРИ СМЕНЕ ТЕМЫ */
 .card, .vision-card, .timer-panel, .stat-card, .create-panel, .tab-bar, .dark-input {
     transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
-    transform: translateZ(0); /* БЛОКИРОВКА МЕРЦАНИЯ КАРТОЧЕК ПРИ СКРОЛЛЕ */
+    /* УБРАЛИ transform: translateZ(0) - ОН ПЕРЕГРУЖАЛ ВИДЕОПАМЯТЬ ТЕЛЕФОНА */
 }
 
 /* =========================================
@@ -95,19 +95,18 @@ body::before {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* =========================================
-   ГЛАВНЫЙ КОНТЕЙНЕР И ИСПРАВЛЕННАЯ ШАПКА
+   ГЛАВНЫЙ КОНТЕЙНЕР И ШАПКА
 ========================================= */
-/* Фиксируем контейнер, чтобы шапка не улетала при скролле */
 .container { display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; padding-top: 20px; padding-bottom: 140px; position: relative; z-index: 1; }
 
-.header-notcoin-style { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; padding: 0 20px 10px 20px; transform: translateZ(0); }
+.header-notcoin-style { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; padding: 0 20px 10px 20px; }
 .m-logo-small { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; background: #fff; transform: rotate(-15deg); box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 6px; margin-right: 0; }
 .main-title-small { margin: 0; font-size: 20px; font-weight: 800; color: var(--text-main); text-shadow: 0 2px 6px rgba(0,0,0,0.2); }
 
 /* =========================================
    ШКАЛА НАГРУЗКИ (БАТАРЕЯ ДНЯ)
 ========================================= */
-.daily-load-container { width: 100vw; max-width: 400px; padding: 0 20px; box-sizing: border-box; margin-bottom: 20px; animation: fadeIn 0.5s ease; transform: translateZ(0); }
+.daily-load-container { width: 100vw; max-width: 400px; padding: 0 20px; box-sizing: border-box; margin-bottom: 20px; animation: fadeIn 0.5s ease; }
 .load-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; }
 .load-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .load-count { font-size: 14px; font-weight: 800; color: var(--text-main); }
@@ -146,7 +145,7 @@ body::before {
 ========================================= */
 .swipe-area { width: 100vw; flex: 1; display: flex; flex-direction: column; overflow-x: hidden; position: relative; touch-action: pan-y; }
 .date-nav-container { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; padding: 0 20px; display: flex; justify-content: space-between; box-sizing: border-box; z-index: 10; pointer-events: none; }
-.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-main); pointer-events: auto; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s; box-shadow: var(--shadow-main); pointer-events: auto; }
 .date-nav-btn:active { transform: scale(0.85); background: var(--bg-input); }
 .date-nav-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 3; fill: none; }
 .cards-track { display: flex; width: 300vw; will-change: transform; align-items: flex-start; }
@@ -168,15 +167,13 @@ body::before {
 .failed-timer { color: #ff3b30 !important; font-weight: bold !important; }
 @keyframes pulseUrgent { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 
-/* ИСПРАВЛЕНО МЕРЦАНИЕ ТЕКСТА: Старый добрый max-height */
-.goal-desc-wrapper { max-height: 0; opacity: 0; margin-top: 0; overflow: hidden; transition: max-height 0.35s ease-in-out, opacity 0.35s ease-in-out, margin-top 0.35s ease-in-out; }
-.goal-desc-wrapper.expanded { max-height: 500px; opacity: 1; margin-top: 8px; }
-.goal-desc-inner { padding-bottom: 4px; pointer-events: auto; }
+.goal-desc-wrapper { max-height: 0; opacity: 0; margin-top: 0; overflow: hidden; transition: max-height 0.35s ease-in-out, opacity 0.35s ease-in-out, margin-top 0.35s ease-in-out; pointer-events: none; }
+.goal-desc-wrapper.expanded { max-height: 500px; opacity: 1; margin-top: 8px; pointer-events: auto; }
+.goal-desc-inner { padding-bottom: 4px; }
 .goal-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; max-height: 260px; overflow-y: auto; word-break: break-word; hyphens: auto; }
 .goal-desc::-webkit-scrollbar { width: 4px; }
 .goal-desc::-webkit-scrollbar-thumb { background: var(--bg-segment); border-radius: 4px; }
 
-/* КНОПКА ОТМЕТКИ */
 .btn-complete { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--accent); background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; cursor: pointer; pointer-events: auto; }
 .btn-complete.disabled { opacity: 0.2; cursor: not-allowed; }
 .btn-complete.done { background: var(--accent); border-color: var(--accent); transform: scale(1.05); }
@@ -210,7 +207,7 @@ body::before {
 .glass-overlay-centered { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-glass-overlay); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; display: flex; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; transition: background-color 0.3s; }
 
 /* =========================================
-   СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ (ЖИРНЫЕ КОНТУРЫ)
+   СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ
 ========================================= */
 .action-buttons-container { display: flex; gap: 24px; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 

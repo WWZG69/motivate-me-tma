@@ -46,7 +46,7 @@
     
     /* Цвета анимированного фона (Яркая лава + Светлая капля) */
     --grad-center: #F2F2F7;
-    --grad-mid1: #ff2a00; /* Яркий неон как в темной! */
+    --grad-mid1: #ff2a00; 
     --grad-mid2: #ff5e00;
     --grad-edge: rgba(255, 140, 0, 0);
 }
@@ -89,9 +89,9 @@ body::before {
 /* =========================================
    ЗАСТАВКА
 ========================================= */
-.simple-splash-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; animation: splashFadeOut 0.4s ease 3.6s forwards; pointer-events: none; }
-.splash-logo { width: 90px; height: 90px; border-radius: 26px; object-fit: cover; background: #fff; box-shadow: 0 10px 35px rgba(0, 0, 0, 0.5); margin-bottom: 15px; transform: rotate(-15deg); animation: logoPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.splash-title { margin: 0; font-size: 34px; font-weight: 800; color: white; text-shadow: 0 4px 15px rgba(0,0,0,0.8); letter-spacing: 0.5px; opacity: 0; animation: fadeIn 0.5s ease 0.2s forwards; }
+.simple-splash-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-base); animation: splashFadeOut 0.4s ease 3.6s forwards; pointer-events: none; }
+.splash-logo { width: 90px; height: 90px; border-radius: 26px; object-fit: cover; background: #fff; box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2); margin-bottom: 15px; transform: rotate(-15deg); animation: logoPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.splash-title { margin: 0; font-size: 34px; font-weight: 800; color: var(--text-main); text-shadow: 0 4px 15px rgba(0,0,0,0.1); letter-spacing: 0.5px; opacity: 0; animation: fadeIn 0.5s ease 0.2s forwards; }
 
 @keyframes logoPop { 0% { opacity: 0; transform: scale(0.8) rotate(-25deg); } 100% { opacity: 1; transform: scale(1) rotate(-15deg); } }
 @keyframes splashFadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -101,9 +101,10 @@ body::before {
    ГЛАВНЫЙ КОНТЕЙНЕР И ШАПКА
 ========================================= */
 .container { display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; transition: padding-top 0.3s ease; padding-bottom: 140px; position: relative; z-index: 1; }
-.header-notcoin-style { display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; padding: 10px 20px 20px 20px; }
-.m-logo-small { width: 36px; height: 36px; border-radius: 12px; object-fit: cover; background: #fff; transform: rotate(-15deg); box-shadow: 0 2px 8px rgba(0,0,0,0.3); margin-right: 12px; }
-.main-title-small { margin: 0; font-size: 22px; font-weight: 800; color: var(--text-main); }
+/* ИСПРАВЛЕНА ШАПКА (Логотип над текстом по центру) */
+.header-notcoin-style { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; padding: 25px 20px 15px 20px; }
+.m-logo-small { width: 52px; height: 52px; border-radius: 16px; object-fit: cover; background: #fff; transform: rotate(-15deg); box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-bottom: 12px; margin-right: 0; }
+.main-title-small { margin: 0; font-size: 24px; font-weight: 800; color: var(--text-main); text-shadow: 0 2px 6px rgba(0,0,0,0.2); }
 
 /* =========================================
    ШКАЛА НАГРУЗКИ (БАТАРЕЯ ДНЯ)
@@ -147,7 +148,7 @@ body::before {
 ========================================= */
 .swipe-area { width: 100vw; flex: 1; display: flex; flex-direction: column; overflow-x: hidden; position: relative; touch-action: pan-y; }
 .date-nav-container { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; padding: 0 20px; display: flex; justify-content: space-between; box-sizing: border-box; z-index: 10; pointer-events: none; }
-.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s; box-shadow: var(--shadow-main); pointer-events: auto; }
+.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-main); pointer-events: auto; }
 .date-nav-btn:active { transform: scale(0.85); background: var(--bg-input); }
 .date-nav-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 3; fill: none; }
 .cards-track { display: flex; width: 300vw; will-change: transform; align-items: flex-start; }
@@ -155,7 +156,7 @@ body::before {
 .date-display-row { text-align: center; font-size: 16px; font-weight: bold; color: var(--text-main); height: 44px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; text-transform: capitalize; }
 
 /* =========================================
-   КАРТОЧКИ ЦЕЛЕЙ И ИХ РАСШИРЕНИЕ
+   КАРТОЧКИ ЦЕЛЕЙ
 ========================================= */
 .card { background: var(--bg-card); border-radius: 24px; padding: 18px 20px; color: var(--text-main); width: 100%; max-width: 360px; box-shadow: var(--shadow-main); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-color); cursor: pointer; }
 .card:active:not(.shake) { transform: scale(0.96); }
@@ -169,15 +170,15 @@ body::before {
 .failed-timer { color: #ff3b30 !important; font-weight: bold !important; }
 @keyframes pulseUrgent { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 
-/* ИСПРАВЛЕНО: Плавное раздвижение карточки без мерцания */
-.goal-desc-wrapper { display: grid; grid-template-rows: 0fr; opacity: 0; margin-top: 0; transition: grid-template-rows 0.3s ease-out, opacity 0.3s ease-out, margin-top 0.3s ease-out; }
-.goal-desc-wrapper.expanded { grid-template-rows: 1fr; opacity: 1; margin-top: 8px; }
-.goal-desc-inner { overflow: hidden; pointer-events: auto; }
-.goal-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; padding-bottom: 4px; max-height: 260px; overflow-y: auto; word-break: break-word; hyphens: auto; }
+/* ИСПРАВЛЕНА АНИМАЦИЯ: Идеальное скольжение без мерцания */
+.goal-desc-wrapper { max-height: 0; opacity: 0; margin-top: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, margin-top 0.3s ease; pointer-events: none; }
+.goal-desc-wrapper.expanded { max-height: 400px; opacity: 1; margin-top: 8px; pointer-events: auto; }
+.goal-desc-inner { padding-bottom: 4px; }
+.goal-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; max-height: 260px; overflow-y: auto; word-break: break-word; hyphens: auto; }
 .goal-desc::-webkit-scrollbar { width: 4px; }
 .goal-desc::-webkit-scrollbar-thumb { background: var(--bg-segment); border-radius: 4px; }
 
-/* ИСПРАВЛЕНО: Жирный оранжевый контур для пустой кнопки */
+/* ИСПРАВЛЕНА КНОПКА ОТМЕТКИ (Жирный оранжевый контур) */
 .btn-complete { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--accent); background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; cursor: pointer; pointer-events: auto; }
 .btn-complete.disabled { opacity: 0.2; cursor: not-allowed; }
 .btn-complete.done { background: var(--accent); border-color: var(--accent); transform: scale(1.05); }
@@ -187,7 +188,7 @@ body::before {
 /* =========================================
    НИЖНИЙ БАР
 ========================================= */
-.tab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-evenly; padding: 10px 0; border-radius: 35px; border: 1px solid var(--border-color); z-index: 100; box-shadow: var(--shadow-main); transition: background-color 0.3s; }
+.tab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-evenly; padding: 10px 0; border-radius: 35px; border: 1px solid var(--border-color); z-index: 100; box-shadow: var(--shadow-main); }
 .tab-item { text-align: center; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; height: 100%; }
 .tab-item:active { transform: scale(0.9); }
 .tab-icon { width: 28px; height: 28px; stroke-width: 1.8; fill: none; transition: all 0.3s ease; stroke: var(--icon-color); }
@@ -211,7 +212,7 @@ body::before {
 .glass-overlay-centered { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-glass-overlay); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; display: flex; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; transition: background-color 0.3s; }
 
 /* =========================================
-   СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ (ИСПРАВЛЕНЫ ГРАНИЦЫ)
+   СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ (ЖИРНЫЕ КОНТУРЫ)
 ========================================= */
 .action-buttons-container { display: flex; gap: 24px; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 
@@ -231,7 +232,7 @@ body::before {
 /* =========================================
    ПАНЕЛЬ СОЗДАНИЯ ЦЕЛИ И ИНПУТЫ
 ========================================= */
-.create-panel { position: fixed; bottom: 105px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 28px; padding: 25px 20px 15px 20px; box-sizing: border-box; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); animation: slidePanelUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 90; display: flex; flex-direction: column; max-height: calc(100vh - 140px); overflow-y: auto; transition: background-color 0.3s; }
+.create-panel { position: fixed; bottom: 105px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 28px; padding: 25px 20px 15px 20px; box-sizing: border-box; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); animation: slidePanelUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 90; display: flex; flex-direction: column; max-height: calc(100vh - 140px); overflow-y: auto; }
 .panel-step { animation: fadeIn 0.3s ease; display: flex; flex-direction: column; }
 @keyframes slidePanelUp { from { transform: translateY(120%) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
@@ -284,7 +285,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 /* =========================================
    ТАЙМЕР ФОКУСА И СТАТИСТИКА
 ========================================= */
-.timer-panel { display: flex; flex-direction: column; align-items: center; background: var(--bg-card); border-radius: 28px; padding: 30px; width: 100%; max-width: 320px; margin: 20px auto; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); box-sizing: border-box; transition: background-color 0.3s; }
+.timer-panel { display: flex; flex-direction: column; align-items: center; background: var(--bg-card); border-radius: 28px; padding: 30px; width: 100%; max-width: 320px; margin: 20px auto; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); box-sizing: border-box; }
 .timer-display { font-size: 64px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; margin: 10px 0 30px 0; }
 .timer-controls { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; }
 .btn-timer-main { width: 72px; height: 72px; border-radius: 50%; border: none; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-main); transition: transform 0.2s; }
@@ -296,7 +297,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 .stats-wrapper { width: 100%; max-width: 360px; margin: 0 auto; display: flex; flex-direction: column; animation: fadeIn 0.4s ease; }
 .stats-row-cards { display: flex; gap: 12px; margin-bottom: 12px; width: 100%; }
-.stat-card { flex: 1; background: var(--bg-card); border-radius: 24px; padding: 20px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); transition: background-color 0.3s; }
+.stat-card { flex: 1; background: var(--bg-card); border-radius: 24px; padding: 20px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); }
 .stat-value { font-size: 32px; font-weight: 800; color: var(--accent); }
 .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 5px; font-weight: 500; }
 
@@ -325,33 +326,12 @@ select.custom-select.dark-input option { color: #000; }
 /* =========================================
    ИДЕАЛЬНАЯ КНОПКА ТЕМЫ И КИНЕМАТОГРАФИЧНЫЙ RIPPLE
 ========================================= */
-.theme-toggle-btn {
-    width: 48px; height: 48px; border-radius: 50%;
-    background: var(--bg-input); border: 1px solid var(--border-color);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--accent); transition: transform 0.2s;
-    padding: 0; outline: none; -webkit-tap-highlight-color: transparent;
-}
+.theme-toggle-btn { width: 48px; height: 48px; border-radius: 50%; background: var(--bg-input); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent); transition: transform 0.2s; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
 .theme-toggle-btn:active { transform: scale(0.9); }
 .theme-toggle-btn svg { width: 24px; height: 24px; stroke: currentColor; fill: none; }
 
-.theme-ripple-effect {
-    position: fixed; width: 10px; height: 10px; border-radius: 50%;
-    pointer-events: none; z-index: 999999;
-    transform: translate(-50%, -50%) scale(1);
-}
-.theme-ripple-effect.fade-out {
-    opacity: 0; 
-    transition: opacity 0.3s ease;
-}
+.theme-ripple-effect { position: fixed; width: 10px; height: 10px; border-radius: 50%; pointer-events: none; z-index: 999999; transform: translate(-50%, -50%) scale(1); }
+.theme-ripple-effect.fade-out { opacity: 0; transition: opacity 0.3s ease; }
 
-/* Расширение для светлой темы */
-@keyframes rippleExpand {
-    to { transform: translate(-50%, -50%) scale(350); }
-}
-
-/* Сужение (всасывание) для темной темы */
-@keyframes rippleCollapse {
-    0% { transform: translate(-50%, -50%) scale(350); }
-    100% { transform: translate(-50%, -50%) scale(0); }
-}
+@keyframes rippleExpand { to { transform: translate(-50%, -50%) scale(350); } }
+@keyframes rippleCollapse { 0% { transform: translate(-50%, -50%) scale(350); } 100% { transform: translate(-50%, -50%) scale(0); } }

@@ -69,7 +69,6 @@ function App() {
     const [activeTab, setActiveTab] = useState('home');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [now, setNow] = useState(new Date());
-    const [isFullscreen, setIsFullscreen] = useState(false);
     const [offsetPx, setOffsetPx] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     
@@ -81,6 +80,7 @@ function App() {
     const isDragging = useRef(false);
     const isSwipeValid = useRef(null); 
     const transitionTimer = useRef(null);
+    const targetShiftRef = useRef(0);
     
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -209,7 +209,6 @@ function App() {
     }, [goals]);
 
     useEffect(() => { try { const tg = window.Telegram?.WebApp; if (tg) { tg.ready(); tg.expand(); } } catch(e) {} const endSplash = setTimeout(() => setShowSplash(false), 4000); return () => clearTimeout(endSplash); }, []);
-    useEffect(() => { try { const tg = window.Telegram?.WebApp; if (tg) { const checkExpand = () => { setIsFullscreen(tg.isExpanded); }; checkExpand(); tg.onEvent('viewportChanged', checkExpand); } } catch(e) {} }, []);
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_goals', JSON.stringify(goals)); } catch (e) {} }, [goals]);
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_visions', JSON.stringify(visions)); } catch (e) {} }, [visions]);
     useEffect(() => { const timer = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(timer); }, []);
@@ -223,7 +222,6 @@ function App() {
     const resetTimer = () => { setIsTimerRunning(false); setTimeLeft(25 * 60); triggerHaptic('light'); };
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
-    // ИСПРАВЛЕННЫЙ ДВИЖОК СКРОЛЛА ДАТ (Надежная защита от залипаний)
     const applyDateShift = (shift) => {
         setCurrentDate(prev => {
             const newDate = new Date(prev);
@@ -238,7 +236,7 @@ function App() {
 
         if (transitionTimer.current) {
             clearTimeout(transitionTimer.current);
-            applyDateShift(offsetPx > 0 ? -1 : 1); // Мгновенно применяем предыдущий свайп
+            applyDateShift(offsetPx > 0 ? -1 : 1);
         }
 
         setIsTransitioning(true);
@@ -275,7 +273,7 @@ function App() {
         if (!isDragging.current || isSwipeValid.current !== true) { isDragging.current = false; return; }
         isDragging.current = false;
         const swipeDuration = Date.now() - touchStartTime.current; const velocity = offsetPx / swipeDuration; 
-        const threshold = window.innerWidth * 0.2; // Снизил порог для легкого быстрого свайпа
+        const threshold = window.innerWidth * 0.2; 
         if (offsetPx > threshold || velocity > 0.4) animateToDate(-1); else if (offsetPx < -threshold || velocity < -0.4) animateToDate(1); 
         else { setIsTransitioning(true); setOffsetPx(0); setTimeout(() => setIsTransitioning(false), 200); }
     };
@@ -443,7 +441,7 @@ function App() {
                 </div>
             )}
 
-            <div className="container" style={{ paddingTop: isFullscreen ? 'calc(5px + 4vh)' : '10px' }}>
+            <div className="container">
                 {isModalOpen && <div className="glass-backdrop" onClick={closeCreateModal}></div>}
                 
                 <div className="header-notcoin-style">

@@ -32,7 +32,8 @@ const Icons = {
     Pencil: () => <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
     Trash: () => <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
     Check: () => <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
-    Close: () => <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+    Close: () => <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+    Alert: () => <svg viewBox="0 0 24 24" fill="none" stroke="#ff3b30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
 };
 
 const TimeWheel = ({ items, value, onChange, width }) => {
@@ -73,7 +74,7 @@ function App() {
     const isDragging = useRef(false);
     const isSwipeValid = useRef(null); 
     const transitionTimer = useRef(null);
-    const pendingShiftRef = useRef(0);
+    const targetShiftRef = useRef(0); // НАКОПИТЕЛЬ КЛИКОВ ПО ДАТЕ
     
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -108,7 +109,7 @@ function App() {
     const [startMonth, setStartMonth] = useState(monthNames[new Date().getMonth()]);
     const [startDay, setStartDay] = useState(new Date().getDate().toString().padStart(2, '0'));
 
-    const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, supportTone: 'soft', startDate: null, visionId: '', weekDays: [0,1,2,3,4,5,6] };
+    const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, startDate: null, visionId: '', weekDays: [0,1,2,3,4,5,6] };
     const defaultVisionForm = { title: '', emoji: '🎯', description: '' };
 
     const [form, setForm] = useState(defaultForm);
@@ -185,16 +186,34 @@ function App() {
     const resetTimer = () => { setIsTimerRunning(false); setTimeLeft(25 * 60); triggerHaptic('light'); };
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
+    // УМНОЕ ПЕРЕЛИСТЫВАНИЕ (Накопление быстрых кликов)
     const animateToDate = (daysShift) => {
-        if (transitionTimer.current) { clearTimeout(transitionTimer.current); setCurrentDate(prev => getOffsetDate(prev, pendingShiftRef.current)); }
-        pendingShiftRef.current = daysShift;
-        setExpandedGoalId(null); setIsTransitioning(true);
-        setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth); triggerHaptic('light');
-        transitionTimer.current = setTimeout(() => { setIsTransitioning(false); setOffsetPx(0); setCurrentDate(prev => getOffsetDate(prev, daysShift)); transitionTimer.current = null; pendingShiftRef.current = 0; }, 200); 
+        targetShiftRef.current += daysShift;
+        setExpandedGoalId(null);
+        setIsTransitioning(true);
+        setOffsetPx(targetShiftRef.current > 0 ? -window.innerWidth : window.innerWidth);
+        triggerHaptic('light');
+
+        if (transitionTimer.current) clearTimeout(transitionTimer.current);
+
+        transitionTimer.current = setTimeout(() => {
+            setIsTransitioning(false);
+            setOffsetPx(0);
+            setCurrentDate(prev => getOffsetDate(prev, targetShiftRef.current));
+            targetShiftRef.current = 0;
+            transitionTimer.current = null;
+        }, 200); 
     };
 
     const onSwipeStart = (e) => {
-        if (transitionTimer.current) { clearTimeout(transitionTimer.current); transitionTimer.current = null; setCurrentDate(prev => getOffsetDate(prev, pendingShiftRef.current)); setOffsetPx(0); setIsTransitioning(false); pendingShiftRef.current = 0; }
+        if (transitionTimer.current) { 
+            clearTimeout(transitionTimer.current); 
+            transitionTimer.current = null; 
+            setCurrentDate(prev => getOffsetDate(prev, targetShiftRef.current)); 
+            targetShiftRef.current = 0;
+            setOffsetPx(0); 
+            setIsTransitioning(false); 
+        }
         touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY; touchStartTime.current = Date.now(); isDragging.current = true; isSwipeValid.current = null; 
     };
     const onSwipeMove = (e) => {
@@ -291,7 +310,6 @@ function App() {
         } catch(e) { return { text: "00:00", className: 'badge failed-timer', style: {} }; }
     };
 
-    // Функция получения активных целей для конкретной даты
     const getActiveGoalsForDate = (dateTarget) => {
         const renderTime = dateTarget.getTime();
         return goals.filter(g => { 
@@ -306,7 +324,6 @@ function App() {
         });
     };
 
-    // Подсчет нагрузки для текущего отображаемого дня
     const activeGoalsToday = getActiveGoalsForDate(currentDate);
     const loadCount = activeGoalsToday.length;
 
@@ -322,7 +339,7 @@ function App() {
             const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
 
             return (
-                <div key={g.id} className={`card ${isShaking ? 'shake' : ''}`} onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
+                <div key={g.id} className={`card ${isShaking ? 'shake' : ''}`} onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchMove={handleCardTouchEnd} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
                     <div className="goal-info">
                         {linkedVision && (<div className="vision-badge">{linkedVision.emoji} {linkedVision.title}</div>)}
                         <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>{g.title}</div>
@@ -392,7 +409,6 @@ function App() {
                 {activeTab === 'home' && (
                     <React.Fragment>
                         
-                        {/* ИНДИКАТОР НАГРУЗКИ (БАТАРЕЯ ДНЯ) */}
                         <div className="daily-load-container">
                             <div className="load-header">
                                 <span className="load-title">Нагрузка дня</span>
@@ -423,6 +439,7 @@ function App() {
                                     return (
                                         <div key={v.id} className={`vision-card ${isActive ? 'active' : ''}`} 
                                              onTouchStart={() => handleVisionTouchStart(v)} 
+                                             onTouchMove={handleCardTouchEnd} 
                                              onTouchEnd={handleCardTouchEnd} 
                                              onMouseDown={() => handleVisionTouchStart(v)} 
                                              onMouseUp={handleCardTouchEnd} 
@@ -657,13 +674,7 @@ function App() {
                                 
                                 {createStep === 'notifs' && (
                                     <div className="panel-step">
-                                        <div className="setting-row" style={{marginBottom: '20px'}}><span style={{fontSize: '15px', fontWeight: '500'}}>Уведомления</span><label className="ios-switch"><input type="checkbox" checked={form.notifications !== false} onChange={e => {triggerHaptic('light'); setForm({...form, notifications: e.target.checked})}} /><span className="slider"></span></label></div><hr className="divider" />
-                                        <div style={{textAlign: 'center', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px'}}>Тон поддержки</div>
-                                        <div className="radio-group" style={{ maxWidth: '200px', margin: '0 auto 10px auto' }}>
-                                            <div className={`radio-btn ${(form.supportTone || 'soft') === 'soft' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, supportTone: 'soft'})}}><Icons.Soft active={(form.supportTone || 'soft') === 'soft'} /></div>
-                                            <div className={`radio-btn ${(form.supportTone || 'soft') === 'hard' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, supportTone: 'hard'})}}><Icons.Hard active={(form.supportTone || 'soft') === 'hard'} /></div>
-                                        </div>
-                                        <div className="info-box"><div className="info-title">{toneInfo[form.supportTone || 'soft'].title}</div><div className="info-desc">{toneInfo[form.supportTone || 'soft'].desc}</div></div>
+                                        <div className="setting-row" style={{marginBottom: '20px'}}><span style={{fontSize: '15px', fontWeight: '500'}}>Уведомления</span><label className="ios-switch"><input type="checkbox" checked={form.notifications !== false} onChange={e => {triggerHaptic('light'); setForm({...form, notifications: e.target.checked})}} /><span className="slider"></span></label></div>
                                     </div>
                                 )}
                             </React.Fragment>
@@ -684,14 +695,14 @@ function App() {
                             {createMode === 'micro' ? (
                                 <React.Fragment>
                                     <div onClick={() => {triggerHaptic('light'); setCreateStep('text');}} className="tab-item"><Icons.Text active={createStep === 'text'} /></div><div onClick={() => {triggerHaptic('light'); setCreateStep('time');}} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
-                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: '#444' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
+                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: '#444', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
                                     <div onClick={() => {triggerHaptic('light'); setCreateStep('notifs');}} className="tab-item"><Icons.Bell active={createStep === 'notifs'} /></div>
                                     <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
                                 </React.Fragment>
                             ) : (
                                 <React.Fragment>
                                     <div style={{flex: 1}}></div>
-                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: '#444' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
+                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: '#444', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
                                     <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
                                     <div style={{flex: 1}}></div>
                                 </React.Fragment>

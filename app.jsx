@@ -1,4 +1,4 @@
-// PRE-BOOT THEME SYNC TO PREVENT FLICKERING (Защита от мерцания фона на старте)
+// PRE-BOOT THEME SYNC (ЗАЩИТА ОТ МЕРЦАНИЯ ФОНА НА СТАРТЕ)
 try {
     if (localStorage.getItem('motivateMe_theme') === 'light') {
         document.body.classList.add('light-theme');
@@ -81,7 +81,6 @@ function App() {
     const isDragging = useRef(false);
     const isSwipeValid = useRef(null); 
     const transitionTimer = useRef(null);
-    const targetShiftRef = useRef(0);
     
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -224,32 +223,46 @@ function App() {
     const resetTimer = () => { setIsTimerRunning(false); setTimeLeft(25 * 60); triggerHaptic('light'); };
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
-    // ИСПРАВЛЕННОЕ БЫСТРОЕ ПЕРЕЛИСТЫВАНИЕ ДАТ
+    // ИСПРАВЛЕННЫЙ ДВИЖОК СКРОЛЛА ДАТ (Надежная защита от залипаний)
+    const applyDateShift = (shift) => {
+        setCurrentDate(prev => {
+            const newDate = new Date(prev);
+            newDate.setDate(newDate.getDate() + shift);
+            return newDate;
+        });
+    };
+
     const animateToDate = (daysShift) => {
-        targetShiftRef.current += daysShift;
-        setExpandedGoalId(null); setIsTransitioning(true);
-        setOffsetPx(targetShiftRef.current > 0 ? -window.innerWidth : window.innerWidth);
+        setExpandedGoalId(null);
         triggerHaptic('light');
-        if (transitionTimer.current) clearTimeout(transitionTimer.current);
+
+        if (transitionTimer.current) {
+            clearTimeout(transitionTimer.current);
+            applyDateShift(offsetPx > 0 ? -1 : 1); // Мгновенно применяем предыдущий свайп
+        }
+
+        setIsTransitioning(true);
+        setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth);
+
         transitionTimer.current = setTimeout(() => {
-            setIsTransitioning(false); setOffsetPx(0);
-            setCurrentDate(prev => getOffsetDate(prev, targetShiftRef.current));
-            targetShiftRef.current = 0; transitionTimer.current = null;
-        }, 180); 
+            setIsTransitioning(false);
+            setOffsetPx(0);
+            applyDateShift(daysShift);
+            transitionTimer.current = null;
+        }, 180);
     };
 
     const onSwipeStart = (e) => {
-        if (transitionTimer.current) { 
-            clearTimeout(transitionTimer.current); 
-            transitionTimer.current = null; 
-            const shiftToApply = targetShiftRef.current;
-            targetShiftRef.current = 0; 
-            setCurrentDate(prev => getOffsetDate(prev, shiftToApply)); 
-            setOffsetPx(0); 
-            setIsTransitioning(false); 
+        if (transitionTimer.current) {
+            clearTimeout(transitionTimer.current);
+            transitionTimer.current = null;
+            applyDateShift(offsetPx > 0 ? -1 : 1);
+            setOffsetPx(0);
+            setIsTransitioning(false);
         }
-        touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY; touchStartTime.current = Date.now(); isDragging.current = true; isSwipeValid.current = null; 
+        touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY; touchStartTime.current = Date.now(); isDragging.current = true; isSwipeValid.current = null;
     };
+
     const onSwipeMove = (e) => {
         if (!isDragging.current) return;
         const deltaX = e.touches[0].clientX - touchStartX.current; const deltaY = e.touches[0].clientY - touchStartY.current;
@@ -257,11 +270,12 @@ function App() {
         if (isSwipeValid.current === null) { if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) isSwipeValid.current = Math.abs(deltaX) > Math.abs(deltaY) * 0.5; }
         if (isSwipeValid.current === true) setOffsetPx(deltaX);
     };
+
     const onSwipeEnd = () => {
         if (!isDragging.current || isSwipeValid.current !== true) { isDragging.current = false; return; }
         isDragging.current = false;
         const swipeDuration = Date.now() - touchStartTime.current; const velocity = offsetPx / swipeDuration; 
-        const threshold = window.innerWidth * 0.2; // Снизили порог для легкого свайпа
+        const threshold = window.innerWidth * 0.2; // Снизил порог для легкого быстрого свайпа
         if (offsetPx > threshold || velocity > 0.4) animateToDate(-1); else if (offsetPx < -threshold || velocity < -0.4) animateToDate(1); 
         else { setIsTransitioning(true); setOffsetPx(0); setTimeout(() => setIsTransitioning(false), 200); }
     };
@@ -377,7 +391,11 @@ function App() {
                             {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - (g.streak || 0))} ⏳</span>}
                             <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
                         </div>
-                        <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}><div className="goal-desc-inner"><div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div></div></div>
+                        <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}>
+                            <div className="goal-desc-inner">
+                                <div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div>
+                            </div>
+                        </div>
                     </div>
                     <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g, renderDate)}><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
                 </div>
@@ -425,7 +443,7 @@ function App() {
                 </div>
             )}
 
-            <div className="container" style={{ paddingTop: isFullscreen ? 'calc(5px + 7vh)' : '10px' }}>
+            <div className="container" style={{ paddingTop: isFullscreen ? 'calc(5px + 4vh)' : '10px' }}>
                 {isModalOpen && <div className="glass-backdrop" onClick={closeCreateModal}></div>}
                 
                 <div className="header-notcoin-style">
@@ -665,11 +683,6 @@ function App() {
                                             </div>
                                         </div>
                                         <div className="setting-row"><span>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} /><span className="slider"></span></label></div>
-                                    </div>
-                                )}
-                                {createStep === 'notifs' && (
-                                    <div className="panel-step">
-                                        <div className="setting-row"><span style={{fontWeight: 'bold'}}>Уведомления</span><label className="ios-switch"><input type="checkbox" checked={form.notifications !== false} onChange={e => setForm({...form, notifications: e.target.checked})} /><span className="slider"></span></label></div>
                                     </div>
                                 )}
                             </React.Fragment>

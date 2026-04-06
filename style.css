@@ -155,7 +155,7 @@ body::before {
 .date-display-row { text-align: center; font-size: 16px; font-weight: bold; color: var(--text-main); height: 44px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; text-transform: capitalize; }
 
 /* =========================================
-   КАРТОЧКИ ЦЕЛЕЙ
+   КАРТОЧКИ ЦЕЛЕЙ И ИХ РАСШИРЕНИЕ
 ========================================= */
 .card { background: var(--bg-card); border-radius: 24px; padding: 18px 20px; color: var(--text-main); width: 100%; max-width: 360px; box-shadow: var(--shadow-main); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-color); cursor: pointer; }
 .card:active:not(.shake) { transform: scale(0.96); }
@@ -168,14 +168,17 @@ body::before {
 .urgent-timer { color: #ff3b30 !important; font-weight: 800 !important; animation: pulseUrgent 0.5s ease-in-out infinite; display: inline-block; }
 .failed-timer { color: #ff3b30 !important; font-weight: bold !important; }
 @keyframes pulseUrgent { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-.goal-desc-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease, opacity 0.3s ease; opacity: 0; }
+
+/* ИСПРАВЛЕНО: Плавное раздвижение карточки без мерцания */
+.goal-desc-wrapper { display: grid; grid-template-rows: 0fr; opacity: 0; margin-top: 0; transition: grid-template-rows 0.3s ease-out, opacity 0.3s ease-out, margin-top 0.3s ease-out; }
 .goal-desc-wrapper.expanded { grid-template-rows: 1fr; opacity: 1; margin-top: 8px; }
 .goal-desc-inner { overflow: hidden; pointer-events: auto; }
 .goal-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; padding-bottom: 4px; max-height: 260px; overflow-y: auto; word-break: break-word; hyphens: auto; }
 .goal-desc::-webkit-scrollbar { width: 4px; }
 .goal-desc::-webkit-scrollbar-thumb { background: var(--bg-segment); border-radius: 4px; }
 
-.btn-complete { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border-color); background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; cursor: pointer; pointer-events: auto; }
+/* ИСПРАВЛЕНО: Жирный оранжевый контур для пустой кнопки */
+.btn-complete { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--accent); background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; cursor: pointer; pointer-events: auto; }
 .btn-complete.disabled { opacity: 0.2; cursor: not-allowed; }
 .btn-complete.done { background: var(--accent); border-color: var(--accent); transform: scale(1.05); }
 .btn-complete svg { width: 20px; height: 20px; stroke: #fff; stroke-width: 3; fill: none; opacity: 0; transform: scale(0.5); transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -184,7 +187,7 @@ body::before {
 /* =========================================
    НИЖНИЙ БАР
 ========================================= */
-.tab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-evenly; padding: 10px 0; border-radius: 35px; border: 1px solid var(--border-color); z-index: 100; box-shadow: var(--shadow-main); }
+.tab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-evenly; padding: 10px 0; border-radius: 35px; border: 1px solid var(--border-color); z-index: 100; box-shadow: var(--shadow-main); transition: background-color 0.3s; }
 .tab-item { text-align: center; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; height: 100%; }
 .tab-item:active { transform: scale(0.9); }
 .tab-icon { width: 28px; height: 28px; stroke-width: 1.8; fill: none; transition: all 0.3s ease; stroke: var(--icon-color); }
@@ -208,28 +211,27 @@ body::before {
 .glass-overlay-centered { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-glass-overlay); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; display: flex; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; transition: background-color 0.3s; }
 
 /* =========================================
-   СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ
+   СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ (ИСПРАВЛЕНЫ ГРАНИЦЫ)
 ========================================= */
 .action-buttons-container { display: flex; gap: 24px; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 
-.glass-btn-circle { width: 72px; height: 72px; border-radius: 50%; background: var(--bg-glass-btn); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border-color); display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: var(--shadow-main); padding: 0; }
+.glass-btn-circle { width: 72px; height: 72px; border-radius: 50%; background: var(--bg-glass-btn); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 2px solid var(--border-color); display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: var(--shadow-main); padding: 0; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .glass-btn-circle:active { transform: scale(0.9); background: var(--bg-glass-btn-hover); }
 .glass-btn-circle svg { width: 30px; height: 30px; stroke: var(--icon-color); stroke-width: 2; fill: none; }
 
-.glass-btn-circle.edit { border-color: rgba(255, 140, 0, 0.4); }
+.glass-btn-circle.edit { border-color: var(--accent); }
 .glass-btn-circle.edit svg { stroke: var(--accent); }
-.glass-btn-circle.danger { border-color: rgba(255, 59, 48, 0.4); }
+.glass-btn-circle.danger { border-color: #ff3b30; }
 .glass-btn-circle.danger svg { stroke: #ff3b30; }
-.glass-btn-circle.success { border-color: rgba(52, 199, 89, 0.4); }
+.glass-btn-circle.success { border-color: #34C759; }
 .glass-btn-circle.success svg { stroke: #34C759; }
-.glass-btn-circle.cancel { border-color: var(--border-color); }
 
 @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
 
 /* =========================================
    ПАНЕЛЬ СОЗДАНИЯ ЦЕЛИ И ИНПУТЫ
 ========================================= */
-.create-panel { position: fixed; bottom: 105px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 28px; padding: 25px 20px 15px 20px; box-sizing: border-box; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); animation: slidePanelUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 90; display: flex; flex-direction: column; max-height: calc(100vh - 140px); overflow-y: auto; }
+.create-panel { position: fixed; bottom: 105px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 28px; padding: 25px 20px 15px 20px; box-sizing: border-box; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); animation: slidePanelUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 90; display: flex; flex-direction: column; max-height: calc(100vh - 140px); overflow-y: auto; transition: background-color 0.3s; }
 .panel-step { animation: fadeIn 0.3s ease; display: flex; flex-direction: column; }
 @keyframes slidePanelUp { from { transform: translateY(120%) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
@@ -237,7 +239,7 @@ body::before {
 .mode-btn { flex: 1; text-align: center; padding: 10px 0; border-radius: 12px; font-weight: bold; font-size: 14px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
 .mode-btn.active { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
 
-.dark-input { background: var(--bg-input) !important; border: 1px solid var(--border-input) !important; color: var(--text-main) !important; border-radius: 12px; padding: 14px; margin-bottom: 15px; width: 100%; box-sizing: border-box; font-size: 16px; outline: none; }
+.dark-input { background: var(--bg-input) !important; border: 1px solid var(--border-input) !important; color: var(--text-main) !important; transition: all 0.3s ease; border-radius: 12px; padding: 14px; margin-bottom: 15px; width: 100%; box-sizing: border-box; font-size: 16px; outline: none; }
 .dark-input::placeholder { color: var(--text-muted); }
 .dark-input:focus { background: var(--bg-segment) !important; border-color: var(--accent) !important; }
 
@@ -282,7 +284,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 /* =========================================
    ТАЙМЕР ФОКУСА И СТАТИСТИКА
 ========================================= */
-.timer-panel { display: flex; flex-direction: column; align-items: center; background: var(--bg-card); border-radius: 28px; padding: 30px; width: 100%; max-width: 320px; margin: 20px auto; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); box-sizing: border-box; }
+.timer-panel { display: flex; flex-direction: column; align-items: center; background: var(--bg-card); border-radius: 28px; padding: 30px; width: 100%; max-width: 320px; margin: 20px auto; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); box-sizing: border-box; transition: background-color 0.3s; }
 .timer-display { font-size: 64px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; margin: 10px 0 30px 0; }
 .timer-controls { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; }
 .btn-timer-main { width: 72px; height: 72px; border-radius: 50%; border: none; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-main); transition: transform 0.2s; }
@@ -294,7 +296,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 .stats-wrapper { width: 100%; max-width: 360px; margin: 0 auto; display: flex; flex-direction: column; animation: fadeIn 0.4s ease; }
 .stats-row-cards { display: flex; gap: 12px; margin-bottom: 12px; width: 100%; }
-.stat-card { flex: 1; background: var(--bg-card); border-radius: 24px; padding: 20px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); }
+.stat-card { flex: 1; background: var(--bg-card); border-radius: 24px; padding: 20px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); transition: background-color 0.3s; }
 .stat-value { font-size: 32px; font-weight: 800; color: var(--accent); }
 .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 5px; font-weight: 500; }
 

@@ -1,3 +1,10 @@
+// PRE-BOOT THEME SYNC TO PREVENT FLICKERING (Защита от мерцания фона на старте)
+try {
+    if (localStorage.getItem('motivateMe_theme') === 'light') {
+        document.body.classList.add('light-theme');
+    }
+} catch(e) {}
+
 const { useState, useEffect, useRef, useMemo } = React;
 
 const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
@@ -217,26 +224,18 @@ function App() {
     const resetTimer = () => { setIsTimerRunning(false); setTimeLeft(25 * 60); triggerHaptic('light'); };
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
-    // ИСПРАВЛЕННЫЙ БАГ #3: Захват значения счетчика перед обнулением
+    // ИСПРАВЛЕННОЕ БЫСТРОЕ ПЕРЕЛИСТЫВАНИЕ ДАТ
     const animateToDate = (daysShift) => {
         targetShiftRef.current += daysShift;
         setExpandedGoalId(null); setIsTransitioning(true);
         setOffsetPx(targetShiftRef.current > 0 ? -window.innerWidth : window.innerWidth);
         triggerHaptic('light');
-        
         if (transitionTimer.current) clearTimeout(transitionTimer.current);
-        
         transitionTimer.current = setTimeout(() => {
-            setIsTransitioning(false); 
-            setOffsetPx(0);
-            
-            // Запоминаем сдвиг ДО сброса
-            const shiftToApply = targetShiftRef.current;
-            targetShiftRef.current = 0; 
-            transitionTimer.current = null;
-            
-            setCurrentDate(prev => getOffsetDate(prev, shiftToApply));
-        }, 200); 
+            setIsTransitioning(false); setOffsetPx(0);
+            setCurrentDate(prev => getOffsetDate(prev, targetShiftRef.current));
+            targetShiftRef.current = 0; transitionTimer.current = null;
+        }, 180); 
     };
 
     const onSwipeStart = (e) => {
@@ -244,8 +243,8 @@ function App() {
             clearTimeout(transitionTimer.current); 
             transitionTimer.current = null; 
             const shiftToApply = targetShiftRef.current;
-            setCurrentDate(prev => getOffsetDate(prev, shiftToApply)); 
             targetShiftRef.current = 0; 
+            setCurrentDate(prev => getOffsetDate(prev, shiftToApply)); 
             setOffsetPx(0); 
             setIsTransitioning(false); 
         }
@@ -261,8 +260,9 @@ function App() {
     const onSwipeEnd = () => {
         if (!isDragging.current || isSwipeValid.current !== true) { isDragging.current = false; return; }
         isDragging.current = false;
-        const swipeDuration = Date.now() - touchStartTime.current; const velocity = offsetPx / swipeDuration; const threshold = window.innerWidth * 0.25; 
-        if (offsetPx > threshold || velocity > 0.6) animateToDate(-1); else if (offsetPx < -threshold || velocity < -0.6) animateToDate(1); 
+        const swipeDuration = Date.now() - touchStartTime.current; const velocity = offsetPx / swipeDuration; 
+        const threshold = window.innerWidth * 0.2; // Снизили порог для легкого свайпа
+        if (offsetPx > threshold || velocity > 0.4) animateToDate(-1); else if (offsetPx < -threshold || velocity < -0.4) animateToDate(1); 
         else { setIsTransitioning(true); setOffsetPx(0); setTimeout(() => setIsTransitioning(false), 200); }
     };
 
@@ -414,7 +414,7 @@ function App() {
         }));
     };
 
-    const transitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
+    const transitionStyle = (isTransitioning && !isDragging.current) ? 'transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
 
     return (
         <React.Fragment>
@@ -667,7 +667,6 @@ function App() {
                                         <div className="setting-row"><span>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} /><span className="slider"></span></label></div>
                                     </div>
                                 )}
-                                {/* ВОЗВРАЩЕННЫЙ КОЛОКОЛЬЧИК И ШАГ УВЕДОМЛЕНИЙ */}
                                 {createStep === 'notifs' && (
                                     <div className="panel-step">
                                         <div className="setting-row"><span style={{fontWeight: 'bold'}}>Уведомления</span><label className="ios-switch"><input type="checkbox" checked={form.notifications !== false} onChange={e => setForm({...form, notifications: e.target.checked})} /><span className="slider"></span></label></div>
@@ -682,9 +681,11 @@ function App() {
                 <div className="tab-bar">
                     {!isModalOpen ? (
                         <React.Fragment>
-                            <div onClick={() => setActiveTab('home')} className="tab-item"><Icons.Goals active={activeTab === 'home'} /></div><div onClick={() => setActiveTab('progress')} className="tab-item"><Icons.Focus active={activeTab === 'progress'} /></div>
+                            <div onClick={() => setActiveTab('home')} className="tab-item"><Icons.Goals active={activeTab === 'home'} /></div>
+                            <div onClick={() => setActiveTab('progress')} className="tab-item"><Icons.Focus active={activeTab === 'progress'} /></div>
                             <div className="tab-add-wrapper" onClick={openCreateModal}><div className="tab-add-btn-outline"><Icons.Add /></div></div>
-                            <div onClick={() => setActiveTab('social')} className="tab-item"><Icons.Stats active={activeTab === 'social'} /></div><div onClick={() => setActiveTab('settings')} className="tab-item"><Icons.Settings active={activeTab === 'settings'} /></div>
+                            <div onClick={() => setActiveTab('social')} className="tab-item"><Icons.Stats active={activeTab === 'social'} /></div>
+                            <div onClick={() => setActiveTab('settings')} className="tab-item"><Icons.Settings active={activeTab === 'settings'} /></div>
                         </React.Fragment>
                     ) : (
                         <React.Fragment>

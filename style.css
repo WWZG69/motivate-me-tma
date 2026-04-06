@@ -1,8 +1,9 @@
 /* =========================================
-   CSS ПЕРЕМЕННЫЕ (ТЕМЫ ПОВЕРХ АНИМИРОВАННОГО ФОНА)
+   CSS ПЕРЕМЕННЫЕ ДЛЯ ТЕМ И ГРАДИЕНТА
 ========================================= */
 :root {
-    /* ТЕМНАЯ ТЕМА */
+    /* ТЕМНАЯ ТЕМА (ПО УМОЛЧАНИЮ) */
+    --bg-base: #000000;
     --bg-card: #141414;
     --text-main: #ffffff;
     --text-muted: rgba(255, 255, 255, 0.45);
@@ -17,15 +18,22 @@
     --border-input: rgba(255, 255, 255, 0.06);
     --bg-segment: rgba(255, 255, 255, 0.1);
     --icon-color: #ffffff;
+    
+    /* Цвета анимированного фона (Лава) */
+    --grad-center: #000000;
+    --grad-mid1: #ff2a00;
+    --grad-mid2: #ff5e00;
+    --grad-edge: rgba(255, 140, 0, 0);
 }
 
 .light-theme {
-    /* СВЕТЛАЯ ТЕМА (Белое матовое стекло поверх огня) */
+    /* СВЕТЛАЯ ТЕМА */
+    --bg-base: #F2F2F7;
     --bg-card: rgba(255, 255, 255, 0.95); 
     --text-main: #000000;
     --text-muted: rgba(0, 0, 0, 0.5);
     --border-color: rgba(255, 255, 255, 0.5);
-    --shadow-main: 0 8px 24px rgba(0, 0, 0, 0.2);
+    --shadow-main: 0 8px 24px rgba(0, 0, 0, 0.15);
     --accent: #FF8C00;
     
     --bg-nav: rgba(255, 255, 255, 0.85);
@@ -35,9 +43,15 @@
     --border-input: rgba(0, 0, 0, 0.1);
     --bg-segment: rgba(0, 0, 0, 0.1);
     --icon-color: #000000;
+    
+    /* Цвета анимированного фона (Светлая капля) */
+    --grad-center: #F2F2F7;
+    --grad-mid1: rgba(255, 140, 0, 0.4);
+    --grad-mid2: rgba(255, 100, 0, 0.15);
+    --grad-edge: rgba(255, 140, 0, 0);
 }
 
-/* ПЛАВНЫЙ ПЕРЕХОД ДЛЯ ВСЕХ ЭЛЕМЕНТОВ ПРИ СМЕНЕ ТЕМЫ */
+/* ПЛАВНЫЙ ПЕРЕХОД */
 .card, .vision-card, .timer-panel, .stat-card, .create-panel, .tab-bar, .dark-input {
     transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease;
 }
@@ -47,7 +61,7 @@
 ========================================= */
 body { 
     margin: 0; padding: 0; 
-    background-color: #000; /* Фон всегда черный, меняются только карточки! */
+    background-color: var(--bg-base); 
     font-family: -apple-system, system-ui, sans-serif; 
     color: var(--text-main); 
     -webkit-tap-highlight-color: transparent; 
@@ -64,10 +78,10 @@ input, textarea, select {
 
 body::before {
     content: ''; position: fixed; top: -110vmax; left: -130vmax; width: 240vmax; height: 240vmax; 
-    /* ВОЗВРАЩЕННАЯ ДИНАМИЧЕСКАЯ КАПЛЯ И ОРАНЖЕВЫЙ НЕОН */
-    background: radial-gradient(circle at center, #000000 35%, #ff2a00 52%, #ff5e00 62%, rgba(255, 140, 0, 0) 75%);
+    background: radial-gradient(circle at center, var(--grad-center) 35%, var(--grad-mid1) 52%, var(--grad-mid2) 62%, var(--grad-edge) 75%);
     z-index: -1; will-change: transform; 
     animation: liquidGpuWobble 20s linear infinite; 
+    transition: background 0.5s ease; /* Плавная смена градиента под волной */
 }
 
 @keyframes liquidGpuWobble { 0% { transform: translate(0, 0) scale(1, 0.85) rotate(0deg); } 33% { transform: translate(4vw, 5vh) scale(0.95, 1.1) rotate(120deg); } 66% { transform: translate(-3vw, 8vh) scale(1.05, 0.9) rotate(240deg); } 100% { transform: translate(0, 0) scale(1, 0.85) rotate(360deg); } }
@@ -133,7 +147,7 @@ body::before {
 ========================================= */
 .swipe-area { width: 100vw; flex: 1; display: flex; flex-direction: column; overflow-x: hidden; position: relative; touch-action: pan-y; }
 .date-nav-container { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; padding: 0 20px; display: flex; justify-content: space-between; box-sizing: border-box; z-index: 10; pointer-events: none; }
-.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-main); pointer-events: auto; }
+.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s; box-shadow: var(--shadow-main); pointer-events: auto; }
 .date-nav-btn:active { transform: scale(0.85); background: var(--bg-input); }
 .date-nav-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 3; fill: none; }
 .cards-track { display: flex; width: 300vw; will-change: transform; align-items: flex-start; }
@@ -170,37 +184,35 @@ body::before {
 /* =========================================
    НИЖНИЙ БАР (СТЕКЛО)
 ========================================= */
-.tab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-evenly; padding: 10px 0; border-radius: 35px; border: 1px solid var(--border-color); z-index: 100; box-shadow: var(--shadow-main); }
+.tab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-evenly; padding: 10px 0; border-radius: 35px; border: 1px solid var(--border-color); z-index: 100; box-shadow: var(--shadow-main); transition: background-color 0.3s; }
 .tab-item { text-align: center; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; height: 100%; }
 .tab-item:active { transform: scale(0.9); }
 .tab-icon { width: 28px; height: 28px; stroke-width: 1.8; fill: none; transition: all 0.3s ease; stroke: var(--icon-color); }
 .tab-add-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; }
-
-/* КНОПКА ДОБАВИТЬ В БАРЕ */
 .tab-add-btn-outline { width: 48px; height: 48px; border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.3s, border-color 0.3s; cursor: pointer; background: transparent; }
 .tab-add-btn-outline:active { transform: scale(0.9); }
 .tab-add-btn-outline svg { stroke: var(--accent); width: 26px; height: 26px; stroke-width: 2.5; transition: stroke 0.3s; }
+.tab-add-btn-outline[style*="444"] svg { stroke: var(--icon-color); }
 .tab-item-save { flex: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
 .tab-item-save svg { background: var(--accent); border-radius: 50%; padding: 8px; width: 26px; height: 26px; stroke: #fff; stroke-width: 3; transition: transform 0.2s; fill: none; }
 .tab-item-save:active svg { transform: scale(0.9); }
 .bottom-touch-shield { position: fixed; bottom: 0; left: 0; right: 0; height: 100px; z-index: 95; background: transparent; touch-action: none; }
 
-/* Активные иконки в баре */
 .tab-item [stroke="#FF8C00"], .tab-item [stroke="var(--accent)"] { stroke: var(--accent) !important; }
 .tab-item [fill="#FF8C00"], .tab-item [fill="var(--accent)"] { fill: var(--accent) !important; }
 
 /* =========================================
-   РАЗМЫТЫЙ ФОН ДЛЯ ОКОН И МЕНЮ
+   РАЗМЫТЫЙ ФОН ДЛЯ ОКОН
 ========================================= */
 .glass-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 80; animation: fadeIn 0.3s ease; }
-.glass-overlay-centered { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-glass-overlay); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; display: flex; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
+.glass-overlay-centered { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-glass-overlay); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; display: flex; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; transition: background-color 0.3s; }
 
 /* =========================================
    СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ
 ========================================= */
 .action-buttons-container { display: flex; gap: 24px; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 
-.glass-btn-circle { width: 72px; height: 72px; border-radius: 50%; background: var(--bg-glass-btn); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border-color); display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: var(--shadow-main); padding: 0; }
+.glass-btn-circle { width: 72px; height: 72px; border-radius: 50%; background: var(--bg-glass-btn); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border-color); display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: var(--shadow-main); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); padding: 0; }
 .glass-btn-circle:active { transform: scale(0.9); background: var(--bg-glass-btn-hover); }
 .glass-btn-circle svg { width: 30px; height: 30px; stroke: var(--icon-color); stroke-width: 2; fill: none; }
 
@@ -217,7 +229,7 @@ body::before {
 /* =========================================
    ПАНЕЛЬ СОЗДАНИЯ ЦЕЛИ И ИНПУТЫ
 ========================================= */
-.create-panel { position: fixed; bottom: 105px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 28px; padding: 25px 20px 15px 20px; box-sizing: border-box; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); animation: slidePanelUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 90; display: flex; flex-direction: column; max-height: calc(100vh - 140px); overflow-y: auto; }
+.create-panel { position: fixed; bottom: 105px; left: 20px; right: 20px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 28px; padding: 25px 20px 15px 20px; box-sizing: border-box; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); animation: slidePanelUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 90; display: flex; flex-direction: column; max-height: calc(100vh - 140px); overflow-y: auto; transition: background-color 0.3s; }
 .panel-step { animation: fadeIn 0.3s ease; display: flex; flex-direction: column; }
 @keyframes slidePanelUp { from { transform: translateY(120%) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
@@ -225,7 +237,7 @@ body::before {
 .mode-btn { flex: 1; text-align: center; padding: 10px 0; border-radius: 12px; font-weight: bold; font-size: 14px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
 .mode-btn.active { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
 
-.dark-input { background: var(--bg-input) !important; border: 1px solid var(--border-input) !important; color: var(--text-main) !important; border-radius: 12px; padding: 14px; margin-bottom: 15px; width: 100%; box-sizing: border-box; font-size: 16px; outline: none; }
+.dark-input { background: var(--bg-input) !important; border: 1px solid var(--border-input) !important; color: var(--text-main) !important; transition: all 0.3s ease; border-radius: 12px; padding: 14px; margin-bottom: 15px; width: 100%; box-sizing: border-box; font-size: 16px; outline: none; }
 .dark-input::placeholder { color: var(--text-muted); }
 .dark-input:focus { background: var(--bg-segment) !important; border-color: var(--accent) !important; }
 
@@ -270,7 +282,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 /* =========================================
    ТАЙМЕР ФОКУСА И СТАТИСТИКА
 ========================================= */
-.timer-panel { display: flex; flex-direction: column; align-items: center; background: var(--bg-card); border-radius: 28px; padding: 30px; width: 100%; max-width: 320px; margin: 20px auto; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); box-sizing: border-box; }
+.timer-panel { display: flex; flex-direction: column; align-items: center; background: var(--bg-card); border-radius: 28px; padding: 30px; width: 100%; max-width: 320px; margin: 20px auto; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); box-sizing: border-box; transition: background-color 0.3s; }
 .timer-display { font-size: 64px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; margin: 10px 0 30px 0; }
 .timer-controls { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; }
 .btn-timer-main { width: 72px; height: 72px; border-radius: 50%; border: none; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-main); transition: transform 0.2s; }
@@ -282,7 +294,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 .stats-wrapper { width: 100%; max-width: 360px; margin: 0 auto; display: flex; flex-direction: column; animation: fadeIn 0.4s ease; }
 .stats-row-cards { display: flex; gap: 12px; margin-bottom: 12px; width: 100%; }
-.stat-card { flex: 1; background: var(--bg-card); border-radius: 24px; padding: 20px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); }
+.stat-card { flex: 1; background: var(--bg-card); border-radius: 24px; padding: 20px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); transition: background-color 0.3s; }
 .stat-value { font-size: 32px; font-weight: 800; color: var(--accent); }
 .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 5px; font-weight: 500; }
 
@@ -309,7 +321,7 @@ select.custom-select { appearance: none; background-image: url("data:image/svg+x
 select.custom-select.dark-input option { color: #000; }
 
 /* =========================================
-   ИДЕАЛЬНАЯ КНОПКА И АНИМАЦИЯ RIPPLE (СМЕНА ТЕМЫ)
+   ИДЕАЛЬНАЯ КНОПКА ТЕМЫ И 2-СЕКУНДНЫЙ RIPPLE
 ========================================= */
 .theme-toggle-btn {
     width: 48px; height: 48px; border-radius: 50%;
@@ -325,11 +337,14 @@ select.custom-select.dark-input option { color: #000; }
     position: fixed; width: 10px; height: 10px; border-radius: 50%;
     pointer-events: none; z-index: 999999;
     transform: translate(-50%, -50%) scale(1);
-    animation: rippleExpand 0.35s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    /* Замедлили анимацию расширения до 2 секунд! */
+    animation: rippleExpand 2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 .theme-ripple-effect.fade-out {
-    opacity: 0; transition: opacity 0.3s ease;
+    opacity: 0; 
+    /* Плавное растворение за полсекунды */
+    transition: opacity 0.5s ease;
 }
 @keyframes rippleExpand {
-    to { transform: translate(-50%, -50%) scale(300); }
+    to { transform: translate(-50%, -50%) scale(400); }
 }

@@ -126,42 +126,51 @@ function App() {
         if (daysInMonth && startDay && !daysInMonth.includes(startDay)) setStartDay('01');
     }, [daysInMonth, startDay]);
 
-    // Управление классом темы на body
     useEffect(() => {
         if (isLightTheme) document.body.classList.add('light-theme');
         else document.body.classList.remove('light-theme');
         localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
     }, [isLightTheme]);
 
-    // 2-СЕКУНДНЫЙ КИНЕМАТОГРАФИЧНЫЙ RIPPLE ЭФФЕКТ
+    // ИДЕАЛЬНАЯ АНИМАЦИЯ: РАСШИРЕНИЕ ДЛЯ СВЕТЛОЙ / СУЖЕНИЕ ДЛЯ ТЕМНОЙ
     const toggleTheme = (e) => {
         const x = e.clientX;
         const y = e.clientY;
-        const targetColor = isLightTheme ? '#000000' : '#F2F2F7'; // Цвет фона новой темы
+        const goingToLight = !isLightTheme;
         
         const ripple = document.createElement('div');
         ripple.className = 'theme-ripple-effect';
         ripple.style.left = `${x}px`;
         ripple.style.top = `${y}px`;
-        ripple.style.backgroundColor = targetColor;
-        document.body.appendChild(ripple);
+        
+        // Волна ВСЕГДА светлого цвета (цвета светлой подложки)
+        ripple.style.backgroundColor = '#F2F2F7'; 
         
         triggerHaptic('medium');
 
-        // На 1-й секунде (когда круг огромный) меняем саму тему элементов под ним
-        setTimeout(() => {
-            setIsLightTheme(!isLightTheme);
-        }, 1000); 
+        if (goingToLight) {
+            // Темная -> Светлая (Волна расширяется от кнопки)
+            ripple.style.animation = 'rippleExpand 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards';
+            document.body.appendChild(ripple);
+            
+            // Ровно в момент когда волна закрыла экран (0.9с), меняем тему и растворяем волну
+            setTimeout(() => {
+                setIsLightTheme(true);
+                ripple.classList.add('fade-out');
+            }, 900);
 
-        // На 2-й секунде начинаем плавно растворять волну
-        setTimeout(() => {
-            ripple.classList.add('fade-out');
-        }, 2000);
-
-        // На 2.5 секунде удаляем из DOM
-        setTimeout(() => {
-            ripple.remove();
-        }, 2500);
+            setTimeout(() => ripple.remove(), 1200);
+        } else {
+            // Светлая -> Темная (Волна "всасывается" в кнопку)
+            // Моментально делаем интерфейс темным под волной
+            setIsLightTheme(false);
+            
+            // Волна начинает огромной и сжимается до нуля
+            ripple.style.animation = 'rippleCollapse 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards';
+            document.body.appendChild(ripple);
+            
+            setTimeout(() => ripple.remove(), 900);
+        }
     };
 
     const triggerHaptic = (type) => {

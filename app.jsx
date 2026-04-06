@@ -22,11 +22,13 @@ const Icons = {
     Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>,
     Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4z"/></svg>,
     Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+    Play: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+    Pause: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
+    Refresh: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>,
     Pencil: () => <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
     Trash: () => <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
     Check: () => <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
     Close: () => <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
-    Alert: () => <svg viewBox="0 0 24 24" fill="none" stroke="#ff3b30" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
     Text: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round"/><line x1="4" y1="12" x2="20" y2="12" strokeLinecap="round"/><line x1="4" y1="18" x2="14" y2="18" strokeLinecap="round"/></svg>,
     Clock: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -64,6 +66,7 @@ function App() {
     const [offsetPx, setOffsetPx] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     
+    // Инициализация темы
     const [isLightTheme, setIsLightTheme] = useState(() => localStorage.getItem('motivateMe_theme') === 'light');
     
     const touchStartX = useRef(0);
@@ -120,28 +123,39 @@ function App() {
     }, [startMonth]);
 
     useEffect(() => {
+        if (daysInMonth && startDay && !daysInMonth.includes(startDay)) setStartDay('01');
+    }, [daysInMonth, startDay]);
+
+    // Управление классом темы на body
+    useEffect(() => {
         if (isLightTheme) document.body.classList.add('light-theme');
         else document.body.classList.remove('light-theme');
         localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
     }, [isLightTheme]);
 
+    // ИДЕАЛЬНЫЙ RIPPLE ЭФФЕКТ
     const toggleTheme = (e) => {
         const x = e.clientX;
         const y = e.clientY;
+        const targetColor = isLightTheme ? '#000000' : '#FFFFFF'; 
         
-        // Создаем элемент круга для анимации Ripple
         const ripple = document.createElement('div');
-        ripple.className = 'theme-ripple';
+        ripple.className = 'theme-ripple-effect';
         ripple.style.left = `${x}px`;
         ripple.style.top = `${y}px`;
+        ripple.style.backgroundColor = targetColor;
         document.body.appendChild(ripple);
         
         triggerHaptic('medium');
 
         setTimeout(() => {
             setIsLightTheme(!isLightTheme);
-            setTimeout(() => ripple.remove(), 600);
-        }, 50);
+            ripple.classList.add('fade-out');
+        }, 300); // Меняем тему, когда волна накрыла экран
+
+        setTimeout(() => {
+            ripple.remove();
+        }, 600);
     };
 
     const triggerHaptic = (type) => {
@@ -309,7 +323,7 @@ function App() {
             const diffMs = limit - now;
             if (diffMs <= 0) return { text: "00:00:00", className: 'badge failed-timer', style: {} };
             const hours = Math.floor(diffMs / (1000 * 60 * 60)); const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)); const secs = Math.floor((diffMs % (1000 * 60)) / 1000);
-            return { text: `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`, className: `badge ${!isDone && diffMs < 3600000 ? 'urgent-timer' : ''}`, style: {} };
+            return { text: `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`, className: `badge ${!isDone && diffMs < 3600000 ? 'urgent-timer' : ''}`, style: {} };
         } catch(e) { return { text: "00:00", className: 'badge failed-timer', style: {} }; }
     };
 
@@ -477,10 +491,14 @@ function App() {
                 {activeTab === 'progress' && (
                     <div className="timer-panel">
                         <h3 style={{ textAlign: 'center', margin: '0 0 20px 0', fontSize: '20px' }}>Фокус</h3>
-                        <div className="timer-display">{Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}</div>
+                        <div className="timer-display">
+                            {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
+                        </div>
                         <div className="timer-controls">
                             <button className="btn-timer-reset" onClick={resetTimer}><Icons.Refresh /></button>
-                            <button className="btn-timer-main" onClick={() => { setIsTimerRunning(!isTimerRunning); triggerHaptic('light'); }}>{isTimerRunning ? <Icons.Pause /> : <Icons.Play />}</button>
+                            <button className="btn-timer-main" onClick={() => { setIsTimerRunning(!isTimerRunning); triggerHaptic('light'); }}>
+                                {isTimerRunning ? <Icons.Pause /> : <Icons.Play />}
+                            </button>
                             <div style={{ width: '48px' }}></div> 
                         </div>
                     </div>
@@ -516,13 +534,16 @@ function App() {
                     <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto' }}>
                         <h3 style={{ textAlign: 'center', margin: '0 0 20px 0' }}>Настройки</h3>
                         <div className="setting-row" style={{marginBottom: '20px'}}>
-                            <span style={{fontWeight: 'bold'}}>Тема оформления</span>
+                            <span style={{fontWeight: 'bold', fontSize: '16px'}}>Тема оформления</span>
                             <button className="theme-toggle-btn" onClick={toggleTheme}>
                                 {isLightTheme ? <Icons.Moon /> : <Icons.Sun />}
                             </button>
                         </div>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>Тон поддержки:</label>
-                        <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)}><option value="soft">Мягкий</option><option value="hard">Жесткий</option></select>
+                        <hr className="divider" />
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', margin: '15px 0 8px 0' }}>Тон поддержки бота:</label>
+                        <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)} style={{marginBottom: 0}}>
+                            <option value="soft">Мягкий</option><option value="hard">Жесткий</option>
+                        </select>
                     </div>
                 )}
 
@@ -574,7 +595,7 @@ function App() {
                         {createMode === 'macro' ? (
                             <div className="panel-step">
                                 <div style={{ display: 'flex', gap: '10px' }}>
-                                    <input type="text" maxLength="2" value={visionForm.emoji} onChange={e => setVisionForm({...visionForm, emoji: e.target.value})} className="dark-input" style={{ width: '60px', textAlign: 'center' }} />
+                                    <input type="text" maxLength="2" value={visionForm.emoji} onChange={e => setVisionForm({...visionForm, emoji: e.target.value})} className="dark-input" style={{ width: '60px', textAlign: 'center', fontSize: '20px', padding: '14px 0' }} />
                                     <input placeholder="Глобальная цель" value={visionForm.title} onChange={e => setVisionForm({...visionForm, title: e.target.value})} className="dark-input" style={{ flex: 1 }} />
                                 </div>
                                 <textarea placeholder="Почему для тебя это важно?" value={visionForm.description} onChange={e => setVisionForm({...visionForm, description: e.target.value})} className="dark-input custom-scrollbar" style={{ minHeight: '80px', resize: 'none' }} />
@@ -631,11 +652,6 @@ function App() {
                                         <div className="setting-row"><span>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} /><span className="slider"></span></label></div>
                                     </div>
                                 )}
-                                {createStep === 'notifs' && (
-                                    <div className="panel-step">
-                                        <div className="setting-row"><span style={{fontWeight: 'bold'}}>Уведомления</span><label className="ios-switch"><input type="checkbox" checked={form.notifications !== false} onChange={e => setForm({...form, notifications: e.target.checked})} /><span className="slider"></span></label></div>
-                                    </div>
-                                )}
                             </React.Fragment>
                         )}
                     </div>
@@ -654,14 +670,14 @@ function App() {
                             {createMode === 'micro' ? (
                                 <React.Fragment>
                                     <div onClick={() => setCreateStep('text')} className="tab-item"><Icons.Text active={createStep === 'text'} /></div><div onClick={() => setCreateStep('time')} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
-                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: '#444', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
-                                    <div onClick={() => setCreateStep('notifs')} className="tab-item"><Icons.Bell active={createStep === 'notifs'} /></div>
+                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: 'var(--text-muted)', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
+                                    <div style={{flex: 1}}></div>
                                     <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
                                 </React.Fragment>
                             ) : (
                                 <React.Fragment>
                                     <div style={{flex: 1}}></div>
-                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: '#444', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
+                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: 'var(--text-muted)', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
                                     <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
                                     <div style={{flex: 1}}></div>
                                 </React.Fragment>

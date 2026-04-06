@@ -2,7 +2,6 @@ const { useState, useEffect, useRef, useMemo } = React;
 
 const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 const typeInfo = { once: { title: "Разовая", desc: "Сделать один раз." }, habit: { title: "Привычка", desc: "Регулярная задача." }, sprint: { title: "Спринт", desc: "Держись без срывов." } };
-const toneInfo = { soft: { title: "Мягкий", desc: "Позитивная поддержка." }, hard: { title: "Жесткий", desc: "Суровая дисциплина." } };
 
 const weekDaysArr = [
     { val: 1, label: 'Пн' }, { val: 2, label: 'Вт' }, { val: 3, label: 'Ср' },
@@ -10,30 +9,27 @@ const weekDaysArr = [
 ];
 
 const Icons = {
-    Goals: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><circle cx="12" cy="12" r="9" /><line x1="12" y1="2" x2="12" y2="5" strokeLinecap="round"/><line x1="12" y1="19" x2="12" y2="22" strokeLinecap="round"/><line x1="2" y1="12" x2="5" y2="12" strokeLinecap="round"/><line x1="19" y1="12" x2="22" y2="12" strokeLinecap="round"/><circle cx="12" cy="12" r="0.5" fill={props.active ? "#FF8C00" : "#fff"} /></svg> ),
-    Focus: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="3" /></svg> ),
+    Goals: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><circle cx="12" cy="12" r="9" /><line x1="12" y1="2" x2="12" y2="5" strokeLinecap="round"/><line x1="12" y1="19" x2="12" y2="22" strokeLinecap="round"/><line x1="2" y1="12" x2="5" y2="12" strokeLinecap="round"/><line x1="19" y1="12" x2="22" y2="12" strokeLinecap="round"/><circle cx="12" cy="12" r="0.5" fill={props.active ? "var(--accent)" : "var(--icon-color)"} /></svg> ),
+    Focus: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="3" /></svg> ),
     Add: (props) => ( <svg viewBox="0 0 24 24" className="tab-add-icon" {...props}><line x1="12" y1="5" x2="12" y2="19" strokeLinecap="round" /><line x1="5" y1="12" x2="19" y2="12" strokeLinecap="round" /></svg> ),
-    Stats: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><circle cx="4" cy="17" r="1.5" fill={props.active ? "#FF8C00" : "#fff"} /><circle cx="12" cy="7" r="1.5" fill={props.active ? "#FF8C00" : "#fff"} /><circle cx="20" cy="14" r="1.5" fill={props.active ? "#FF8C00" : "#fff"} /><path d="M5.5 16l5-7.5M13.5 8l5 4.5" strokeLinecap="round" /></svg> ),
-    Settings: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> ),
+    Stats: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><circle cx="4" cy="17" r="1.5" fill={props.active ? "var(--accent)" : "var(--icon-color)"} /><circle cx="12" cy="7" r="1.5" fill={props.active ? "var(--accent)" : "var(--icon-color)"} /><circle cx="20" cy="14" r="1.5" fill={props.active ? "var(--accent)" : "var(--icon-color)"} /><path d="M5.5 16l5-7.5M13.5 8l5 4.5" strokeLinecap="round" /></svg> ),
+    Settings: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> ),
     ChevronLeft: () => <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>,
     ChevronRight: () => <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>,
-    Text: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round"/><line x1="4" y1="12" x2="20" y2="12" strokeLinecap="round"/><line x1="4" y1="18" x2="14" y2="18" strokeLinecap="round"/></svg>,
-    Clock: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-    Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "#FF8C00" : "#fff"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-    Save: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke="#fff" {...props}><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-    Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>,
-    Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4z"/></svg>,
-    Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
-    Soft: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>,
-    Hard: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "#FF8C00" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>,
-    Play: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
-    Pause: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
-    Refresh: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>,
+    Sun: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+    Moon: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
+    Save: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke="#000" {...props}><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+    Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>,
+    Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4z"/></svg>,
+    Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
     Pencil: () => <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
     Trash: () => <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
     Check: () => <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
     Close: () => <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
-    Alert: () => <svg viewBox="0 0 24 24" fill="none" stroke="#ff3b30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Alert: () => <svg viewBox="0 0 24 24" fill="none" stroke="#ff3b30" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+    Text: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round"/><line x1="4" y1="12" x2="20" y2="12" strokeLinecap="round"/><line x1="4" y1="18" x2="14" y2="18" strokeLinecap="round"/></svg>,
+    Clock: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+    Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>
 };
 
 const TimeWheel = ({ items, value, onChange, width }) => {
@@ -68,13 +64,15 @@ function App() {
     const [offsetPx, setOffsetPx] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     
+    const [isLightTheme, setIsLightTheme] = useState(() => localStorage.getItem('motivateMe_theme') === 'light');
+    
     const touchStartX = useRef(0);
     const touchStartY = useRef(0);
     const touchStartTime = useRef(0); 
     const isDragging = useRef(false);
     const isSwipeValid = useRef(null); 
     const transitionTimer = useRef(null);
-    const targetShiftRef = useRef(0); // НАКОПИТЕЛЬ КЛИКОВ ПО ДАТЕ
+    const targetShiftRef = useRef(0);
     
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -84,13 +82,11 @@ function App() {
     const [shakingGoalId, setShakingGoalId] = useState(null);
     const isLongPress = useRef(false);
     const pressTimer = useRef(null);
-    
     const [activeVisionId, setActiveVisionId] = useState(null);
     
     const [goals, setGoals] = useState(() => {
         try { const saved = localStorage.getItem('motivateMe_v20_goals'); return saved ? JSON.parse(saved) : []; } catch (e) { return []; }
     });
-
     const [visions, setVisions] = useState(() => {
         try { const saved = localStorage.getItem('motivateMe_v20_visions'); return saved ? JSON.parse(saved) : []; } catch (e) { return []; }
     });
@@ -102,7 +98,6 @@ function App() {
     
     const [actionMenuGoal, setActionMenuGoal] = useState(null);
     const [confirmDeleteGoalId, setConfirmDeleteGoalId] = useState(null);
-    
     const [actionMenuVision, setActionMenuVision] = useState(null);
     const [confirmDeleteVisionId, setConfirmDeleteVisionId] = useState(null);
     
@@ -117,7 +112,6 @@ function App() {
 
     const hoursList = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'));
     const minutesList = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
-
     const daysInMonth = useMemo(() => {
         const monthIdx = monthNames.indexOf(startMonth);
         const year = new Date().getFullYear();
@@ -126,8 +120,29 @@ function App() {
     }, [startMonth]);
 
     useEffect(() => {
-        if (daysInMonth && startDay && !daysInMonth.includes(startDay)) setStartDay('01');
-    }, [daysInMonth, startDay]);
+        if (isLightTheme) document.body.classList.add('light-theme');
+        else document.body.classList.remove('light-theme');
+        localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
+    }, [isLightTheme]);
+
+    const toggleTheme = (e) => {
+        const x = e.clientX;
+        const y = e.clientY;
+        
+        // Создаем элемент круга для анимации Ripple
+        const ripple = document.createElement('div');
+        ripple.className = 'theme-ripple';
+        ripple.style.left = `${x}px`;
+        ripple.style.top = `${y}px`;
+        document.body.appendChild(ripple);
+        
+        triggerHaptic('medium');
+
+        setTimeout(() => {
+            setIsLightTheme(!isLightTheme);
+            setTimeout(() => ripple.remove(), 600);
+        }, 50);
+    };
 
     const triggerHaptic = (type) => {
         try {
@@ -186,33 +201,24 @@ function App() {
     const resetTimer = () => { setIsTimerRunning(false); setTimeLeft(25 * 60); triggerHaptic('light'); };
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
-    // УМНОЕ ПЕРЕЛИСТЫВАНИЕ (Накопление быстрых кликов)
     const animateToDate = (daysShift) => {
         targetShiftRef.current += daysShift;
-        setExpandedGoalId(null);
-        setIsTransitioning(true);
+        setExpandedGoalId(null); setIsTransitioning(true);
         setOffsetPx(targetShiftRef.current > 0 ? -window.innerWidth : window.innerWidth);
         triggerHaptic('light');
-
         if (transitionTimer.current) clearTimeout(transitionTimer.current);
-
         transitionTimer.current = setTimeout(() => {
-            setIsTransitioning(false);
-            setOffsetPx(0);
+            setIsTransitioning(false); setOffsetPx(0);
             setCurrentDate(prev => getOffsetDate(prev, targetShiftRef.current));
-            targetShiftRef.current = 0;
-            transitionTimer.current = null;
+            targetShiftRef.current = 0; transitionTimer.current = null;
         }, 200); 
     };
 
     const onSwipeStart = (e) => {
         if (transitionTimer.current) { 
-            clearTimeout(transitionTimer.current); 
-            transitionTimer.current = null; 
+            clearTimeout(transitionTimer.current); transitionTimer.current = null; 
             setCurrentDate(prev => getOffsetDate(prev, targetShiftRef.current)); 
-            targetShiftRef.current = 0;
-            setOffsetPx(0); 
-            setIsTransitioning(false); 
+            targetShiftRef.current = 0; setOffsetPx(0); setIsTransitioning(false); 
         }
         touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY; touchStartTime.current = Date.now(); isDragging.current = true; isSwipeValid.current = null; 
     };
@@ -256,7 +262,6 @@ function App() {
             else { setVisions([{ ...visionForm, id: Date.now() }, ...visions]); }
             setIsModalOpen(false); triggerHaptic('success'); return;
         }
-
         if (!form.title) { triggerHaptic('error'); setCreateStep('text'); return; }
         try {
             const nowObj = new Date(); const currentYear = nowObj.getFullYear();
@@ -264,10 +269,8 @@ function App() {
             let targetYear = currentYear;
             if (selectedMonthIdx < nowObj.getMonth() || (selectedMonthIdx === nowObj.getMonth() && selectedDayNum < nowObj.getDate())) targetYear = currentYear + 1;
             const finalStartDate = new Date(targetYear, selectedMonthIdx, selectedDayNum); finalStartDate.setHours(0, 0, 0, 0);
-            
             const safeWeekDays = form.weekDays && form.weekDays.length > 0 ? form.weekDays : [0,1,2,3,4,5,6];
             const goalData = { ...form, startDate: finalStartDate.toISOString(), weekDays: safeWeekDays };
-            
             if (editingId) setGoals(goals.map(g => g.id === editingId ? { ...goalData, id: g.id, streak: g.streak || 0, history: g.history || {}, createdAt: g.createdAt } : g));
             else setGoals([{ ...goalData, id: Date.now(), streak: 0, history: {}, createdAt: new Date().toDateString() }, ...goals]);
         } catch(e) {}
@@ -300,7 +303,7 @@ function App() {
         try {
             const view = new Date(checkDate); view.setHours(0, 0, 0, 0); const today = new Date(now); today.setHours(0, 0, 0, 0);
             const safeDeadline = goal.deadline || '23:59';
-            if (view > today) return { text: `до ${safeDeadline}`, className: 'badge', style: {color: 'white'} };
+            if (view > today) return { text: `до ${safeDeadline}`, className: 'badge', style: {color: 'var(--text-main)'} };
             if (view < today) return { text: "00:00:00", className: 'badge failed-timer', style: {} };
             const [h, m] = safeDeadline.split(':'); const limit = new Date(now); limit.setHours(parseInt(h, 10)||23, parseInt(m, 10)||59, 0, 0); 
             const diffMs = limit - now;
@@ -328,21 +331,17 @@ function App() {
     const loadCount = activeGoalsToday.length;
 
     const renderDayCards = (renderDate) => {
-        const dateKey = renderDate.toDateString(); 
-        const activeGoals = getActiveGoalsForDate(renderDate);
-
+        const dateKey = renderDate.toDateString(); const activeGoals = getActiveGoalsForDate(renderDate);
         if (activeGoals.length === 0) return <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Задач на этот день нет.</p>;
-        
         return activeGoals.map(g => {
             const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; const isShaking = shakingGoalId === g.id; 
             const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
             const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
-
             return (
                 <div key={g.id} className={`card ${isShaking ? 'shake' : ''}`} onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchMove={handleCardTouchEnd} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
                     <div className="goal-info">
                         {linkedVision && (<div className="vision-badge">{linkedVision.emoji} {linkedVision.title}</div>)}
-                        <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(255,255,255,0.6)' : 'white' }}>{g.title}</div>
+                        <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'var(--text-muted)' : 'var(--text-main)' }}>{g.title}</div>
                         <div className="stats-row">
                             {g.type !== 'once' && <span className="badge">{g.streak || 0} 🔥</span>}
                             {g.type === 'habit' && <span className="badge">∞</span>}
@@ -386,7 +385,6 @@ function App() {
         }));
     };
 
-    const handleDescChange = (e) => { setForm({...form, description: e.target.value}); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'; };
     const transitionStyle = isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
 
     return (
@@ -408,7 +406,6 @@ function App() {
 
                 {activeTab === 'home' && (
                     <React.Fragment>
-                        
                         <div className="daily-load-container">
                             <div className="load-header">
                                 <span className="load-title">Нагрузка дня</span>
@@ -435,21 +432,17 @@ function App() {
                                     let totalDone = 0;
                                     linkedGoals.forEach(g => { if(g.history) totalDone += Object.keys(g.history).length; });
                                     const isActive = activeVisionId === v.id;
-
                                     return (
                                         <div key={v.id} className={`vision-card ${isActive ? 'active' : ''}`} 
                                              onTouchStart={() => handleVisionTouchStart(v)} 
-                                             onTouchMove={handleCardTouchEnd} 
-                                             onTouchEnd={handleCardTouchEnd} 
-                                             onMouseDown={() => handleVisionTouchStart(v)} 
-                                             onMouseUp={handleCardTouchEnd} 
+                                             onTouchMove={handleCardTouchEnd} onTouchEnd={handleCardTouchEnd} 
+                                             onMouseDown={() => handleVisionTouchStart(v)} onMouseUp={handleCardTouchEnd} 
                                              onClick={() => handleVisionClick(v)}>
                                             <div className="vision-card-header">
                                                 <div className="vision-emoji-large">{v.emoji}</div>
                                                 {isActive && <div className="vision-active-badge">Выбрано</div>}
                                             </div>
                                             <div className="vision-card-title">{v.title}</div>
-                                            <div className="vision-card-desc">{v.description || 'Нет описания'}</div>
                                             <div className="vision-card-stats">
                                                 <div className="v-stat"><span className="v-stat-val">{totalStreak}</span><span className="v-stat-label">Огонь 🔥</span></div>
                                                 <div className="v-stat"><span className="v-stat-val">{totalDone}</span><span className="v-stat-label">Шагов 🎯</span></div>
@@ -483,7 +476,7 @@ function App() {
                 
                 {activeTab === 'progress' && (
                     <div className="timer-panel">
-                        <h3 style={{ textAlign: 'center', color: '#fff', margin: '0 0 20px 0', fontSize: '20px' }}>Фокус</h3>
+                        <h3 style={{ textAlign: 'center', margin: '0 0 20px 0', fontSize: '20px' }}>Фокус</h3>
                         <div className="timer-display">{Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}</div>
                         <div className="timer-controls">
                             <button className="btn-timer-reset" onClick={resetTimer}><Icons.Refresh /></button>
@@ -505,9 +498,8 @@ function App() {
                                 <div className="stat-label">Лучший стрик</div>
                             </div>
                         </div>
-
                         <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto' }}>
-                            <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#fff' }}>Активность за 7 дней</h3>
+                            <h3 style={{ margin: '0 0 20px 0', fontSize: '16px' }}>Активность за 7 дней</h3>
                             <div className="bar-chart">
                                 {statsData.last7Days.map(day => (
                                     <div key={day.iso} className="bar-col">
@@ -517,39 +509,28 @@ function App() {
                                 ))}
                             </div>
                         </div>
-
-                        <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto' }}>
-                            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#fff' }}>Пульс (90 дней)</h3>
-                            <div className="heatmap-scroll">
-                                <div className="heatmap-grid">
-                                    {statsData.heatmapCols.map((col, cIdx) => (
-                                        <div key={cIdx} className="heatmap-col">
-                                            {col.map(cell => (<div key={cell.iso} className={`heatmap-cell level-${cell.level}`}></div>))}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 )}
 
                 {activeTab === 'settings' && (
-                    <div className="card" style={{ display: 'block', background: 'rgba(0,0,0,0.65)', maxWidth: '360px', margin: '0 auto' }}>
-                        <h3 style={{ textAlign: 'center', color: '#fff', margin: '0 0 15px 0' }}>Настройки</h3>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px', color: '#fff' }}>Тон поддержки:</label>
-                        <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)}><option value="soft" style={{color: '#000'}}>Мягкий</option><option value="hard" style={{color: '#000'}}>Жесткий</option></select>
+                    <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto' }}>
+                        <h3 style={{ textAlign: 'center', margin: '0 0 20px 0' }}>Настройки</h3>
+                        <div className="setting-row" style={{marginBottom: '20px'}}>
+                            <span style={{fontWeight: 'bold'}}>Тема оформления</span>
+                            <button className="theme-toggle-btn" onClick={toggleTheme}>
+                                {isLightTheme ? <Icons.Moon /> : <Icons.Sun />}
+                            </button>
+                        </div>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>Тон поддержки:</label>
+                        <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)}><option value="soft">Мягкий</option><option value="hard">Жесткий</option></select>
                     </div>
                 )}
 
                 {actionMenuGoal && (
                     <div className="glass-overlay-centered" onClick={() => setActionMenuGoal(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
-                            <button className="glass-btn-circle edit" onClick={() => { setForm({...actionMenuGoal}); setEditingId(actionMenuGoal.id); setCreateMode('micro'); setActionMenuGoal(null); setCreateStep('text'); setIsModalOpen(true); }}>
-                                <Icons.Pencil />
-                            </button>
-                            <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteGoalId(actionMenuGoal.id); setActionMenuGoal(null); }}>
-                                <Icons.Trash />
-                            </button>
+                            <button className="glass-btn-circle edit" onClick={() => { setForm({...actionMenuGoal}); setEditingId(actionMenuGoal.id); setCreateMode('micro'); setActionMenuGoal(null); setCreateStep('text'); setIsModalOpen(true); }}><Icons.Pencil /></button>
+                            <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteGoalId(actionMenuGoal.id); setActionMenuGoal(null); }}><Icons.Trash /></button>
                         </div>
                     </div>
                 )}
@@ -557,12 +538,8 @@ function App() {
                 {actionMenuVision && (
                     <div className="glass-overlay-centered" onClick={() => setActionMenuVision(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
-                            <button className="glass-btn-circle edit" onClick={() => { setVisionForm({...actionMenuVision}); setEditingId(actionMenuVision.id); setCreateMode('macro'); setActionMenuVision(null); setCreateStep('text'); setIsModalOpen(true); }}>
-                                <Icons.Pencil />
-                            </button>
-                            <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteVisionId(actionMenuVision.id); setActionMenuVision(null); }}>
-                                <Icons.Trash />
-                            </button>
+                            <button className="glass-btn-circle edit" onClick={() => { setVisionForm({...actionMenuVision}); setEditingId(actionMenuVision.id); setCreateMode('macro'); setActionMenuVision(null); setCreateStep('text'); setIsModalOpen(true); }}><Icons.Pencil /></button>
+                            <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteVisionId(actionMenuVision.id); setActionMenuVision(null); }}><Icons.Trash /></button>
                         </div>
                     </div>
                 )}
@@ -593,14 +570,12 @@ function App() {
                                 <div className={`mode-btn ${createMode === 'macro' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setCreateMode('macro');}}>Видение</div>
                             </div>
                         )}
-
                         <h3 style={{margin: '0 0 15px 0', textAlign: 'center', fontSize: '18px'}}>{editingId ? 'Редактировать' : (createMode === 'macro' ? 'Новое Видение' : 'Новая цель')}</h3>
-                        
                         {createMode === 'macro' ? (
                             <div className="panel-step">
                                 <div style={{ display: 'flex', gap: '10px' }}>
-                                    <input type="text" maxLength="2" value={visionForm.emoji} onChange={e => setVisionForm({...visionForm, emoji: e.target.value})} className="dark-input" style={{ width: '60px', textAlign: 'center', fontSize: '20px', padding: '14px 0' }} />
-                                    <input placeholder="Глобальная цель (Бизнес, Здоровье...)" value={visionForm.title} onChange={e => setVisionForm({...visionForm, title: e.target.value})} className="dark-input" style={{ flex: 1 }} />
+                                    <input type="text" maxLength="2" value={visionForm.emoji} onChange={e => setVisionForm({...visionForm, emoji: e.target.value})} className="dark-input" style={{ width: '60px', textAlign: 'center' }} />
+                                    <input placeholder="Глобальная цель" value={visionForm.title} onChange={e => setVisionForm({...visionForm, title: e.target.value})} className="dark-input" style={{ flex: 1 }} />
                                 </div>
                                 <textarea placeholder="Почему для тебя это важно?" value={visionForm.description} onChange={e => setVisionForm({...visionForm, description: e.target.value})} className="dark-input custom-scrollbar" style={{ minHeight: '80px', resize: 'none' }} />
                             </div>
@@ -608,51 +583,38 @@ function App() {
                             <React.Fragment>
                                 {createStep === 'text' && (
                                     <div className="panel-step">
-                                        <input placeholder="Название (например: Пробежка)" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="dark-input" />
-                                        
+                                        <input placeholder="Название" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="dark-input" />
                                         {visions.length > 0 && (
                                             <select className="custom-select dark-input" value={form.visionId || ''} onChange={e => setForm({...form, visionId: e.target.value})}>
                                                 <option value="">Без глобальной цели</option>
                                                 {visions.map(v => <option key={v.id} value={v.id}>{v.emoji} {v.title}</option>)}
                                             </select>
                                         )}
-
-                                        <textarea placeholder="Опиши конкретные шаги" value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none', overflowY: 'auto' }} />
+                                        <textarea placeholder="Опиши шаги" value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none' }} />
                                     </div>
                                 )}
-                                
                                 {createStep === 'time' && (
                                     <div className="panel-step">
                                         <div className="radio-group">
-                                            <div className={`radio-btn ${(form.type || 'habit') === 'once' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'once'})}}><Icons.Target active={(form.type || 'habit') === 'once'} /></div>
+                                            <div className={`radio-btn ${(form.type || 'habit') === 'once' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'once'})}}><Icons.Target active={(form.type || 'once') === 'once'} /></div>
                                             <div className={`radio-btn ${(form.type || 'habit') === 'habit' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'habit'})}}><Icons.Infinity active={(form.type || 'habit') === 'habit'} /></div>
-                                            <div className={`radio-btn ${(form.type || 'habit') === 'sprint' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'sprint'})}}><Icons.Sprint active={(form.type || 'habit') === 'sprint'} /></div>
+                                            <div className={`radio-btn ${(form.type || 'habit') === 'sprint' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'sprint'})}}><Icons.Sprint active={(form.type || 'sprint') === 'sprint'} /></div>
                                         </div>
                                         <div className="info-box"><div className="info-title">{typeInfo[form.type || 'habit'].title}</div><div className="info-desc">{typeInfo[form.type || 'habit'].desc}</div></div>
-                                        
                                         {(form.type || 'habit') === 'habit' && (
                                             <div style={{marginBottom: '20px'}}>
-                                                <div style={{textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px'}}>Активные дни:</div>
                                                 <div className="weekdays-selector">
                                                     {weekDaysArr.map(d => {
                                                         const isActive = form.weekDays && form.weekDays.includes(d.val);
-                                                        return (
-                                                            <div key={d.val} className={`weekday-btn ${isActive ? 'active' : ''}`} onClick={() => toggleWeekDay(d.val)}>
-                                                                {d.label}
-                                                            </div>
-                                                        );
+                                                        return ( <div key={d.val} className={`weekday-btn ${isActive ? 'active' : ''}`} onClick={() => toggleWeekDay(d.val)}>{d.label}</div> );
                                                     })}
                                                 </div>
                                             </div>
                                         )}
-
-                                        {(form.type || 'habit') === 'sprint' && (<input type="number" placeholder="Дней соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="dark-input" style={{textAlign: 'center', marginTop: '10px'}} />)}
-                                        
+                                        {(form.type || 'habit') === 'sprint' && (<input type="number" placeholder="Дней соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="dark-input" style={{textAlign: 'center'}} />)}
                                         <hr className="divider" />
-                                        
                                         <div className="wheels-grid">
                                             <div className="wheel-section">
-                                                <div className="wheel-label">Дедлайн</div>
                                                 <div className="ios-time-picker mini">
                                                     <TimeWheel items={hoursList} value={(form.deadline || '23:59').split(':')[0]} onChange={h => setForm({...form, deadline: `${h}:${(form.deadline || '23:59').split(':')[1]}`})} width="40px" />
                                                     <span className="time-colon">:</span>
@@ -660,21 +622,18 @@ function App() {
                                                 </div>
                                             </div>
                                             <div className="wheel-section">
-                                                <div className="wheel-label">Начало</div>
                                                 <div className="ios-time-picker mini">
                                                     <TimeWheel items={monthNames} value={startMonth} onChange={setStartMonth} width="85px" />
                                                     <TimeWheel items={daysInMonth} value={startDay} onChange={setStartDay} width="40px" />
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div className="setting-row"><span style={{fontSize: '15px', fontWeight: '500'}}>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => {triggerHaptic('light'); setForm({...form, ignoreHoliday: e.target.checked})}} /><span className="slider"></span></label></div>
+                                        <div className="setting-row"><span>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} /><span className="slider"></span></label></div>
                                     </div>
                                 )}
-                                
                                 {createStep === 'notifs' && (
                                     <div className="panel-step">
-                                        <div className="setting-row" style={{marginBottom: '20px'}}><span style={{fontSize: '15px', fontWeight: '500'}}>Уведомления</span><label className="ios-switch"><input type="checkbox" checked={form.notifications !== false} onChange={e => {triggerHaptic('light'); setForm({...form, notifications: e.target.checked})}} /><span className="slider"></span></label></div>
+                                        <div className="setting-row"><span style={{fontWeight: 'bold'}}>Уведомления</span><label className="ios-switch"><input type="checkbox" checked={form.notifications !== false} onChange={e => setForm({...form, notifications: e.target.checked})} /><span className="slider"></span></label></div>
                                     </div>
                                 )}
                             </React.Fragment>
@@ -694,9 +653,9 @@ function App() {
                         <React.Fragment>
                             {createMode === 'micro' ? (
                                 <React.Fragment>
-                                    <div onClick={() => {triggerHaptic('light'); setCreateStep('text');}} className="tab-item"><Icons.Text active={createStep === 'text'} /></div><div onClick={() => {triggerHaptic('light'); setCreateStep('time');}} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
+                                    <div onClick={() => setCreateStep('text')} className="tab-item"><Icons.Text active={createStep === 'text'} /></div><div onClick={() => setCreateStep('time')} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
                                     <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: '#444', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
-                                    <div onClick={() => {triggerHaptic('light'); setCreateStep('notifs');}} className="tab-item"><Icons.Bell active={createStep === 'notifs'} /></div>
+                                    <div onClick={() => setCreateStep('notifs')} className="tab-item"><Icons.Bell active={createStep === 'notifs'} /></div>
                                     <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
                                 </React.Fragment>
                             ) : (

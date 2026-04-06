@@ -133,11 +133,11 @@ function App() {
         localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
     }, [isLightTheme]);
 
-    // ИДЕАЛЬНЫЙ RIPPLE ЭФФЕКТ
+    // 2-СЕКУНДНЫЙ КИНЕМАТОГРАФИЧНЫЙ RIPPLE ЭФФЕКТ
     const toggleTheme = (e) => {
         const x = e.clientX;
         const y = e.clientY;
-        const targetColor = isLightTheme ? '#000000' : '#FFFFFF'; 
+        const targetColor = isLightTheme ? '#000000' : '#F2F2F7'; // Цвет фона новой темы
         
         const ripple = document.createElement('div');
         ripple.className = 'theme-ripple-effect';
@@ -148,14 +148,20 @@ function App() {
         
         triggerHaptic('medium');
 
+        // На 1-й секунде (когда круг огромный) меняем саму тему элементов под ним
         setTimeout(() => {
             setIsLightTheme(!isLightTheme);
-            ripple.classList.add('fade-out');
-        }, 300); // Меняем тему, когда волна накрыла экран
+        }, 1000); 
 
+        // На 2-й секунде начинаем плавно растворять волну
+        setTimeout(() => {
+            ripple.classList.add('fade-out');
+        }, 2000);
+
+        // На 2.5 секунде удаляем из DOM
         setTimeout(() => {
             ripple.remove();
-        }, 600);
+        }, 2500);
     };
 
     const triggerHaptic = (type) => {

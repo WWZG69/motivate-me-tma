@@ -21,14 +21,13 @@ input, textarea, select {
 
 body::before {
     content: ''; position: fixed; top: -110vmax; left: -130vmax; width: 240vmax; height: 240vmax; 
-    /* ВЕРНУЛИ НАШ ФИРМЕННЫЙ ЯРКИЙ ФОН С ЧЕРНОЙ КАПЛЕЙ! */
     background: radial-gradient(circle at center, #000000 35%, #ff2a00 52%, #ff5e00 62%, rgba(255, 140, 0, 0) 75%);
     z-index: -1; will-change: transform; 
     opacity: 0; 
     animation: liquidGpuWobble 20s linear infinite, fadeInGradient 0.4s ease 3.6s forwards; 
 }
 
-@keyframes bodyBgReveal { to { background-color: #FF8C00; } } /* Вернули яркую подложку */
+@keyframes bodyBgReveal { to { background-color: #FF8C00; } }
 @keyframes fadeInGradient { to { opacity: 1; } }
 @keyframes liquidGpuWobble { 0% { transform: translate(0, 0) scale(1, 0.85) rotate(0deg); } 33% { transform: translate(4vw, 5vh) scale(0.95, 1.1) rotate(120deg); } 66% { transform: translate(-3vw, 8vh) scale(1.05, 0.9) rotate(240deg); } 100% { transform: translate(0, 0) scale(1, 0.85) rotate(360deg); } }
 
@@ -66,7 +65,7 @@ body::before {
 .load-segment.danger { background: #ff3b30; box-shadow: 0 0 8px rgba(255, 59, 48, 0.4); }
 
 /* =========================================
-   МАКРО-ЦЕЛИ (ВИДЕНИЯ) - ПЛОТНЫЕ МАТОВЫЕ
+   МАКРО-ЦЕЛИ (ВИДЕНИЯ) - ПЛОТНЫЕ МАТОВЫЕ (БЕЗ will-change)
 ========================================= */
 .visions-scroll-track {
     display: flex; gap: 15px; width: 100vw; 
@@ -82,11 +81,11 @@ body::before {
     border: 1px solid rgba(255, 255, 255, 0.06);
     scroll-snap-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
     transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s; 
-    cursor: pointer; min-height: 220px; box-sizing: border-box; transform: translateZ(0); will-change: transform;
+    cursor: pointer; min-height: 220px; box-sizing: border-box; 
 }
-.vision-card:active { transform: scale(0.96) translateZ(0); }
+.vision-card:active { transform: scale(0.96); }
 .vision-card.active { border-color: #FF8C00; }
-.vision-card.active:active { transform: scale(0.96) translateZ(0); }
+.vision-card.active:active { transform: scale(0.96); }
 
 .vision-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
 .vision-emoji-large { font-size: 48px; line-height: 1; background: rgba(255,255,255,0.03); border-radius: 20px; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; }
@@ -114,10 +113,10 @@ body::before {
 .date-display-row { text-align: center; font-size: 16px; font-weight: bold; color: #fff; height: 44px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; text-transform: capitalize; }
 
 /* =========================================
-   КАРТОЧКИ ЦЕЛЕЙ - ПЛОТНЫЕ МАТОВЫЕ
+   КАРТОЧКИ ЦЕЛЕЙ - ПЛОТНЫЕ МАТОВЫЕ (БЕЗ will-change)
 ========================================= */
-.card { background: #141414; border-radius: 24px; padding: 18px 20px; color: white; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255, 255, 255, 0.06); transition: transform 0.15s ease, opacity 0.3s ease; cursor: pointer; transform: translateZ(0); will-change: transform, opacity; }
-.card:active:not(.shake) { transform: scale(0.96) translateZ(0); }
+.card { background: #141414; border-radius: 24px; padding: 18px 20px; color: white; width: 100%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255, 255, 255, 0.06); transition: transform 0.15s ease, opacity 0.3s ease; cursor: pointer; }
+.card:active:not(.shake) { transform: scale(0.96); }
 .shake { animation: shakeCard 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes shakeCard { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); } 20%, 40%, 60%, 80% { transform: translateX(4px); } }
 .goal-info { flex: 1; padding-right: 15px; display: flex; flex-direction: column; justify-content: center; gap: 4px; pointer-events: none; }
@@ -148,7 +147,8 @@ body::before {
 .tab-item:active { transform: scale(0.9); }
 .tab-icon { width: 28px; height: 28px; stroke-width: 1.8; fill: none; transition: all 0.3s ease; }
 .tab-add-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; }
-.tab-add-btn-outline { width: 48px; height: 48px; border: 1px solid #FF8C00; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.3s, border-color 0.3s; cursor: pointer; background: transparent; }
+/* КОНТУР + УТОЛЩЕН ДО 2PX */
+.tab-add-btn-outline { width: 48px; height: 48px; border: 2px solid #FF8C00; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.3s, border-color 0.3s; cursor: pointer; background: transparent; }
 .tab-add-btn-outline:active { transform: scale(0.9); }
 .tab-add-btn-outline svg { stroke: #FF8C00; width: 26px; height: 26px; stroke-width: 2.5; transition: stroke 0.3s; }
 .tab-add-btn-outline[style*="444"] svg { stroke: #fff; }

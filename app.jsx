@@ -29,8 +29,8 @@ const Icons = {
     Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>,
     Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4z"/></svg>,
     Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
-    Play: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
-    Pause: (props) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
+    Play: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+    Pause: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
     Refresh: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>,
     Pencil: () => <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
     Trash: () => <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
@@ -73,6 +73,7 @@ function App() {
     const [isTransitioning, setIsTransitioning] = useState(false);
     
     const [isLightTheme, setIsLightTheme] = useState(() => localStorage.getItem('motivateMe_theme') === 'light');
+    const [isHeatmapExpanded, setIsHeatmapExpanded] = useState(false); // СОСТОЯНИЕ РАСШИРЕННОГО ПУЛЬСА
     
     const touchStartX = useRef(0);
     const touchStartY = useRef(0);
@@ -176,6 +177,7 @@ function App() {
         } catch(e) {}
     };
 
+    // НОВАЯ ЛОГИКА СТАТИСТИКИ (365 ДНЕЙ ДЛЯ СЕТКИ)
     const statsData = useMemo(() => {
         const today = new Date(); let totalDone = 0; let bestStreak = 0; let completionByDate = {}; 
         goals.forEach(g => {
@@ -196,16 +198,18 @@ function App() {
             if (count > maxDaily) maxDaily = count;
             last7Days.push({ day: d.toLocaleDateString('ru-RU', { weekday: 'short' }), count, iso });
         }
-        const heatmapCols = []; let currentWeek = [];
-        for (let i = 90; i >= 0; i--) {
+        
+        const heatmapDays = [];
+        // Генерируем массив от старейшего дня к сегодняшнему (слева направо)
+        for (let i = 364; i >= 0; i--) {
             const d = new Date(today); d.setDate(d.getDate() - i);
             const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             const count = completionByDate[iso] || 0;
             let level = 0; if (count > 0) level = 1; if (count > 2) level = 2; if (count > 4) level = 3;
-            currentWeek.push({ iso, level, count });
-            if (currentWeek.length === 7 || i === 0) { heatmapCols.push(currentWeek); currentWeek = []; }
+            heatmapDays.push({ iso, level, count });
         }
-        return { totalDone, bestStreak, last7Days, maxDaily, heatmapCols };
+        
+        return { totalDone, bestStreak, last7Days, maxDaily, heatmapDays };
     }, [goals]);
 
     useEffect(() => { try { const tg = window.Telegram?.WebApp; if (tg) { tg.ready(); tg.expand(); } } catch(e) {} const endSplash = setTimeout(() => setShowSplash(false), 4000); return () => clearTimeout(endSplash); }, []);
@@ -389,6 +393,7 @@ function App() {
                             {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - (g.streak || 0))} ⏳</span>}
                             <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
                         </div>
+                        {/* ИДЕАЛЬНАЯ АНИМАЦИЯ ЧЕРЕЗ GRID */}
                         <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}>
                             <div className="goal-desc-inner">
                                 <div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div>
@@ -527,8 +532,9 @@ function App() {
                         </div>
                         <div className="timer-controls">
                             <button className="btn-timer-reset" onClick={resetTimer}><Icons.Refresh /></button>
+                            {/* ИСПРАВЛЕНА КНОПКА PLAY/PAUSE */}
                             <button className="btn-timer-main" onClick={() => { setIsTimerRunning(!isTimerRunning); triggerHaptic('light'); }}>
-                                {isTimerRunning ? <Icons.Pause /> : <Icons.Play />}
+                                {isTimerRunning ? <Icons.Pause style={{marginLeft: '0'}} /> : <Icons.Play style={{marginLeft: '4px'}} />}
                             </button>
                             <div style={{ width: '48px' }}></div> 
                         </div>
@@ -547,6 +553,7 @@ function App() {
                                 <div className="stat-label">Лучший стрик</div>
                             </div>
                         </div>
+                        
                         <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto' }}>
                             <h3 style={{ margin: '0 0 20px 0', fontSize: '16px' }}>Активность за 7 дней</h3>
                             <div className="bar-chart">
@@ -555,6 +562,28 @@ function App() {
                                         <div className="bar-track"><div className="bar-fill" style={{ height: `${(day.count / statsData.maxDaily) * 100}%` }}></div></div>
                                         <div className="bar-label">{day.day}</div>
                                     </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* НОВАЯ СЕТКА ПУЛЬСА 90/365 */}
+                        <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto' }} onClick={() => {triggerHaptic('light'); setIsHeatmapExpanded(!isHeatmapExpanded)}}>
+                            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', textAlign: 'center' }}>
+                                Пульс активности ({isHeatmapExpanded ? '365' : '90'} дней)
+                            </h3>
+                            <div className="heatmap-grid" style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(14px, 1fr))',
+                                gap: '6px',
+                                width: '100%',
+                                transition: 'all 0.3s ease'
+                            }}>
+                                {(isHeatmapExpanded ? statsData.heatmapDays : statsData.heatmapDays.slice(-90)).map(day => (
+                                    <div key={day.iso} className={`heatmap-cell level-${day.level}`} style={{
+                                        width: '100%',
+                                        aspectRatio: '1/1',
+                                        borderRadius: '50%'
+                                    }}></div>
                                 ))}
                             </div>
                         </div>
@@ -681,6 +710,20 @@ function App() {
                                             </div>
                                         </div>
                                         <div className="setting-row"><span>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} /><span className="slider"></span></label></div>
+                                    </div>
+                                )}
+                                {/* ИСПРАВЛЕНО: ТУМБЛЕР УВЕДОМЛЕНИЙ */}
+                                {createStep === 'notifs' && (
+                                    <div className="panel-step">
+                                        <div className="card" style={{margin: '0', maxWidth: '100%', border: '1px solid var(--border-color)', background: 'transparent', boxShadow: 'none'}}>
+                                            <div className="setting-row" style={{width: '100%'}}>
+                                                <span style={{fontWeight: 'bold', fontSize: '15px'}}>Уведомления</span>
+                                                <label className="ios-switch">
+                                                    <input type="checkbox" checked={form.notifications !== false} onChange={e => setForm({...form, notifications: e.target.checked})} />
+                                                    <span className="slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </React.Fragment>

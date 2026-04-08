@@ -27,10 +27,10 @@ const Icons = {
     Moon: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
     Save: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke="#000" {...props}><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     
-    // ПЕРЕРИСОВАННЫЕ ИКОНКИ ТИПОВ ЦЕЛИ
-    Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill={props.active ? "var(--accent)" : "var(--icon-color)"}/></svg>,
-    Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 8a4 4 0 1 0 0 8h8a4 4 0 1 0 0-8H8z"/></svg>,
-    Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
+    // ИСПРАВЛЕНО: Утонченные (1.5px) премиальные иконки
+    Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill={props.active ? "var(--accent)" : "var(--icon-color)"}/></svg>,
+    Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 8a4 4 0 1 0 0 8h8a4 4 0 1 0 0-8H8z"/></svg>,
+    Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
     
     Play: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
     Pause: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
@@ -44,7 +44,6 @@ const Icons = {
     Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>
 };
 
-// ИСПРАВЛЕНО: Колесо с фиксированной высотой строк и плавным масштабированием текста
 const TimeWheel = ({ items, value, onChange, width }) => {
     const ref = useRef(null);
     const itemHeight = 44; 
@@ -56,7 +55,6 @@ const TimeWheel = ({ items, value, onChange, width }) => {
         const idx = Math.round(e.target.scrollTop / itemHeight);
         if (items[idx] && items[idx] !== value) {
             onChange(items[idx]);
-            // Вибрация срабатывает только при смене индекса
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
         }
     };
@@ -678,11 +676,9 @@ function App() {
                                         )}
                                         {(form.type || 'habit') === 'sprint' && (<input type="number" placeholder="Дней соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="dark-input" style={{textAlign: 'center'}} />)}
                                         <hr className="divider" />
-                                        
-                                        {/* ИСПРАВЛЕНО: ДОБАВЛЕНЫ ЗАГОЛОВКИ ДЕДЛАЙН И НАЧАЛО */}
                                         <div className="wheels-grid">
                                             <div className="wheel-section">
-                                                <div className="wheel-label" style={{color: 'var(--text-muted)'}}>Дедлайн</div>
+                                                <div className="wheel-label">Дедлайн</div>
                                                 <div className="ios-time-picker mini">
                                                     <TimeWheel items={hoursList} value={(form.deadline || '23:59').split(':')[0]} onChange={h => setForm({...form, deadline: `${h}:${(form.deadline || '23:59').split(':')[1]}`})} width="40px" />
                                                     <span className="time-colon">:</span>
@@ -690,7 +686,7 @@ function App() {
                                                 </div>
                                             </div>
                                             <div className="wheel-section">
-                                                <div className="wheel-label" style={{color: 'var(--text-muted)'}}>Начало</div>
+                                                <div className="wheel-label">Начало</div>
                                                 <div className="ios-time-picker mini">
                                                     <TimeWheel items={monthNames} value={startMonth} onChange={setStartMonth} width="85px" />
                                                     <TimeWheel items={daysInMonth} value={startDay} onChange={setStartDay} width="40px" />

@@ -26,11 +26,9 @@ const Icons = {
     Sun: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
     Moon: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
     Save: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke="#000" {...props}><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-    
     Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill={props.active ? "var(--accent)" : "var(--icon-color)"}/></svg>,
     Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4z"/></svg>,
     Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
-    
     Play: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
     Pause: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
     Refresh: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>,
@@ -87,14 +85,12 @@ function App() {
     const isDragging = useRef(false);
     const isSwipeValid = useRef(null); 
     const transitionTimer = useRef(null);
-    const targetShiftRef = useRef(0);
     
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     const [showGiveUpModal, setShowGiveUpModal] = useState(false);
     
-    // НОВОЕ: Состояния для интеграции целей и таймера Фокуса
     const [activeFocusGoal, setActiveFocusGoal] = useState(null);
     const [activeFocusDate, setActiveFocusDate] = useState(null);
 
@@ -123,7 +119,6 @@ function App() {
     const [startMonth, setStartMonth] = useState(monthNames[new Date().getMonth()]);
     const [startDay, setStartDay] = useState(new Date().getDate().toString().padStart(2, '0'));
 
-    // НОВОЕ: В defaultForm добавлены controlMethod и focusTime
     const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, startDate: null, visionId: '', weekDays: [0,1,2,3,4,5,6], controlMethod: 'check', focusTime: 25 };
     const defaultVisionForm = { title: '', emoji: '🎯', description: '' };
 
@@ -222,7 +217,6 @@ function App() {
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_visions', JSON.stringify(visions)); } catch (e) {} }, [visions]);
     useEffect(() => { const timer = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(timer); }, []);
     
-    // НОВОЕ: Интеллектуальный таймер Фокуса с авто-комплитом цели
     useEffect(() => {
         let interval = null;
         if (isTimerRunning && timeLeft > 0) {
@@ -230,7 +224,6 @@ function App() {
         } else if (isTimerRunning && timeLeft === 0) {
             setIsTimerRunning(false);
             triggerHaptic('success');
-            // Если таймер завершился и была активная цель — автоматически отмечаем ее выполненной
             if (activeFocusGoal && activeFocusDate) {
                 const dateStr = activeFocusDate.toDateString();
                 setGoals(prevGoals => prevGoals.map(g => {
@@ -247,7 +240,6 @@ function App() {
         return () => clearInterval(interval);
     }, [isTimerRunning, timeLeft, activeFocusGoal, activeFocusDate]);
 
-    // НОВОЕ: Функция запуска Фокуса
     const startFocusSession = (goal, dateTarget) => {
         triggerHaptic('light');
         setActiveFocusGoal(goal);
@@ -258,7 +250,7 @@ function App() {
 
     const resetTimer = () => { 
         setIsTimerRunning(false); 
-        setActiveFocusGoal(null); // Если мы сдаемся, сбрасываем привязку
+        setActiveFocusGoal(null);
         setTimeLeft(25 * 60); 
         triggerHaptic('light'); 
     };
@@ -378,15 +370,35 @@ function App() {
         } catch(e) { return { text: "00:00", className: 'badge failed-timer', style: {} }; }
     };
 
+    // ИСПРАВЛЕНО: Четкий расчет даты для Спринта и Разовой задачи
     const getActiveGoalsForDate = (dateTarget) => {
         const renderTime = dateTarget.getTime();
         return goals.filter(g => { 
             if (activeVisionId && g.visionId != activeVisionId) return false;
             try { 
-                if (g.startDate && new Date(g.startDate).getTime() > renderTime) return false; 
+                const startD = new Date(g.startDate);
+                startD.setHours(0,0,0,0);
+                const startT = startD.getTime();
+                
+                if (startT > renderTime) return false; 
+                
                 if (g.type === 'habit' && g.weekDays && g.weekDays.length > 0) {
                     if (!g.weekDays.includes(dateTarget.getDay())) return false;
                 }
+                
+                // Спринт работает ровно столько дней, сколько указано
+                if (g.type === 'sprint') {
+                    const durationDays = parseInt(g.duration, 10) || 1;
+                    const endD = new Date(startT);
+                    endD.setDate(endD.getDate() + durationDays - 1);
+                    if (renderTime > endD.getTime()) return false;
+                }
+                
+                // Разовая цель висит только в назначенный день
+                if (g.type === 'once') {
+                    if (renderTime !== startT) return false;
+                }
+                
                 return true; 
             } catch(e) { return true; } 
         });
@@ -406,9 +418,9 @@ function App() {
             const textLen = (g.description || 'Описания нет').length;
             const animDuration = Math.min(0.8, Math.max(0.2, textLen * 0.002));
             
-            // НОВОЕ: Определение иконки кнопки
             const isTimerGoal = g.controlMethod === 'timer';
             let BtnIcon = isDone ? Icons.Check : (isTimerGoal ? Icons.Play : Icons.Check);
+            let btnClass = `btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''} ${isTimerGoal && !isDone ? 'timer-ready' : ''}`;
 
             return (
                 <div key={g.id} className="card" onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchMove={handleCardTouchEnd} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
@@ -427,8 +439,7 @@ function App() {
                             </div>
                         </div>
                     </div>
-                    {/* НОВОЕ: Интеллектуальная кнопка */}
-                    <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => {
+                    <button className={btnClass} onClick={(e) => {
                         e.stopPropagation();
                         if (!canToggle) { triggerHaptic('error'); return; }
                         if (!isDone && isTimerGoal) {
@@ -462,7 +473,6 @@ function App() {
     };
 
     const toggleGoal = (e, goalObj, dateTarget) => {
-        // Мы попадаем сюда только для обычных чек-инов ИЛИ если нужно снять галочку с таймера
         const { canToggle } = checkPermissions(goalObj, dateTarget);
         if (!canToggle) { triggerHaptic('error'); return; }
         const dateStr = dateTarget.toDateString(); const isCurrentlyDone = !!(goalObj.history && goalObj.history[dateStr]);
@@ -566,18 +576,14 @@ function App() {
                 {activeTab === 'progress' && (
                     <div className="timer-panel">
                         <h3 style={{ textAlign: 'center', margin: '0 0 5px 0', fontSize: '20px' }}>Комната исполнения</h3>
-                        
-                        {/* НОВОЕ: Название активной цели */}
                         <div className="focus-goal-label">
                             {activeFocusGoal ? activeFocusGoal.title : "Свободный фокус"}
                         </div>
-                        
                         <div className="timer-display">
                             {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
                         </div>
                         <div className="timer-controls">
                             <button className="btn-timer-reset" onClick={() => { 
-                                // Проверка, что таймер был хоть немного запущен (не равен изначальному времени)
                                 const isGoalTimer = activeFocusGoal && activeFocusGoal.focusTime ? (activeFocusGoal.focusTime * 60) : (25 * 60);
                                 if (timeLeft < isGoalTimer && timeLeft > 0) {
                                     setIsTimerRunning(false);
@@ -764,21 +770,25 @@ function App() {
                                         )}
                                         <textarea placeholder="Опиши шаги" value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none' }} />
                                         
-                                        {/* НОВОЕ: Переключатель метода контроля (Фокус) */}
-                                        <hr className="divider" style={{marginTop: '0px'}} />
-                                        <div className="setting-row" style={{padding: '0'}}>
-                                            <span style={{fontWeight: 'bold', fontSize: '15px'}}>Требует фокуса</span>
-                                            <label className="ios-switch">
-                                                <input type="checkbox" checked={form.controlMethod === 'timer'} onChange={e => setForm({...form, controlMethod: e.target.checked ? 'timer' : 'check'})} />
-                                                <span className="slider"></span>
-                                            </label>
-                                        </div>
-                                        {form.controlMethod === 'timer' && (
-                                            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '15px', animation: 'fadeIn 0.3s'}}>
-                                                <span style={{fontSize: '14px', color: 'var(--text-muted)'}}>Время (минут):</span>
-                                                <input type="number" className="dark-input" style={{width: '80px', marginBottom: 0, textAlign: 'center', padding: '8px'}} value={form.focusTime || 25} onChange={e => setForm({...form, focusTime: parseInt(e.target.value) || 25})} />
+                                        {/* ИСПРАВЛЕНО: Карточка Фокуса с описанием */}
+                                        <div className="card" style={{margin: '15px 0 0 0', maxWidth: '100%', border: '1px solid var(--border-color)', background: 'transparent', boxShadow: 'none', padding: '15px'}}>
+                                            <div className="setting-row" style={{width: '100%', padding: '0'}}>
+                                                <span style={{fontWeight: 'bold', fontSize: '15px'}}>Требует фокуса</span>
+                                                <label className="ios-switch">
+                                                    <input type="checkbox" checked={form.controlMethod === 'timer'} onChange={e => setForm({...form, controlMethod: e.target.checked ? 'timer' : 'check'})} />
+                                                    <span className="slider"></span>
+                                                </label>
                                             </div>
-                                        )}
+                                            <p style={{fontSize: '12px', color: 'var(--text-muted)', margin: '8px 0 0 0', lineHeight: '1.4'}}>
+                                                Задача не будет отмечаться тапом. Для выполнения потребуется отсидеть таймер в Комнате исполнения.
+                                            </p>
+                                            {form.controlMethod === 'timer' && (
+                                                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '15px', paddingTop: '15px', borderTop: '1px solid var(--border-input)', animation: 'fadeIn 0.3s'}}>
+                                                    <span style={{fontSize: '14px', color: 'var(--text-main)', fontWeight: '500'}}>Время (минут):</span>
+                                                    <input type="number" className="dark-input" style={{width: '80px', marginBottom: 0, textAlign: 'center', padding: '8px'}} value={form.focusTime || 25} onChange={e => setForm({...form, focusTime: parseInt(e.target.value) || 25})} />
+                                                </div>
+                                            )}
+                                        </div>
 
                                     </div>
                                 )}

@@ -92,8 +92,12 @@ function App() {
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
-    const [showGiveUpModal, setShowGiveUpModal] = useState(false); // НОВОЕ: Состояние окна ловушки
+    const [showGiveUpModal, setShowGiveUpModal] = useState(false);
     
+    // НОВОЕ: Состояния для интеграции целей и таймера Фокуса
+    const [activeFocusGoal, setActiveFocusGoal] = useState(null);
+    const [activeFocusDate, setActiveFocusDate] = useState(null);
+
     const [expandedGoalId, setExpandedGoalId] = useState(null);
     const isLongPress = useRef(false);
     const pressTimer = useRef(null);
@@ -119,7 +123,8 @@ function App() {
     const [startMonth, setStartMonth] = useState(monthNames[new Date().getMonth()]);
     const [startDay, setStartDay] = useState(new Date().getDate().toString().padStart(2, '0'));
 
-    const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, startDate: null, visionId: '', weekDays: [0,1,2,3,4,5,6] };
+    // НОВОЕ: В defaultForm добавлены controlMethod и focusTime
+    const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, startDate: null, visionId: '', weekDays: [0,1,2,3,4,5,6], controlMethod: 'check', focusTime: 25 };
     const defaultVisionForm = { title: '', emoji: '🎯', description: '' };
 
     const [form, setForm] = useState(defaultForm);
@@ -144,7 +149,6 @@ function App() {
         localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
     }, [isLightTheme]);
 
-    // АНТИ-СКРОЛЛ ФОНА ВКЛЮЧАЕТ В СЕБЯ НОВОЕ ОКНО
     const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId || showGiveUpModal;
     useEffect(() => {
         if (isAnyModalOpen) { document.body.style.overflow = 'hidden'; } 
@@ -217,14 +221,48 @@ function App() {
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_goals', JSON.stringify(goals)); } catch (e) {} }, [goals]);
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_visions', JSON.stringify(visions)); } catch (e) {} }, [visions]);
     useEffect(() => { const timer = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(timer); }, []);
+    
+    // НОВОЕ: Интеллектуальный таймер Фокуса с авто-комплитом цели
     useEffect(() => {
         let interval = null;
-        if (isTimerRunning && timeLeft > 0) interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-        else if (timeLeft === 0) { setIsTimerRunning(false); triggerHaptic('success'); }
+        if (isTimerRunning && timeLeft > 0) {
+            interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+        } else if (isTimerRunning && timeLeft === 0) {
+            setIsTimerRunning(false);
+            triggerHaptic('success');
+            // Если таймер завершился и была активная цель — автоматически отмечаем ее выполненной
+            if (activeFocusGoal && activeFocusDate) {
+                const dateStr = activeFocusDate.toDateString();
+                setGoals(prevGoals => prevGoals.map(g => {
+                    if (g.id === activeFocusGoal.id) {
+                        const newHistory = { ...(g.history || {}) };
+                        newHistory[dateStr] = true;
+                        return { ...g, history: newHistory, streak: (g.streak || 0) + 1 };
+                    }
+                    return g;
+                }));
+                setActiveFocusGoal(null);
+            }
+        }
         return () => clearInterval(interval);
-    }, [isTimerRunning, timeLeft]);
+    }, [isTimerRunning, timeLeft, activeFocusGoal, activeFocusDate]);
 
-    const resetTimer = () => { setIsTimerRunning(false); setTimeLeft(25 * 60); triggerHaptic('light'); };
+    // НОВОЕ: Функция запуска Фокуса
+    const startFocusSession = (goal, dateTarget) => {
+        triggerHaptic('light');
+        setActiveFocusGoal(goal);
+        setActiveFocusDate(dateTarget);
+        setTimeLeft((goal.focusTime || 25) * 60);
+        setActiveTab('progress');
+    };
+
+    const resetTimer = () => { 
+        setIsTimerRunning(false); 
+        setActiveFocusGoal(null); // Если мы сдаемся, сбрасываем привязку
+        setTimeLeft(25 * 60); 
+        triggerHaptic('light'); 
+    };
+
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
     const applyDateShift = (shift) => {
@@ -367,6 +405,10 @@ function App() {
             
             const textLen = (g.description || 'Описания нет').length;
             const animDuration = Math.min(0.8, Math.max(0.2, textLen * 0.002));
+            
+            // НОВОЕ: Определение иконки кнопки
+            const isTimerGoal = g.controlMethod === 'timer';
+            let BtnIcon = isDone ? Icons.Check : (isTimerGoal ? Icons.Play : Icons.Check);
 
             return (
                 <div key={g.id} className="card" onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchMove={handleCardTouchEnd} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
@@ -385,7 +427,18 @@ function App() {
                             </div>
                         </div>
                     </div>
-                    <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => toggleGoal(e, g, renderDate)}><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                    {/* НОВОЕ: Интеллектуальная кнопка */}
+                    <button className={`btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''}`} onClick={(e) => {
+                        e.stopPropagation();
+                        if (!canToggle) { triggerHaptic('error'); return; }
+                        if (!isDone && isTimerGoal) {
+                            startFocusSession(g, renderDate);
+                        } else {
+                            toggleGoal(e, g, renderDate);
+                        }
+                    }}>
+                        <BtnIcon style={isTimerGoal && !isDone ? { marginLeft: '3px' } : {}} />
+                    </button>
                 </div>
             );
         });
@@ -409,7 +462,8 @@ function App() {
     };
 
     const toggleGoal = (e, goalObj, dateTarget) => {
-        e.stopPropagation(); const { canToggle } = checkPermissions(goalObj, dateTarget);
+        // Мы попадаем сюда только для обычных чек-инов ИЛИ если нужно снять галочку с таймера
+        const { canToggle } = checkPermissions(goalObj, dateTarget);
         if (!canToggle) { triggerHaptic('error'); return; }
         const dateStr = dateTarget.toDateString(); const isCurrentlyDone = !!(goalObj.history && goalObj.history[dateStr]);
         setGoals(goals.map(g => {
@@ -511,14 +565,21 @@ function App() {
                 
                 {activeTab === 'progress' && (
                     <div className="timer-panel">
-                        <h3 style={{ textAlign: 'center', margin: '0 0 20px 0', fontSize: '20px' }}>Фокус</h3>
+                        <h3 style={{ textAlign: 'center', margin: '0 0 5px 0', fontSize: '20px' }}>Комната исполнения</h3>
+                        
+                        {/* НОВОЕ: Название активной цели */}
+                        <div className="focus-goal-label">
+                            {activeFocusGoal ? activeFocusGoal.title : "Свободный фокус"}
+                        </div>
+                        
                         <div className="timer-display">
                             {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
                         </div>
                         <div className="timer-controls">
-                            {/* КНОПКА СБРОСА (Тоже вызывает ловушку, если таймер был запущен) */}
                             <button className="btn-timer-reset" onClick={() => { 
-                                if (timeLeft < 25 * 60 && timeLeft > 0) {
+                                // Проверка, что таймер был хоть немного запущен (не равен изначальному времени)
+                                const isGoalTimer = activeFocusGoal && activeFocusGoal.focusTime ? (activeFocusGoal.focusTime * 60) : (25 * 60);
+                                if (timeLeft < isGoalTimer && timeLeft > 0) {
                                     setIsTimerRunning(false);
                                     setShowGiveUpModal(true);
                                     triggerHaptic('heavy');
@@ -529,18 +590,17 @@ function App() {
                                 <Icons.Refresh />
                             </button>
                             
-                            {/* КНОПКА ПАУЗЫ (Вызывает ловушку вместо паузы) */}
                             <button className="btn-timer-main" onClick={() => { 
                                 if (isTimerRunning) {
-                                    setIsTimerRunning(false); // Ставим на паузу
-                                    setShowGiveUpModal(true); // Показываем ловушку
+                                    setIsTimerRunning(false); 
+                                    setShowGiveUpModal(true); 
                                     triggerHaptic('heavy');
                                 } else {
                                     setIsTimerRunning(true);
                                     triggerHaptic('light');
                                 }
                             }}>
-                                {isTimerRunning ? <Icons.Pause /> : <Icons.Play />}
+                                {isTimerRunning ? <Icons.Pause /> : <Icons.Play style={{marginLeft: '4px'}} />}
                             </button>
                             <div style={{ width: '48px' }}></div> 
                         </div>
@@ -613,7 +673,6 @@ function App() {
                     </div>
                 )}
 
-                {/* НОВОЕ: МОДАЛЬНОЕ ОКНО "ПРАВО НА ОШИБКУ" (ЛОВУШКА №1) */}
                 {showGiveUpModal && (
                     <div className="glass-overlay-centered" style={{ zIndex: 9999 }}>
                         <div className="give-up-modal">
@@ -622,15 +681,15 @@ function App() {
                             <div className="give-up-actions">
                                 <button className="btn-continue-pulsing" onClick={() => { 
                                     setShowGiveUpModal(false); 
-                                    setIsTimerRunning(true); // Продолжаем таймер
+                                    setIsTimerRunning(true); 
                                     triggerHaptic('success'); 
                                 }}>
                                     Я справлюсь. Продолжить
                                 </button>
                                 <button className="btn-give-up-weak" onClick={() => { 
                                     setShowGiveUpModal(false); 
-                                    resetTimer(); // Сбрасываем (сдаемся)
-                                    triggerHaptic('heavy'); // Тяжелый удар
+                                    resetTimer(); 
+                                    triggerHaptic('heavy'); 
                                 }}>
                                     Я слабак, сдаюсь
                                 </button>
@@ -704,6 +763,23 @@ function App() {
                                             </select>
                                         )}
                                         <textarea placeholder="Опиши шаги" value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none' }} />
+                                        
+                                        {/* НОВОЕ: Переключатель метода контроля (Фокус) */}
+                                        <hr className="divider" style={{marginTop: '0px'}} />
+                                        <div className="setting-row" style={{padding: '0'}}>
+                                            <span style={{fontWeight: 'bold', fontSize: '15px'}}>Требует фокуса</span>
+                                            <label className="ios-switch">
+                                                <input type="checkbox" checked={form.controlMethod === 'timer'} onChange={e => setForm({...form, controlMethod: e.target.checked ? 'timer' : 'check'})} />
+                                                <span className="slider"></span>
+                                            </label>
+                                        </div>
+                                        {form.controlMethod === 'timer' && (
+                                            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '15px', animation: 'fadeIn 0.3s'}}>
+                                                <span style={{fontSize: '14px', color: 'var(--text-muted)'}}>Время (минут):</span>
+                                                <input type="number" className="dark-input" style={{width: '80px', marginBottom: 0, textAlign: 'center', padding: '8px'}} value={form.focusTime || 25} onChange={e => setForm({...form, focusTime: parseInt(e.target.value) || 25})} />
+                                            </div>
+                                        )}
+
                                     </div>
                                 )}
                                 {createStep === 'time' && (

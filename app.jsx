@@ -26,9 +26,12 @@ const Icons = {
     Sun: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
     Moon: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
     Save: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke="#000" {...props}><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-    Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>,
-    Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4z"/></svg>,
-    Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+    
+    // ПЕРЕРИСОВАННЫЕ ИКОНКИ ТИПОВ ЦЕЛИ
+    Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill={props.active ? "var(--accent)" : "var(--icon-color)"}/></svg>,
+    Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 8a4 4 0 1 0 0 8h8a4 4 0 1 0 0-8H8z"/></svg>,
+    Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
+    
     Play: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="5 3 19 12 5 21 5 3"/></svg>,
     Pause: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
     Refresh: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>,
@@ -41,6 +44,7 @@ const Icons = {
     Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>
 };
 
+// ИСПРАВЛЕНО: Колесо с фиксированной высотой строк и плавным масштабированием текста
 const TimeWheel = ({ items, value, onChange, width }) => {
     const ref = useRef(null);
     const itemHeight = 44; 
@@ -52,13 +56,18 @@ const TimeWheel = ({ items, value, onChange, width }) => {
         const idx = Math.round(e.target.scrollTop / itemHeight);
         if (items[idx] && items[idx] !== value) {
             onChange(items[idx]);
+            // Вибрация срабатывает только при смене индекса
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
         }
     };
     return (
         <div className="wheel-container" onScroll={handleScroll} ref={ref} style={{ width: width ? width : "60px" }}>
             <div className="wheel-spacer"></div>
-            {items.map(item => <div key={item} className={`wheel-item ${item === value ? 'selected' : ''}`}>{item}</div>)}
+            {items.map(item => (
+                <div key={item} className={`wheel-item ${item === value ? 'selected' : ''}`}>
+                    <span>{item}</span>
+                </div>
+            ))}
             <div className="wheel-spacer"></div>
         </div>
     );
@@ -81,7 +90,6 @@ function App() {
     const isDragging = useRef(false);
     const isSwipeValid = useRef(null); 
     const transitionTimer = useRef(null);
-    const targetShiftRef = useRef(0);
     
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -137,37 +145,23 @@ function App() {
         localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
     }, [isLightTheme]);
 
-    // АНТИ-СКРОЛЛ ФОНА: Проверяем, открыто ли хоть одно модальное окно/меню
     const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId;
     useEffect(() => {
-        if (isAnyModalOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
+        if (isAnyModalOpen) { document.body.style.overflow = 'hidden'; } 
+        else { document.body.style.overflow = ''; }
         return () => { document.body.style.overflow = ''; };
     }, [isAnyModalOpen]);
 
     const toggleTheme = (e) => {
-        const x = e.clientX;
-        const y = e.clientY;
-        const goingToLight = !isLightTheme;
-        
+        const x = e.clientX; const y = e.clientY; const goingToLight = !isLightTheme;
         const ripple = document.createElement('div');
         ripple.className = 'theme-ripple-effect';
-        ripple.style.left = `${x}px`;
-        ripple.style.top = `${y}px`;
-        ripple.style.backgroundColor = '#F2F2F7'; 
-        
+        ripple.style.left = `${x}px`; ripple.style.top = `${y}px`; ripple.style.backgroundColor = '#F2F2F7'; 
         triggerHaptic('medium');
-
         if (goingToLight) {
             ripple.style.animation = 'rippleExpand 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards';
             document.body.appendChild(ripple);
-            setTimeout(() => {
-                setIsLightTheme(true);
-                ripple.classList.add('fade-out');
-            }, 900);
+            setTimeout(() => { setIsLightTheme(true); ripple.classList.add('fade-out'); }, 900);
             setTimeout(() => ripple.remove(), 1200);
         } else {
             setIsLightTheme(false);
@@ -216,7 +210,6 @@ function App() {
             let level = 0; if (count > 0) level = 1; if (count > 2) level = 2; if (count > 4) level = 3;
             heatmapDays.push({ iso, level, count });
         }
-        
         return { totalDone, bestStreak, last7Days, maxDaily, heatmapDays };
     }, [goals]);
 
@@ -235,16 +228,11 @@ function App() {
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
     const applyDateShift = (shift) => {
-        setCurrentDate(prev => {
-            const newDate = new Date(prev);
-            newDate.setDate(newDate.getDate() + shift);
-            return newDate;
-        });
+        setCurrentDate(prev => { const newDate = new Date(prev); newDate.setDate(newDate.getDate() + shift); return newDate; });
     };
 
     const animateToDate = (daysShift) => {
-        setExpandedGoalId(null);
-        triggerHaptic('light');
+        setExpandedGoalId(null); triggerHaptic('light');
         if (transitionTimer.current) { clearTimeout(transitionTimer.current); applyDateShift(offsetPx > 0 ? -1 : 1); }
         setIsTransitioning(true); setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth);
         transitionTimer.current = setTimeout(() => {
@@ -530,7 +518,7 @@ function App() {
                         <div className="timer-controls">
                             <button className="btn-timer-reset" onClick={resetTimer}><Icons.Refresh /></button>
                             <button className="btn-timer-main" onClick={() => { setIsTimerRunning(!isTimerRunning); triggerHaptic('light'); }}>
-                                {isTimerRunning ? <Icons.Pause style={{marginLeft: '0'}} /> : <Icons.Play style={{marginLeft: '4px'}} />}
+                                {isTimerRunning ? <Icons.Pause /> : <Icons.Play />}
                             </button>
                             <div style={{ width: '48px' }}></div> 
                         </div>
@@ -690,8 +678,11 @@ function App() {
                                         )}
                                         {(form.type || 'habit') === 'sprint' && (<input type="number" placeholder="Дней соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="dark-input" style={{textAlign: 'center'}} />)}
                                         <hr className="divider" />
+                                        
+                                        {/* ИСПРАВЛЕНО: ДОБАВЛЕНЫ ЗАГОЛОВКИ ДЕДЛАЙН И НАЧАЛО */}
                                         <div className="wheels-grid">
                                             <div className="wheel-section">
+                                                <div className="wheel-label" style={{color: 'var(--text-muted)'}}>Дедлайн</div>
                                                 <div className="ios-time-picker mini">
                                                     <TimeWheel items={hoursList} value={(form.deadline || '23:59').split(':')[0]} onChange={h => setForm({...form, deadline: `${h}:${(form.deadline || '23:59').split(':')[1]}`})} width="40px" />
                                                     <span className="time-colon">:</span>
@@ -699,6 +690,7 @@ function App() {
                                                 </div>
                                             </div>
                                             <div className="wheel-section">
+                                                <div className="wheel-label" style={{color: 'var(--text-muted)'}}>Начало</div>
                                                 <div className="ios-time-picker mini">
                                                     <TimeWheel items={monthNames} value={startMonth} onChange={setStartMonth} width="85px" />
                                                     <TimeWheel items={daysInMonth} value={startDay} onChange={setStartDay} width="40px" />

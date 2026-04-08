@@ -144,7 +144,7 @@ body::before {
 ========================================= */
 .swipe-area { width: 100vw; flex: 1; display: flex; flex-direction: column; overflow-x: hidden; position: relative; touch-action: pan-y; will-change: transform; transform: translateZ(0); }
 .date-nav-container { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; padding: 0 20px; display: flex; justify-content: space-between; box-sizing: border-box; z-index: 10; pointer-events: none; }
-.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s; box-shadow: var(--shadow-main); pointer-events: auto; }
+.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-main); pointer-events: auto; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .date-nav-btn:active { background: var(--bg-input); }
 .date-nav-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 3; fill: none; }
 .cards-track { display: flex; width: 300vw; align-items: flex-start; }
@@ -204,6 +204,22 @@ body::before {
 .glass-overlay-centered { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-glass-overlay); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; display: flex; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; transition: background-color 0.3s; }
 
 /* =========================================
+   НОВОЕ: ОКНО ЛОВУШКИ (СДАЕШЬСЯ?)
+========================================= */
+.give-up-modal { background: var(--bg-card); border-radius: 28px; padding: 30px 20px; width: 85%; max-width: 320px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 16px 40px rgba(0,0,0,0.5); animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
+.give-up-title { font-size: 24px; font-weight: 800; color: var(--text-main); margin: 0 0 10px 0; }
+.give-up-text { font-size: 14px; color: var(--text-muted); line-height: 1.5; margin: 0 0 30px 0; }
+.give-up-actions { display: flex; flex-direction: column; gap: 15px; }
+
+.btn-continue-pulsing { width: 100%; padding: 16px; border-radius: 16px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 800; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); animation: pulseAccent 2s infinite; transition: transform 0.2s; }
+.btn-continue-pulsing:active { transform: scale(0.95); }
+
+.btn-give-up-weak { background: transparent; border: none; color: var(--text-muted); font-size: 13px; font-weight: 500; cursor: pointer; padding: 10px; opacity: 0.5; transition: opacity 0.2s; }
+.btn-give-up-weak:active { opacity: 0.8; }
+
+@keyframes pulseAccent { 0% { transform: scale(1); box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); } 50% { transform: scale(1.03); box-shadow: 0 8px 25px rgba(255, 140, 0, 0.6); } 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); } }
+
+/* =========================================
    СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ
 ========================================= */
 .action-buttons-container { display: flex; gap: 24px; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -238,7 +254,6 @@ body::before {
 .weekday-btn { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: transparent; border: 2px solid var(--border-input); font-size: 14px; font-weight: bold; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
 .weekday-btn.active { background: transparent; border-color: var(--accent); color: var(--accent); }
 
-/* ИСПРАВЛЕНО: Иконки внутри кнопок теперь имеют отступы (воздух) */
 .radio-group { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
 .radio-btn { width: 52px; height: 52px; border-radius: 50%; background: transparent; border: 2px solid var(--border-input); display: flex; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: pointer; }
 .radio-btn.active { background: transparent; border-color: var(--accent); transform: scale(1.1); }

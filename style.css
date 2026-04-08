@@ -73,6 +73,16 @@ input, textarea, select {
     user-select: auto !important;
 }
 
+/* ИСПРАВЛЕНО: Прячем стрелочки вверх/вниз в браузере для input type="number" */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield; 
+}
+
 body::before {
     content: ''; position: fixed; top: -110vmax; left: -130vmax; width: 240vmax; height: 240vmax; 
     background: radial-gradient(circle at center, var(--grad-center) 35%, var(--grad-mid1) 52%, var(--grad-mid2) 62%, var(--grad-edge) 75%);
@@ -171,7 +181,6 @@ body::before {
 .goal-desc::-webkit-scrollbar { width: 4px; }
 .goal-desc::-webkit-scrollbar-thumb { background: var(--bg-segment); border-radius: 4px; }
 
-/* ИСПРАВЛЕНО: Кнопка-отметка и спец-стили для Фокуса (timer-ready) */
 .btn-complete { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--accent); background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; padding: 0; cursor: pointer; pointer-events: auto; }
 .btn-complete.disabled { opacity: 0.2; cursor: not-allowed; }
 

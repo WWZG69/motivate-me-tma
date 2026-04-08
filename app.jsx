@@ -137,21 +137,37 @@ function App() {
         localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
     }, [isLightTheme]);
 
+    // АНТИ-СКРОЛЛ ФОНА: Проверяем, открыто ли хоть одно модальное окно/меню
+    const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId;
+    useEffect(() => {
+        if (isAnyModalOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [isAnyModalOpen]);
+
     const toggleTheme = (e) => {
         const x = e.clientX;
         const y = e.clientY;
         const goingToLight = !isLightTheme;
+        
         const ripple = document.createElement('div');
         ripple.className = 'theme-ripple-effect';
         ripple.style.left = `${x}px`;
         ripple.style.top = `${y}px`;
         ripple.style.backgroundColor = '#F2F2F7'; 
+        
         triggerHaptic('medium');
 
         if (goingToLight) {
             ripple.style.animation = 'rippleExpand 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards';
             document.body.appendChild(ripple);
-            setTimeout(() => { setIsLightTheme(true); ripple.classList.add('fade-out'); }, 900);
+            setTimeout(() => {
+                setIsLightTheme(true);
+                ripple.classList.add('fade-out');
+            }, 900);
             setTimeout(() => ripple.remove(), 1200);
         } else {
             setIsLightTheme(false);
@@ -171,7 +187,6 @@ function App() {
         } catch(e) {}
     };
 
-    // ГЕНЕРАЦИЯ ДАННЫХ ПУЛЬСА (365 дней в правильном порядке)
     const statsData = useMemo(() => {
         const today = new Date(); let totalDone = 0; let bestStreak = 0; let completionByDate = {}; 
         goals.forEach(g => {
@@ -194,7 +209,6 @@ function App() {
         }
         
         const heatmapDays = [];
-        // Создаем массив от самого старого дня к сегодняшнему (слева направо)
         for (let i = 364; i >= 0; i--) {
             const d = new Date(today); d.setDate(d.getDate() - i);
             const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -363,9 +377,8 @@ function App() {
             const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
             const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
             
-            // ДИНАМИЧЕСКИЙ РАСЧЕТ ВРЕМЕНИ АНИМАЦИИ НА ОСНОВЕ КОЛИЧЕСТВА ТЕКСТА
             const textLen = (g.description || 'Описания нет').length;
-            const animDuration = Math.min(0.8, Math.max(0.2, textLen * 0.002)); // от 0.2с до 0.8с
+            const animDuration = Math.min(0.8, Math.max(0.2, textLen * 0.002));
 
             return (
                 <div key={g.id} className="card" onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchMove={handleCardTouchEnd} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
@@ -378,7 +391,6 @@ function App() {
                             {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - (g.streak || 0))} ⏳</span>}
                             <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
                         </div>
-                        {/* ПРИМЕНЯЕМ РАССЧИТАННОЕ ВРЕМЯ АНИМАЦИИ К СЕТКЕ */}
                         <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`} style={{ transitionDuration: `${animDuration}s` }}>
                             <div className="goal-desc-inner" style={{ transitionDuration: `${animDuration * 0.8}s` }}>
                                 <div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div>
@@ -489,7 +501,7 @@ function App() {
                             </div>
                         )}
 
-                        <div className="swipe-area" onTouchStart={onSwipeStart} onTouchMove={onSwipeMove} onTouchEnd={onSwipeEnd} style={{ pointerEvents: isModalOpen ? 'none' : 'auto' }}>
+                        <div className="swipe-area" onTouchStart={onSwipeStart} onTouchMove={onSwipeMove} onTouchEnd={onSwipeEnd} style={{ pointerEvents: isAnyModalOpen ? 'none' : 'auto' }}>
                             <div className="date-nav-container">
                                 <button className="date-nav-btn" onClick={() => animateToDate(-1)}><Icons.ChevronLeft /></button>
                                 <button className="date-nav-btn" onClick={() => animateToDate(1)}><Icons.ChevronRight /></button>
@@ -518,7 +530,7 @@ function App() {
                         <div className="timer-controls">
                             <button className="btn-timer-reset" onClick={resetTimer}><Icons.Refresh /></button>
                             <button className="btn-timer-main" onClick={() => { setIsTimerRunning(!isTimerRunning); triggerHaptic('light'); }}>
-                                {isTimerRunning ? <Icons.Pause /> : <Icons.Play />}
+                                {isTimerRunning ? <Icons.Pause style={{marginLeft: '0'}} /> : <Icons.Play style={{marginLeft: '4px'}} />}
                             </button>
                             <div style={{ width: '48px' }}></div> 
                         </div>
@@ -550,18 +562,12 @@ function App() {
                             </div>
                         </div>
 
-                        {/* НОВАЯ СЕТКА ПУЛЬСА С АНИМАЦИЕЙ "ЗАНАВЕСА" И КРУГЛЫМИ ТОЧКАМИ */}
                         <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto', padding: '20px' }} onClick={() => {triggerHaptic('light'); setIsHeatmapExpanded(!isHeatmapExpanded)}}>
                             <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', textAlign: 'center' }}>
                                 Пульс активности ({isHeatmapExpanded ? '365' : '90'} дней)
                             </h3>
                             
-                            {/* РАСКРЫВАЮЩИЙСЯ БЛОК СО СТАРЫМИ ДНЯМИ */}
-                            <div style={{ 
-                                display: 'grid', 
-                                gridTemplateRows: isHeatmapExpanded ? '1fr' : '0fr', 
-                                transition: 'grid-template-rows 0.7s cubic-bezier(0.25, 1, 0.5, 1)' 
-                            }}>
+                            <div style={{ display: 'grid', gridTemplateRows: isHeatmapExpanded ? '1fr' : '0fr', transition: 'grid-template-rows 0.7s cubic-bezier(0.25, 1, 0.5, 1)' }}>
                                 <div style={{ overflow: 'hidden' }}>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'flex-start', width: '100%', marginBottom: '6px' }}>
                                         {statsData.heatmapDays.slice(0, -90).map(day => (
@@ -571,7 +577,6 @@ function App() {
                                 </div>
                             </div>
                             
-                            {/* ВСЕГДА ВИДИМЫЙ БЛОК ПОСЛЕДНИХ 90 ДНЕЙ */}
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'flex-start', width: '100%' }}>
                                 {statsData.heatmapDays.slice(-90).map(day => (
                                     <div key={day.iso} className={`heatmap-cell level-${day.level}`} style={{ width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0 }}></div>

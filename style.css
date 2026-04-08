@@ -144,7 +144,7 @@ body::before {
 ========================================= */
 .swipe-area { width: 100vw; flex: 1; display: flex; flex-direction: column; overflow-x: hidden; position: relative; touch-action: pan-y; will-change: transform; transform: translateZ(0); }
 .date-nav-container { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; padding: 0 20px; display: flex; justify-content: space-between; box-sizing: border-box; z-index: 10; pointer-events: none; }
-.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-main); pointer-events: auto; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s; box-shadow: var(--shadow-main); pointer-events: auto; }
 .date-nav-btn:active { background: var(--bg-input); }
 .date-nav-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 3; fill: none; }
 .cards-track { display: flex; width: 300vw; align-items: flex-start; }
@@ -204,7 +204,7 @@ body::before {
 .glass-overlay-centered { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-glass-overlay); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; display: flex; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; transition: background-color 0.3s; }
 
 /* =========================================
-   НОВОЕ: ОКНО ЛОВУШКИ (СДАЕШЬСЯ?)
+   ОКНО ЛОВУШКИ (СДАЕШЬСЯ?)
 ========================================= */
 .give-up-modal { background: var(--bg-card); border-radius: 28px; padding: 30px 20px; width: 85%; max-width: 320px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 16px 40px rgba(0,0,0,0.5); animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
 .give-up-title { font-size: 24px; font-weight: 800; color: var(--text-main); margin: 0 0 10px 0; }
@@ -293,6 +293,9 @@ input:checked + .slider:before { transform: translateX(20px); }
 .timer-panel { display: flex; flex-direction: column; align-items: center; background: var(--bg-card); border-radius: 28px; padding: 30px; width: 100%; max-width: 320px; margin: 20px auto; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); box-sizing: border-box; transition: background-color 0.3s; }
 .timer-display { font-size: 64px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; margin: 10px 0 30px 0; }
 .timer-controls { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; }
+
+/* НОВОЕ: Стили для заголовка цели внутри фокуса */
+.focus-goal-label { font-size: 14px; color: var(--accent); text-transform: uppercase; font-weight: 800; letter-spacing: 1px; margin-bottom: 10px; text-align: center; animation: fadeIn 0.3s ease; }
 
 .btn-timer-main { width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--accent); background: transparent; color: var(--accent); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-main); transition: transform 0.2s; }
 .btn-timer-main:active { transform: scale(0.9); }

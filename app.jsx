@@ -38,7 +38,10 @@ const Icons = {
     Close: () => <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
     Text: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round"/><line x1="4" y1="12" x2="20" y2="12" strokeLinecap="round"/><line x1="4" y1="18" x2="14" y2="18" strokeLinecap="round"/></svg>,
     Clock: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-    Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+    // Новые иконки для минус и плюс
+    Plus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+    Minus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="5" y1="12" x2="19" y2="12"/></svg>
 };
 
 const TimeWheel = ({ items, value, onChange, width }) => {
@@ -312,6 +315,18 @@ function App() {
         });
     };
 
+    // ФУНКЦИИ КНОПОК + И - ДЛЯ ФОКУСА
+    const adjustFocusTime = (amount, e) => {
+        e.preventDefault(); 
+        triggerHaptic('light');
+        setForm(prev => {
+            let current = parseInt(prev.focusTime) || 25;
+            let next = current + amount;
+            if (next < 1) next = 1;
+            return {...prev, focusTime: next};
+        });
+    };
+
     const saveGoal = () => {
         if (createMode === 'macro') {
             if (!visionForm.title) { triggerHaptic('error'); return; }
@@ -370,7 +385,6 @@ function App() {
         } catch(e) { return { text: "00:00", className: 'badge failed-timer', style: {} }; }
     };
 
-    // ИСПРАВЛЕНО: Четкий расчет даты для Спринта и Разовой задачи
     const getActiveGoalsForDate = (dateTarget) => {
         const renderTime = dateTarget.getTime();
         return goals.filter(g => { 
@@ -386,7 +400,6 @@ function App() {
                     if (!g.weekDays.includes(dateTarget.getDay())) return false;
                 }
                 
-                // Спринт работает ровно столько дней, сколько указано
                 if (g.type === 'sprint') {
                     const durationDays = parseInt(g.duration, 10) || 1;
                     const endD = new Date(startT);
@@ -394,7 +407,6 @@ function App() {
                     if (renderTime > endD.getTime()) return false;
                 }
                 
-                // Разовая цель висит только в назначенный день
                 if (g.type === 'once') {
                     if (renderTime !== startT) return false;
                 }
@@ -770,8 +782,11 @@ function App() {
                                         )}
                                         <textarea placeholder="Опиши шаги" value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none' }} />
                                         
-                                        {/* ИСПРАВЛЕНО: Карточка Фокуса с описанием */}
+                                        {/* ИДЕАЛЬНЫЙ БЛОК НАСТРОЙКИ ФОКУСА */}
                                         <div className="card" style={{margin: '15px 0 0 0', maxWidth: '100%', border: '1px solid var(--border-color)', background: 'transparent', boxShadow: 'none', padding: '15px'}}>
+                                            <p style={{fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 15px 0', lineHeight: '1.4', textAlign: 'center'}}>
+                                                Задача не будет отмечаться тапом. Для выполнения потребуется отсидеть таймер в Комнате исполнения.
+                                            </p>
                                             <div className="setting-row" style={{width: '100%', padding: '0'}}>
                                                 <span style={{fontWeight: 'bold', fontSize: '15px'}}>Требует фокуса</span>
                                                 <label className="ios-switch">
@@ -779,17 +794,32 @@ function App() {
                                                     <span className="slider"></span>
                                                 </label>
                                             </div>
-                                            <p style={{fontSize: '12px', color: 'var(--text-muted)', margin: '8px 0 0 0', lineHeight: '1.4'}}>
-                                                Задача не будет отмечаться тапом. Для выполнения потребуется отсидеть таймер в Комнате исполнения.
-                                            </p>
+                                            
                                             {form.controlMethod === 'timer' && (
-                                                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '15px', paddingTop: '15px', borderTop: '1px solid var(--border-input)', animation: 'fadeIn 0.3s'}}>
-                                                    <span style={{fontSize: '14px', color: 'var(--text-main)', fontWeight: '500'}}>Время (минут):</span>
-                                                    <input type="number" className="dark-input" style={{width: '80px', marginBottom: 0, textAlign: 'center', padding: '8px'}} value={form.focusTime || 25} onChange={e => setForm({...form, focusTime: parseInt(e.target.value) || 25})} />
+                                                <div style={{marginTop: '15px', paddingTop: '15px', borderTop: '1px solid var(--border-input)', animation: 'fadeIn 0.3s'}}>
+                                                    <div style={{fontSize: '14px', color: 'var(--text-main)', fontWeight: 'bold', marginBottom: '12px', textAlign: 'center'}}>Время (минут):</div>
+                                                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px'}}>
+                                                        <button className="glass-btn-circle" style={{width: '48px', height: '48px', minWidth: '48px'}} onClick={(e) => adjustFocusTime(-5, e)}>
+                                                            <Icons.Minus style={{width: '24px', height: '24px', stroke: 'var(--text-main)'}} />
+                                                        </button>
+                                                        
+                                                        <input 
+                                                            type="number" 
+                                                            className="dark-input" 
+                                                            style={{flex: 1, marginBottom: 0, textAlign: 'center', fontSize: '24px', fontWeight: '800', padding: '12px', letterSpacing: '1px'}} 
+                                                            value={form.focusTime === '' ? '' : form.focusTime} 
+                                                            onFocus={() => setForm({...form, focusTime: ''})}
+                                                            onBlur={() => { if (form.focusTime === '' || form.focusTime <= 0) setForm({...form, focusTime: 25}); }}
+                                                            onChange={e => setForm({...form, focusTime: parseInt(e.target.value) || ''})} 
+                                                        />
+                                                        
+                                                        <button className="glass-btn-circle" style={{width: '48px', height: '48px', minWidth: '48px'}} onClick={(e) => adjustFocusTime(5, e)}>
+                                                            <Icons.Plus style={{width: '24px', height: '24px', stroke: 'var(--text-main)'}} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
-
                                     </div>
                                 )}
                                 {createStep === 'time' && (

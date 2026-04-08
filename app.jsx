@@ -27,7 +27,6 @@ const Icons = {
     Moon: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
     Save: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke="#000" {...props}><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     
-    // ИСПРАВЛЕНО: Бесконечность теперь красивая восьмерка
     Target: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill={props.active ? "var(--accent)" : "var(--icon-color)"}/></svg>,
     Infinity: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4z"/></svg>,
     Sprint: (props) => <svg viewBox="0 0 24 24" fill="none" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
@@ -93,6 +92,7 @@ function App() {
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
+    const [showGiveUpModal, setShowGiveUpModal] = useState(false); // НОВОЕ: Состояние окна ловушки
     
     const [expandedGoalId, setExpandedGoalId] = useState(null);
     const isLongPress = useRef(false);
@@ -144,7 +144,8 @@ function App() {
         localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
     }, [isLightTheme]);
 
-    const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId;
+    // АНТИ-СКРОЛЛ ФОНА ВКЛЮЧАЕТ В СЕБЯ НОВОЕ ОКНО
+    const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId || showGiveUpModal;
     useEffect(() => {
         if (isAnyModalOpen) { document.body.style.overflow = 'hidden'; } 
         else { document.body.style.overflow = ''; }
@@ -515,9 +516,31 @@ function App() {
                             {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
                         </div>
                         <div className="timer-controls">
-                            <button className="btn-timer-reset" onClick={resetTimer}><Icons.Refresh /></button>
-                            <button className="btn-timer-main" onClick={() => { setIsTimerRunning(!isTimerRunning); triggerHaptic('light'); }}>
-                                {isTimerRunning ? <Icons.Pause style={{marginLeft: '0'}} /> : <Icons.Play style={{marginLeft: '4px'}} />}
+                            {/* КНОПКА СБРОСА (Тоже вызывает ловушку, если таймер был запущен) */}
+                            <button className="btn-timer-reset" onClick={() => { 
+                                if (timeLeft < 25 * 60 && timeLeft > 0) {
+                                    setIsTimerRunning(false);
+                                    setShowGiveUpModal(true);
+                                    triggerHaptic('heavy');
+                                } else {
+                                    resetTimer(); 
+                                }
+                            }}>
+                                <Icons.Refresh />
+                            </button>
+                            
+                            {/* КНОПКА ПАУЗЫ (Вызывает ловушку вместо паузы) */}
+                            <button className="btn-timer-main" onClick={() => { 
+                                if (isTimerRunning) {
+                                    setIsTimerRunning(false); // Ставим на паузу
+                                    setShowGiveUpModal(true); // Показываем ловушку
+                                    triggerHaptic('heavy');
+                                } else {
+                                    setIsTimerRunning(true);
+                                    triggerHaptic('light');
+                                }
+                            }}>
+                                {isTimerRunning ? <Icons.Pause /> : <Icons.Play />}
                             </button>
                             <div style={{ width: '48px' }}></div> 
                         </div>
@@ -587,6 +610,32 @@ function App() {
                         <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)} style={{marginBottom: 0}}>
                             <option value="soft">Мягкий</option><option value="hard">Жесткий</option>
                         </select>
+                    </div>
+                )}
+
+                {/* НОВОЕ: МОДАЛЬНОЕ ОКНО "ПРАВО НА ОШИБКУ" (ЛОВУШКА №1) */}
+                {showGiveUpModal && (
+                    <div className="glass-overlay-centered" style={{ zIndex: 9999 }}>
+                        <div className="give-up-modal">
+                            <h2 className="give-up-title">Решил сдаться?</h2>
+                            <p className="give-up-text">Время идёт. Твои цели сами себя не достигнут. Ты можешь бросить всё прямо сейчас и остаться там же, где был вчера. Или можешь взять себя в руки.</p>
+                            <div className="give-up-actions">
+                                <button className="btn-continue-pulsing" onClick={() => { 
+                                    setShowGiveUpModal(false); 
+                                    setIsTimerRunning(true); // Продолжаем таймер
+                                    triggerHaptic('success'); 
+                                }}>
+                                    Я справлюсь. Продолжить
+                                </button>
+                                <button className="btn-give-up-weak" onClick={() => { 
+                                    setShowGiveUpModal(false); 
+                                    resetTimer(); // Сбрасываем (сдаемся)
+                                    triggerHaptic('heavy'); // Тяжелый удар
+                                }}>
+                                    Я слабак, сдаюсь
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 

@@ -73,7 +73,7 @@ function App() {
     const [isTransitioning, setIsTransitioning] = useState(false);
     
     const [isLightTheme, setIsLightTheme] = useState(() => localStorage.getItem('motivateMe_theme') === 'light');
-    const [isHeatmapExpanded, setIsHeatmapExpanded] = useState(false); // СОСТОЯНИЕ РАСШИРЕННОГО ПУЛЬСА
+    const [isHeatmapExpanded, setIsHeatmapExpanded] = useState(false); 
     
     const touchStartX = useRef(0);
     const touchStartY = useRef(0);
@@ -177,7 +177,6 @@ function App() {
         } catch(e) {}
     };
 
-    // НОВАЯ ЛОГИКА СТАТИСТИКИ (365 ДНЕЙ ДЛЯ СЕТКИ)
     const statsData = useMemo(() => {
         const today = new Date(); let totalDone = 0; let bestStreak = 0; let completionByDate = {}; 
         goals.forEach(g => {
@@ -200,7 +199,6 @@ function App() {
         }
         
         const heatmapDays = [];
-        // Генерируем массив от старейшего дня к сегодняшнему (слева направо)
         for (let i = 364; i >= 0; i--) {
             const d = new Date(today); d.setDate(d.getDate() - i);
             const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -393,7 +391,6 @@ function App() {
                             {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - (g.streak || 0))} ⏳</span>}
                             <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
                         </div>
-                        {/* ИДЕАЛЬНАЯ АНИМАЦИЯ ЧЕРЕЗ GRID */}
                         <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}>
                             <div className="goal-desc-inner">
                                 <div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div>
@@ -532,9 +529,8 @@ function App() {
                         </div>
                         <div className="timer-controls">
                             <button className="btn-timer-reset" onClick={resetTimer}><Icons.Refresh /></button>
-                            {/* ИСПРАВЛЕНА КНОПКА PLAY/PAUSE */}
                             <button className="btn-timer-main" onClick={() => { setIsTimerRunning(!isTimerRunning); triggerHaptic('light'); }}>
-                                {isTimerRunning ? <Icons.Pause style={{marginLeft: '0'}} /> : <Icons.Play style={{marginLeft: '4px'}} />}
+                                {isTimerRunning ? <Icons.Pause /> : <Icons.Play />}
                             </button>
                             <div style={{ width: '48px' }}></div> 
                         </div>
@@ -566,23 +562,25 @@ function App() {
                             </div>
                         </div>
 
-                        {/* НОВАЯ СЕТКА ПУЛЬСА 90/365 */}
+                        {/* НОВАЯ СЕТКА ПУЛЬСА НА FLEXBOX (Работает везде) */}
                         <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto' }} onClick={() => {triggerHaptic('light'); setIsHeatmapExpanded(!isHeatmapExpanded)}}>
                             <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', textAlign: 'center' }}>
                                 Пульс активности ({isHeatmapExpanded ? '365' : '90'} дней)
                             </h3>
-                            <div className="heatmap-grid" style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(14px, 1fr))',
+                            <div style={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
                                 gap: '6px',
+                                justifyContent: 'center',
                                 width: '100%',
                                 transition: 'all 0.3s ease'
                             }}>
                                 {(isHeatmapExpanded ? statsData.heatmapDays : statsData.heatmapDays.slice(-90)).map(day => (
                                     <div key={day.iso} className={`heatmap-cell level-${day.level}`} style={{
-                                        width: '100%',
-                                        aspectRatio: '1/1',
-                                        borderRadius: '50%'
+                                        width: '14px',
+                                        height: '14px',
+                                        borderRadius: '50%',
+                                        flexShrink: 0
                                     }}></div>
                                 ))}
                             </div>
@@ -712,7 +710,6 @@ function App() {
                                         <div className="setting-row"><span>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} /><span className="slider"></span></label></div>
                                     </div>
                                 )}
-                                {/* ИСПРАВЛЕНО: ТУМБЛЕР УВЕДОМЛЕНИЙ */}
                                 {createStep === 'notifs' && (
                                     <div className="panel-step">
                                         <div className="card" style={{margin: '0', maxWidth: '100%', border: '1px solid var(--border-color)', background: 'transparent', boxShadow: 'none'}}>

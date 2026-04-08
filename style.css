@@ -65,6 +65,9 @@ body {
     -webkit-user-select: none; 
     user-select: none; 
     min-height: 100vh; overflow-x: hidden; 
+    /* ИСПРАВЛЕНО: Четкий рендеринг шрифтов при анимации */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 input, textarea, select {
@@ -96,9 +99,10 @@ body::before {
 /* =========================================
    ГЛАВНЫЙ КОНТЕЙНЕР И ШАПКА
 ========================================= */
-.container { display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; padding-top: calc(20px + 4vh); padding-bottom: 140px; position: relative; z-index: 1; }
+.container { display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; padding-top: 10px; padding-bottom: 140px; position: relative; z-index: 1; }
 
-.header-notcoin-style { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; padding: 0 20px 10px 20px; }
+/* ИСПРАВЛЕНО: Шапка опущена, иконка меньше, текст под ней */
+.header-notcoin-style { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; padding: 40px 20px 10px 20px; }
 .m-logo-small { width: 26px; height: 26px; border-radius: 8px; object-fit: cover; background: #fff; transform: rotate(-15deg); box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 6px; margin-right: 0; }
 .main-title-small { margin: 0; font-size: 18px; font-weight: 800; color: var(--text-main); text-shadow: 0 2px 6px rgba(0,0,0,0.2); }
 
@@ -119,10 +123,12 @@ body::before {
 /* =========================================
    МАКРО-ЦЕЛИ (ВИДЕНИЯ)
 ========================================= */
+/* ИСПРАВЛЕНО: Отступ снизу теперь ровно 16px, как между карточками целей */
 .visions-scroll-track { display: flex; gap: 15px; width: 100vw; padding: 0 max(20px, calc(50vw - 180px)) 16px max(20px, calc(50vw - 180px)); box-sizing: border-box; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .visions-scroll-track::-webkit-scrollbar { display: none; }
 
-.vision-card { flex: 0 0 100%; max-width: 360px; background: var(--bg-card); border-radius: 28px; padding: 25px; display: flex; flex-direction: column; border: 1px solid var(--border-color); scroll-snap-align: center; box-shadow: var(--shadow-main); cursor: pointer; min-height: 220px; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+/* ИСПРАВЛЕНО: Убрана анимация продавливания (:active) */
+.vision-card { flex: 0 0 100%; max-width: 360px; background: var(--bg-card); border-radius: 28px; padding: 25px; display: flex; flex-direction: column; border: 1px solid var(--border-color); scroll-snap-align: center; box-shadow: var(--shadow-main); cursor: pointer; min-height: 220px; box-sizing: border-box; }
 .vision-card.active { border-color: var(--accent); }
 
 .vision-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
@@ -141,21 +147,21 @@ body::before {
 /* =========================================
    ЗОНА СВАЙПА И ДАТЫ
 ========================================= */
+/* Только свайп-зона аппаратно ускорена, чтобы не перегружать память */
 .swipe-area { width: 100vw; flex: 1; display: flex; flex-direction: column; overflow-x: hidden; position: relative; touch-action: pan-y; will-change: transform; transform: translateZ(0); }
 .date-nav-container { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; padding: 0 20px; display: flex; justify-content: space-between; box-sizing: border-box; z-index: 10; pointer-events: none; }
-.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-main); pointer-events: auto; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.date-nav-btn:active { transform: scale(0.85); background: var(--bg-input); }
+.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-main); pointer-events: auto; }
+.date-nav-btn:active { background: var(--bg-input); }
 .date-nav-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 3; fill: none; }
 .cards-track { display: flex; width: 300vw; align-items: flex-start; }
 .cards-pane { width: 100vw; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 0 20px; box-sizing: border-box; }
 .date-display-row { text-align: center; font-size: 16px; font-weight: bold; color: var(--text-main); height: 44px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; text-transform: capitalize; }
 
 /* =========================================
-   КАРТОЧКИ ЦЕЛЕЙ
+   КАРТОЧКИ ЦЕЛЕЙ И ИХ РАСШИРЕНИЕ
 ========================================= */
-.card { background: var(--bg-card); border-radius: 24px; padding: 18px 20px; color: var(--text-main); width: 100%; max-width: 360px; box-shadow: var(--shadow-main); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-color); cursor: pointer; -webkit-font-smoothing: antialiased; }
-.shake { animation: shakeCard 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-@keyframes shakeCard { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); } 20%, 40%, 60%, 80% { transform: translateX(4px); } }
+/* ИСПРАВЛЕНО: Убрана анимация продавливания */
+.card { background: var(--bg-card); border-radius: 24px; padding: 18px 20px; color: var(--text-main); width: 100%; max-width: 360px; box-shadow: var(--shadow-main); margin-bottom: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-color); cursor: pointer; }
 
 .goal-info { flex: 1; padding-right: 15px; display: flex; flex-direction: column; justify-content: center; gap: 4px; pointer-events: none; }
 .goal-title { font-weight: 600; font-size: 17px; margin: 0; color: var(--text-main); line-height: 1.2; word-break: break-word; hyphens: auto; }
@@ -165,10 +171,10 @@ body::before {
 .failed-timer { color: #ff3b30 !important; font-weight: bold !important; }
 @keyframes pulseUrgent { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 
-/* ИСПРАВЛЕНА АНИМАЦИЯ РАЗВЕРТЫВАНИЯ */
-.goal-desc-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
+/* ИСПРАВЛЕНА АНИМАЦИЯ: Идеальное скольжение через CSS Grid (Время задается в JS) */
+.goal-desc-wrapper { display: grid; grid-template-rows: 0fr; transition-property: grid-template-rows; transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1); }
 .goal-desc-wrapper.expanded { grid-template-rows: 1fr; }
-.goal-desc-inner { min-height: 0; overflow: hidden; opacity: 0; transform: translateY(-5px); transition: opacity 0.2s ease, transform 0.3s ease; pointer-events: auto; }
+.goal-desc-inner { min-height: 0; overflow: hidden; opacity: 0; transform: translateY(-5px); transition-property: opacity, transform; transition-timing-function: ease; pointer-events: auto; }
 .goal-desc-wrapper.expanded .goal-desc-inner { opacity: 1; transform: translateY(0); padding-top: 8px; }
 .goal-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; padding-bottom: 4px; max-height: 260px; overflow-y: auto; word-break: break-word; hyphens: auto; }
 .goal-desc::-webkit-scrollbar { width: 4px; }
@@ -212,7 +218,7 @@ body::before {
 .action-buttons-container { display: flex; gap: 24px; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 
 .glass-btn-circle { width: 72px; height: 72px; border-radius: 50%; background: var(--bg-glass-btn); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 2px solid var(--border-color); display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: var(--shadow-main); padding: 0; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-.glass-btn-circle:active { transform: scale(0.9); background: var(--bg-glass-btn-hover); }
+.glass-btn-circle:active { background: var(--bg-glass-btn-hover); }
 .glass-btn-circle svg { width: 30px; height: 30px; stroke: var(--icon-color); stroke-width: 2; fill: none; }
 
 .glass-btn-circle.edit { border-color: var(--accent); }
@@ -284,12 +290,13 @@ input:checked + .slider:before { transform: translateX(20px); }
 .timer-display { font-size: 64px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; margin: 10px 0 30px 0; }
 .timer-controls { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; }
 
+/* ИСПРАВЛЕНО: Иконка Паузы по центру, кнопка только контур */
 .btn-timer-main { width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--accent); background: transparent; color: var(--accent); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-main); transition: transform 0.2s; }
 .btn-timer-main:active { transform: scale(0.9); }
 .btn-timer-main svg { width: 32px; height: 32px; stroke: var(--accent); fill: var(--accent); }
 
 .btn-timer-reset { width: 48px; height: 48px; border-radius: 50%; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--icon-color); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
-.btn-timer-reset:active { transform: scale(0.85); background: var(--bg-segment); }
+.btn-timer-reset:active { background: var(--bg-segment); }
 .btn-timer-reset svg { width: 22px; height: 22px; }
 
 .stats-wrapper { width: 100%; max-width: 360px; margin: 0 auto; display: flex; flex-direction: column; animation: fadeIn 0.4s ease; }
@@ -305,7 +312,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 .bar-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
 @keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 
-/* Цвета ячеек пульса активности */
 .heatmap-cell { transition: background 0.3s; }
 .heatmap-cell.level-0 { background: var(--bg-input); }
 .heatmap-cell.level-1 { background: rgba(255, 140, 0, 0.3); }

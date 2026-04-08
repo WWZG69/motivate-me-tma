@@ -144,7 +144,7 @@ body::before {
 ========================================= */
 .swipe-area { width: 100vw; flex: 1; display: flex; flex-direction: column; overflow-x: hidden; position: relative; touch-action: pan-y; will-change: transform; transform: translateZ(0); }
 .date-nav-container { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; padding: 0 20px; display: flex; justify-content: space-between; box-sizing: border-box; z-index: 10; pointer-events: none; }
-.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-main); pointer-events: auto; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.date-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; color: var(--icon-color); width: 44px; height: 44px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s; box-shadow: var(--shadow-main); pointer-events: auto; }
 .date-nav-btn:active { background: var(--bg-input); }
 .date-nav-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 3; fill: none; }
 .cards-track { display: flex; width: 300vw; align-items: flex-start; }
@@ -238,10 +238,11 @@ body::before {
 .weekday-btn { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: transparent; border: 2px solid var(--border-input); font-size: 14px; font-weight: bold; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
 .weekday-btn.active { background: transparent; border-color: var(--accent); color: var(--accent); }
 
+/* ИСПРАВЛЕНО: Иконки внутри кнопок теперь имеют отступы (воздух) */
 .radio-group { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
 .radio-btn { width: 52px; height: 52px; border-radius: 50%; background: transparent; border: 2px solid var(--border-input); display: flex; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: pointer; }
 .radio-btn.active { background: transparent; border-color: var(--accent); transform: scale(1.1); }
-.radio-btn svg { stroke: var(--icon-color); }
+.radio-btn svg { width: 24px; height: 24px; stroke: var(--icon-color); }
 .radio-btn.active svg { stroke: var(--accent); }
 
 .info-box { text-align: center; margin-bottom: 20px; min-height: 44px; }
@@ -249,7 +250,6 @@ body::before {
 .info-desc { font-size: 13px; color: var(--text-muted); line-height: 1.4; margin: 0; }
 .divider { border: 0; height: 1px; background: var(--border-input); margin: 15px 0; width: 100%; }
 
-/* ИСПРАВЛЕНО: Белый цвет (var(--text-main)) для заголовков колес, оранжевая подсветка для цифр */
 .wheels-grid { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 20px; }
 .wheel-section { flex: 1; display: flex; flex-direction: column; align-items: center; }
 .wheel-label { font-size: 13px; font-weight: bold; color: var(--text-main); margin-bottom: 8px; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }

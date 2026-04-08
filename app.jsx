@@ -88,7 +88,6 @@ function App() {
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     
     const [expandedGoalId, setExpandedGoalId] = useState(null);
-    const [shakingGoalId, setShakingGoalId] = useState(null);
     const isLongPress = useRef(false);
     const pressTimer = useRef(null);
     const [activeVisionId, setActiveVisionId] = useState(null);
@@ -142,22 +141,17 @@ function App() {
         const x = e.clientX;
         const y = e.clientY;
         const goingToLight = !isLightTheme;
-        
         const ripple = document.createElement('div');
         ripple.className = 'theme-ripple-effect';
         ripple.style.left = `${x}px`;
         ripple.style.top = `${y}px`;
         ripple.style.backgroundColor = '#F2F2F7'; 
-        
         triggerHaptic('medium');
 
         if (goingToLight) {
             ripple.style.animation = 'rippleExpand 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards';
             document.body.appendChild(ripple);
-            setTimeout(() => {
-                setIsLightTheme(true);
-                ripple.classList.add('fade-out');
-            }, 900);
+            setTimeout(() => { setIsLightTheme(true); ripple.classList.add('fade-out'); }, 900);
             setTimeout(() => ripple.remove(), 1200);
         } else {
             setIsLightTheme(false);
@@ -177,6 +171,7 @@ function App() {
         } catch(e) {}
     };
 
+    // ГЕНЕРАЦИЯ ДАННЫХ ПУЛЬСА (365 дней в правильном порядке)
     const statsData = useMemo(() => {
         const today = new Date(); let totalDone = 0; let bestStreak = 0; let completionByDate = {}; 
         goals.forEach(g => {
@@ -199,6 +194,7 @@ function App() {
         }
         
         const heatmapDays = [];
+        // Создаем массив от самого старого дня к сегодняшнему (слева направо)
         for (let i = 364; i >= 0; i--) {
             const d = new Date(today); d.setDate(d.getDate() - i);
             const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -235,30 +231,17 @@ function App() {
     const animateToDate = (daysShift) => {
         setExpandedGoalId(null);
         triggerHaptic('light');
-
-        if (transitionTimer.current) {
-            clearTimeout(transitionTimer.current);
-            applyDateShift(offsetPx > 0 ? -1 : 1);
-        }
-
-        setIsTransitioning(true);
-        setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth);
-
+        if (transitionTimer.current) { clearTimeout(transitionTimer.current); applyDateShift(offsetPx > 0 ? -1 : 1); }
+        setIsTransitioning(true); setOffsetPx(daysShift > 0 ? -window.innerWidth : window.innerWidth);
         transitionTimer.current = setTimeout(() => {
-            setIsTransitioning(false);
-            setOffsetPx(0);
-            applyDateShift(daysShift);
-            transitionTimer.current = null;
+            setIsTransitioning(false); setOffsetPx(0); applyDateShift(daysShift); transitionTimer.current = null;
         }, 180);
     };
 
     const onSwipeStart = (e) => {
         if (transitionTimer.current) {
-            clearTimeout(transitionTimer.current);
-            transitionTimer.current = null;
-            applyDateShift(offsetPx > 0 ? -1 : 1);
-            setOffsetPx(0);
-            setIsTransitioning(false);
+            clearTimeout(transitionTimer.current); transitionTimer.current = null;
+            applyDateShift(offsetPx > 0 ? -1 : 1); setOffsetPx(0); setIsTransitioning(false);
         }
         touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY; touchStartTime.current = Date.now(); isDragging.current = true; isSwipeValid.current = null;
     };
@@ -274,8 +257,7 @@ function App() {
     const onSwipeEnd = () => {
         if (!isDragging.current || isSwipeValid.current !== true) { isDragging.current = false; return; }
         isDragging.current = false;
-        const swipeDuration = Date.now() - touchStartTime.current; const velocity = offsetPx / swipeDuration; 
-        const threshold = window.innerWidth * 0.2; 
+        const swipeDuration = Date.now() - touchStartTime.current; const velocity = offsetPx / swipeDuration; const threshold = window.innerWidth * 0.2; 
         if (offsetPx > threshold || velocity > 0.4) animateToDate(-1); else if (offsetPx < -threshold || velocity < -0.4) animateToDate(1); 
         else { setIsTransitioning(true); setOffsetPx(0); setTimeout(() => setIsTransitioning(false), 200); }
     };
@@ -377,11 +359,16 @@ function App() {
         const dateKey = renderDate.toDateString(); const activeGoals = getActiveGoalsForDate(renderDate);
         if (activeGoals.length === 0) return <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Задач на этот день нет.</p>;
         return activeGoals.map(g => {
-            const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; const isShaking = shakingGoalId === g.id; 
+            const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; 
             const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
             const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
+            
+            // ДИНАМИЧЕСКИЙ РАСЧЕТ ВРЕМЕНИ АНИМАЦИИ НА ОСНОВЕ КОЛИЧЕСТВА ТЕКСТА
+            const textLen = (g.description || 'Описания нет').length;
+            const animDuration = Math.min(0.8, Math.max(0.2, textLen * 0.002)); // от 0.2с до 0.8с
+
             return (
-                <div key={g.id} className={`card ${isShaking ? 'shake' : ''}`} onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchMove={handleCardTouchEnd} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
+                <div key={g.id} className="card" onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchMove={handleCardTouchEnd} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
                     <div className="goal-info">
                         {linkedVision && (<div className="vision-badge">{linkedVision.emoji} {linkedVision.title}</div>)}
                         <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'var(--text-muted)' : 'var(--text-main)' }}>{g.title}</div>
@@ -391,8 +378,9 @@ function App() {
                             {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - (g.streak || 0))} ⏳</span>}
                             <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
                         </div>
-                        <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`}>
-                            <div className="goal-desc-inner">
+                        {/* ПРИМЕНЯЕМ РАССЧИТАННОЕ ВРЕМЯ АНИМАЦИИ К СЕТКЕ */}
+                        <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`} style={{ transitionDuration: `${animDuration}s` }}>
+                            <div className="goal-desc-inner" style={{ transitionDuration: `${animDuration * 0.8}s` }}>
                                 <div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div>
                             </div>
                         </div>
@@ -422,7 +410,7 @@ function App() {
 
     const toggleGoal = (e, goalObj, dateTarget) => {
         e.stopPropagation(); const { canToggle } = checkPermissions(goalObj, dateTarget);
-        if (!canToggle) { triggerHaptic('error'); setShakingGoalId(goalObj.id); setTimeout(() => setShakingGoalId(null), 400); return; }
+        if (!canToggle) { triggerHaptic('error'); return; }
         const dateStr = dateTarget.toDateString(); const isCurrentlyDone = !!(goalObj.history && goalObj.history[dateStr]);
         setGoals(goals.map(g => {
             if (g.id !== goalObj.id) return g;
@@ -562,26 +550,31 @@ function App() {
                             </div>
                         </div>
 
-                        {/* НОВАЯ СЕТКА ПУЛЬСА НА FLEXBOX (Работает везде) */}
-                        <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto' }} onClick={() => {triggerHaptic('light'); setIsHeatmapExpanded(!isHeatmapExpanded)}}>
+                        {/* НОВАЯ СЕТКА ПУЛЬСА С АНИМАЦИЕЙ "ЗАНАВЕСА" И КРУГЛЫМИ ТОЧКАМИ */}
+                        <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto', padding: '20px' }} onClick={() => {triggerHaptic('light'); setIsHeatmapExpanded(!isHeatmapExpanded)}}>
                             <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', textAlign: 'center' }}>
                                 Пульс активности ({isHeatmapExpanded ? '365' : '90'} дней)
                             </h3>
-                            <div style={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: '6px',
-                                justifyContent: 'center',
-                                width: '100%',
-                                transition: 'all 0.3s ease'
+                            
+                            {/* РАСКРЫВАЮЩИЙСЯ БЛОК СО СТАРЫМИ ДНЯМИ */}
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateRows: isHeatmapExpanded ? '1fr' : '0fr', 
+                                transition: 'grid-template-rows 0.7s cubic-bezier(0.25, 1, 0.5, 1)' 
                             }}>
-                                {(isHeatmapExpanded ? statsData.heatmapDays : statsData.heatmapDays.slice(-90)).map(day => (
-                                    <div key={day.iso} className={`heatmap-cell level-${day.level}`} style={{
-                                        width: '14px',
-                                        height: '14px',
-                                        borderRadius: '50%',
-                                        flexShrink: 0
-                                    }}></div>
+                                <div style={{ overflow: 'hidden' }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'flex-start', width: '100%', marginBottom: '6px' }}>
+                                        {statsData.heatmapDays.slice(0, -90).map(day => (
+                                            <div key={day.iso} className={`heatmap-cell level-${day.level}`} style={{ width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0 }}></div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* ВСЕГДА ВИДИМЫЙ БЛОК ПОСЛЕДНИХ 90 ДНЕЙ */}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'flex-start', width: '100%' }}>
+                                {statsData.heatmapDays.slice(-90).map(day => (
+                                    <div key={day.iso} className={`heatmap-cell level-${day.level}`} style={{ width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0 }}></div>
                                 ))}
                             </div>
                         </div>

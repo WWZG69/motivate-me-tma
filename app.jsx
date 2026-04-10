@@ -780,40 +780,39 @@ function App() {
                                         )}
                                         <textarea placeholder="Опиши шаги" value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none' }} />
                                         
-                                        {/* ИСПРАВЛЕНО: Блок настройки фокуса с идеальной версткой */}
-                                        <div className="card" style={{margin: '15px 0 0 0', width: '100%', border: '1px solid var(--border-color)', background: 'transparent', boxShadow: 'none', padding: '20px', boxSizing: 'border-box'}}>
-                                            <div className="setting-row" style={{width: '100%', padding: '0', marginBottom: '10px'}}>
-                                                <span style={{fontWeight: 'bold', fontSize: '16px'}}>Требует фокуса</span>
-                                                <label className="ios-switch">
+                                        {/* ИСПРАВЛЕНО: ЖЕЛЕЗОБЕТОННАЯ ВЕРСТКА БЛОКА ФОКУСА */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', margin: '15px 0 0 0', width: '100%', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '16px', boxSizing: 'border-box' }}>
+                                            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: '1.4', textAlign: 'left', width: '100%' }}>
+                                                Отметка тапом отключена. Выполнение засчитается только после завершения таймера в Комнате исполнения.
+                                            </p>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                                <span style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--text-main)' }}>Требует фокуса</span>
+                                                <label className="ios-switch" style={{ flexShrink: 0, margin: 0 }}>
                                                     <input type="checkbox" checked={form.controlMethod === 'timer'} onChange={e => setForm({...form, controlMethod: e.target.checked ? 'timer' : 'check'})} />
                                                     <span className="slider"></span>
                                                 </label>
                                             </div>
                                             
-                                            <p style={{fontSize: '13px', color: 'var(--text-muted)', margin: '0', lineHeight: '1.4', textAlign: 'left'}}>
-                                                Отметка тапом отключена. Выполнение засчитается только после завершения таймера в Комнате исполнения.
-                                            </p>
-                                            
                                             {form.controlMethod === 'timer' && (
-                                                <div style={{marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border-input)', animation: 'fadeIn 0.3s'}}>
-                                                    <div style={{fontSize: '14px', color: 'var(--text-main)', fontWeight: 'bold', marginBottom: '15px', textAlign: 'left'}}>Время (минут):</div>
-                                                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px'}}>
-                                                        <button className="glass-btn-circle" style={{width: '48px', height: '48px', minWidth: '48px'}} onClick={(e) => adjustFocusTime(-5, e)}>
-                                                            <Icons.Minus style={{width: '24px', height: '24px', stroke: 'var(--text-main)'}} />
+                                                <div style={{ display: 'flex', flexDirection: 'column', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-input)', animation: 'fadeIn 0.3s' }}>
+                                                    <div style={{ fontSize: '14px', color: 'var(--text-main)', fontWeight: 'bold', marginBottom: '12px', textAlign: 'left' }}>Время (минут):</div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px', width: '100%' }}>
+                                                        <button className="glass-btn-circle" style={{ width: '48px', height: '48px', minWidth: '48px', margin: 0 }} onClick={(e) => adjustFocusTime(-5, e)}>
+                                                            <Icons.Minus style={{ width: '24px', height: '24px', stroke: 'var(--text-main)' }} />
                                                         </button>
                                                         
                                                         <input 
                                                             type="number" 
                                                             className="dark-input" 
-                                                            style={{flex: 1, marginBottom: 0, textAlign: 'center', fontSize: '24px', fontWeight: '800', padding: '12px', letterSpacing: '1px'}} 
+                                                            style={{ flex: 1, margin: 0, textAlign: 'center', fontSize: '24px', fontWeight: '800', padding: '12px', letterSpacing: '1px' }} 
                                                             value={form.focusTime === '' ? '' : form.focusTime} 
                                                             onFocus={() => setForm({...form, focusTime: ''})}
                                                             onBlur={() => { if (form.focusTime === '' || form.focusTime <= 0) setForm({...form, focusTime: 25}); }}
                                                             onChange={e => setForm({...form, focusTime: parseInt(e.target.value) || ''})} 
                                                         />
                                                         
-                                                        <button className="glass-btn-circle" style={{width: '48px', height: '48px', minWidth: '48px'}} onClick={(e) => adjustFocusTime(5, e)}>
-                                                            <Icons.Plus style={{width: '24px', height: '24px', stroke: 'var(--text-main)'}} />
+                                                        <button className="glass-btn-circle" style={{ width: '48px', height: '48px', minWidth: '48px', margin: 0 }} onClick={(e) => adjustFocusTime(5, e)}>
+                                                            <Icons.Plus style={{ width: '24px', height: '24px', stroke: 'var(--text-main)' }} />
                                                         </button>
                                                     </div>
                                                 </div>

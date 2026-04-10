@@ -39,7 +39,6 @@ const Icons = {
     Text: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round"/><line x1="4" y1="12" x2="20" y2="12" strokeLinecap="round"/><line x1="4" y1="18" x2="14" y2="18" strokeLinecap="round"/></svg>,
     Clock: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-    // Новые иконки для минус и плюс
     Plus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
     Minus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="5" y1="12" x2="19" y2="12"/></svg>
 };
@@ -315,7 +314,6 @@ function App() {
         });
     };
 
-    // ФУНКЦИИ КНОПОК + И - ДЛЯ ФОКУСА
     const adjustFocusTime = (amount, e) => {
         e.preventDefault(); 
         triggerHaptic('light');
@@ -782,22 +780,23 @@ function App() {
                                         )}
                                         <textarea placeholder="Опиши шаги" value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none' }} />
                                         
-                                        {/* ИДЕАЛЬНЫЙ БЛОК НАСТРОЙКИ ФОКУСА */}
-                                        <div className="card" style={{margin: '15px 0 0 0', maxWidth: '100%', border: '1px solid var(--border-color)', background: 'transparent', boxShadow: 'none', padding: '15px'}}>
-                                            <p style={{fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 15px 0', lineHeight: '1.4', textAlign: 'center'}}>
-                                                Задача не будет отмечаться тапом. Для выполнения потребуется отсидеть таймер в Комнате исполнения.
-                                            </p>
-                                            <div className="setting-row" style={{width: '100%', padding: '0'}}>
-                                                <span style={{fontWeight: 'bold', fontSize: '15px'}}>Требует фокуса</span>
+                                        {/* ИСПРАВЛЕНО: Блок настройки фокуса с идеальной версткой */}
+                                        <div className="card" style={{margin: '15px 0 0 0', width: '100%', border: '1px solid var(--border-color)', background: 'transparent', boxShadow: 'none', padding: '20px', boxSizing: 'border-box'}}>
+                                            <div className="setting-row" style={{width: '100%', padding: '0', marginBottom: '10px'}}>
+                                                <span style={{fontWeight: 'bold', fontSize: '16px'}}>Требует фокуса</span>
                                                 <label className="ios-switch">
                                                     <input type="checkbox" checked={form.controlMethod === 'timer'} onChange={e => setForm({...form, controlMethod: e.target.checked ? 'timer' : 'check'})} />
                                                     <span className="slider"></span>
                                                 </label>
                                             </div>
                                             
+                                            <p style={{fontSize: '13px', color: 'var(--text-muted)', margin: '0', lineHeight: '1.4', textAlign: 'left'}}>
+                                                Отметка тапом отключена. Выполнение засчитается только после завершения таймера в Комнате исполнения.
+                                            </p>
+                                            
                                             {form.controlMethod === 'timer' && (
-                                                <div style={{marginTop: '15px', paddingTop: '15px', borderTop: '1px solid var(--border-input)', animation: 'fadeIn 0.3s'}}>
-                                                    <div style={{fontSize: '14px', color: 'var(--text-main)', fontWeight: 'bold', marginBottom: '12px', textAlign: 'center'}}>Время (минут):</div>
+                                                <div style={{marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border-input)', animation: 'fadeIn 0.3s'}}>
+                                                    <div style={{fontSize: '14px', color: 'var(--text-main)', fontWeight: 'bold', marginBottom: '15px', textAlign: 'left'}}>Время (минут):</div>
                                                     <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px'}}>
                                                         <button className="glass-btn-circle" style={{width: '48px', height: '48px', minWidth: '48px'}} onClick={(e) => adjustFocusTime(-5, e)}>
                                                             <Icons.Minus style={{width: '24px', height: '24px', stroke: 'var(--text-main)'}} />
@@ -820,6 +819,7 @@ function App() {
                                                 </div>
                                             )}
                                         </div>
+
                                     </div>
                                 )}
                                 {createStep === 'time' && (

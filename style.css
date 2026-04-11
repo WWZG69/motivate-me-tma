@@ -103,12 +103,14 @@ body::before {
 @keyframes splashFadeOut { from { opacity: 1; } to { opacity: 0; } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-.container { display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; padding-top: calc(20px + 4vh); padding-bottom: 140px; position: relative; z-index: 1; }
+/* ИСПРАВЛЕНО: Увеличил padding-top до 85px для защиты от системных кнопок */
+.container { display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; padding-top: 85px; padding-bottom: 140px; position: relative; z-index: 1; }
 
 /* =========================================
-   НОВАЯ ШАПКА + КРЕДИТ ДОВЕРИЯ
+   ШАПКА + КРЕДИТ ДОВЕРИЯ (ОПУЩЕНА НИЖЕ)
 ========================================= */
-.header-notcoin-style { display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box; padding: 15px 20px 20px 20px; z-index: 10; max-width: 440px; margin: 0 auto; }
+/* ИСПРАВЛЕНО: Добавил margin-top 10px, чтобы визуально опустить всю шапку еще ниже */
+.header-notcoin-style { position: relative; display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box; padding: 0 20px 20px 20px; z-index: 10; max-width: 440px; margin: 10px auto 0 auto; }
 .header-left { display: flex; align-items: center; gap: 10px; }
 .m-logo-small { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; background: #fff; transform: rotate(-10deg); box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin: 0; }
 .main-title-small { margin: 0; font-size: 20px; font-weight: 800; color: var(--text-main); text-shadow: 0 2px 6px rgba(0,0,0,0.2); letter-spacing: -0.5px; }

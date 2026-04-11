@@ -40,7 +40,8 @@ const Icons = {
     Clock: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     Plus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-    Minus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Minus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+    Shield: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
 };
 
 const TimeWheel = ({ items, value, onChange, width }) => {
@@ -101,7 +102,6 @@ function App() {
     const pressTimer = useRef(null);
     const [activeVisionId, setActiveVisionId] = useState(null);
     
-    // ВНЕДРЕНИЕ: Глобальный Кредит Доверия
     const [trustScore, setTrustScore] = useState(() => {
         try { const saved = localStorage.getItem('motivateMe_v20_trust'); return saved ? parseFloat(saved) : 100; } catch (e) { return 100; }
     });
@@ -151,7 +151,6 @@ function App() {
         localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
     }, [isLightTheme]);
 
-    // Сохранение Trust Score
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_trust', trustScore.toString()); } catch (e) {} }, [trustScore]);
 
     const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId || showGiveUpModal;
@@ -227,7 +226,6 @@ function App() {
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_visions', JSON.stringify(visions)); } catch (e) {} }, [visions]);
     useEffect(() => { const timer = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(timer); }, []);
     
-    // ВНЕДРЕНИЕ: Вознаграждение за Фокус (+1%)
     useEffect(() => {
         let interval = null;
         if (isTimerRunning && timeLeft > 0) {
@@ -235,7 +233,7 @@ function App() {
         } else if (isTimerRunning && timeLeft === 0) {
             setIsTimerRunning(false);
             triggerHaptic('success');
-            setTrustScore(prev => Math.min(100, prev + 1)); // Вознаграждение
+            setTrustScore(prev => Math.min(100, prev + 1));
             if (activeFocusGoal && activeFocusDate) {
                 const dateStr = activeFocusDate.toDateString();
                 setGoals(prevGoals => prevGoals.map(g => {
@@ -357,15 +355,13 @@ function App() {
         setIsModalOpen(false); triggerHaptic('success');
     };
     
-    // ВНЕДРЕНИЕ: Штраф за удаление цели (-5%)
     const deleteGoal = () => { 
         setGoals(goals.filter(g => g.id !== confirmDeleteGoalId)); 
         setConfirmDeleteGoalId(null); 
         setTrustScore(prev => Math.max(0, prev - 5));
-        triggerHaptic('heavy'); // Сменил на тяжелый отклик как маркер потери
+        triggerHaptic('heavy'); 
     };
     
-    // Видения удаляются без штрафа (это группировка)
     const deleteVision = () => {
         setVisions(visions.filter(v => v.id !== confirmDeleteVisionId));
         setGoals(goals.map(g => g.visionId === confirmDeleteVisionId ? { ...g, visionId: null } : g));
@@ -500,7 +496,6 @@ function App() {
         if (!isLongPress.current) { triggerHaptic('light'); setActiveVisionId(activeVisionId === vision.id ? null : vision.id); }
     };
 
-    // ВНЕДРЕНИЕ: Вознаграждение (+1%) или Откат (-1%) для обычных задач
     const toggleGoal = (e, goalObj, dateTarget) => {
         const { canToggle } = checkPermissions(goalObj, dateTarget);
         if (!canToggle) { triggerHaptic('error'); return; }
@@ -535,27 +530,20 @@ function App() {
             <div className="container">
                 {isModalOpen && <div className="glass-backdrop" onClick={closeCreateModal}></div>}
                 
+                {/* ВНЕДРЕНИЕ: Новая компактная шапка с шильдиком Кредита Доверия */}
                 <div className="header-notcoin-style">
-                    <img src="image_0.png" alt="Logo" className="m-logo-small" />
-                    <h1 className="main-title-small">MotivateMe</h1>
+                    <div className="header-left">
+                        <img src="image_0.png" alt="Logo" className="m-logo-small" />
+                        <h1 className="main-title-small">MotivateMe</h1>
+                    </div>
+                    <div className={`trust-badge ${trustScore < 50 ? 'danger' : trustScore < 80 ? 'warning' : 'safe'}`}>
+                        <Icons.Shield style={{width: '16px', height: '16px', marginRight: '4px'}} />
+                        {trustScore.toFixed(0)}%
+                    </div>
                 </div>
 
                 {activeTab === 'home' && (
                     <React.Fragment>
-                        
-                        {/* ВНЕДРЕНИЕ: Панель Trust Score */}
-                        <div className="trust-score-container">
-                            <div className="trust-header">
-                                <span>Кредит доверия</span>
-                                <span className={`trust-value ${trustScore < 50 ? 'danger' : trustScore < 80 ? 'warning' : 'safe'}`}>
-                                    {trustScore.toFixed(0)}%
-                                </span>
-                            </div>
-                            <div className="trust-track">
-                                <div className={`trust-fill ${trustScore < 50 ? 'danger' : trustScore < 80 ? 'warning' : 'safe'}`} style={{width: `${trustScore}%`}}></div>
-                            </div>
-                        </div>
-
                         <div className="daily-load-container">
                             <div className="load-header">
                                 <span className="load-title">Нагрузка дня</span>
@@ -743,7 +731,6 @@ function App() {
                                 }}>
                                     Я справлюсь. Продолжить
                                 </button>
-                                {/* ВНЕДРЕНИЕ: Штраф за Капитуляцию (-5%) */}
                                 <button className="btn-give-up-weak" onClick={() => { 
                                     setShowGiveUpModal(false); 
                                     resetTimer(); 

@@ -93,7 +93,7 @@ body::before {
 @keyframes liquidGpuWobble { 0% { transform: translate(0, 0) scale(1, 0.85) rotate(0deg); } 33% { transform: translate(4vw, 5vh) scale(0.95, 1.1) rotate(120deg); } 66% { transform: translate(-3vw, 8vh) scale(1.05, 0.9) rotate(240deg); } 100% { transform: translate(0, 0) scale(1, 0.85) rotate(360deg); } }
 
 /* =========================================
-   ЗАСТАВКА И ШАПКА
+   ЗАСТАВКА
 ========================================= */
 .simple-splash-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-base); animation: splashFadeOut 0.4s ease 3.6s forwards; pointer-events: none; }
 .splash-logo { width: 90px; height: 90px; border-radius: 26px; object-fit: cover; background: #fff; box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2); margin-bottom: 15px; transform: rotate(-15deg); animation: logoPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -105,23 +105,20 @@ body::before {
 
 .container { display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; padding-top: calc(20px + 4vh); padding-bottom: 140px; position: relative; z-index: 1; }
 
-.header-notcoin-style { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; padding: 0 20px 10px 20px; }
-.m-logo-small { width: 26px; height: 26px; border-radius: 8px; object-fit: cover; background: #fff; transform: rotate(-15deg); box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 6px; margin-right: 0; }
-.main-title-small { margin: 0; font-size: 18px; font-weight: 800; color: var(--text-main); text-shadow: 0 2px 6px rgba(0,0,0,0.2); }
-
 /* =========================================
-   КРЕДИТ ДОВЕРИЯ (TRUST SCORE)
+   НОВАЯ ШАПКА + КРЕДИТ ДОВЕРИЯ
 ========================================= */
-.trust-score-container { width: 100%; max-width: 360px; padding: 15px 20px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border-color); box-shadow: var(--shadow-main); margin-bottom: 20px; box-sizing: border-box; animation: fadeIn 0.4s ease; }
-.trust-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-main); }
-.trust-value { font-size: 18px; transition: color 0.3s; }
-.trust-track { width: 100%; height: 8px; background: var(--bg-input); border-radius: 4px; overflow: hidden; }
-.trust-fill { height: 100%; border-radius: 4px; transition: width 0.5s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s; }
+.header-notcoin-style { display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box; padding: 15px 20px 20px 20px; z-index: 10; max-width: 440px; margin: 0 auto; }
+.header-left { display: flex; align-items: center; gap: 10px; }
+.m-logo-small { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; background: #fff; transform: rotate(-10deg); box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin: 0; }
+.main-title-small { margin: 0; font-size: 20px; font-weight: 800; color: var(--text-main); text-shadow: 0 2px 6px rgba(0,0,0,0.2); letter-spacing: -0.5px; }
 
-/* Цвета статусов (используются и для текста, и для полосы) */
-.safe { background-color: #34C759; color: #34C759; }
-.warning { background-color: var(--accent); color: var(--accent); }
-.danger { background-color: #ff3b30; color: #ff3b30; }
+.trust-badge { display: flex; align-items: center; padding: 6px 12px; border-radius: 12px; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; background: var(--bg-input); border: 1px solid var(--border-color); box-shadow: var(--shadow-main); transition: all 0.3s ease; }
+.trust-badge.safe { color: #34C759; border-color: rgba(52, 199, 89, 0.3); background: rgba(52, 199, 89, 0.1); }
+.trust-badge.warning { color: var(--accent); border-color: rgba(255, 140, 0, 0.3); background: rgba(255, 140, 0, 0.1); }
+.trust-badge.danger { color: #ff3b30; border-color: rgba(255, 59, 48, 0.3); background: rgba(255, 59, 48, 0.1); animation: pulseDanger 2s infinite; }
+
+@keyframes pulseDanger { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); } }
 
 /* =========================================
    ШКАЛА НАГРУЗКИ (БАТАРЕЯ ДНЯ)

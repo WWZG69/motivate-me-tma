@@ -101,6 +101,11 @@ function App() {
     const pressTimer = useRef(null);
     const [activeVisionId, setActiveVisionId] = useState(null);
     
+    // ВНЕДРЕНИЕ: Глобальный Кредит Доверия
+    const [trustScore, setTrustScore] = useState(() => {
+        try { const saved = localStorage.getItem('motivateMe_v20_trust'); return saved ? parseFloat(saved) : 100; } catch (e) { return 100; }
+    });
+
     const [goals, setGoals] = useState(() => {
         try { const saved = localStorage.getItem('motivateMe_v20_goals'); return saved ? JSON.parse(saved) : []; } catch (e) { return []; }
     });
@@ -145,6 +150,9 @@ function App() {
         else document.body.classList.remove('light-theme');
         localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
     }, [isLightTheme]);
+
+    // Сохранение Trust Score
+    useEffect(() => { try { localStorage.setItem('motivateMe_v20_trust', trustScore.toString()); } catch (e) {} }, [trustScore]);
 
     const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId || showGiveUpModal;
     useEffect(() => {
@@ -219,6 +227,7 @@ function App() {
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_visions', JSON.stringify(visions)); } catch (e) {} }, [visions]);
     useEffect(() => { const timer = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(timer); }, []);
     
+    // ВНЕДРЕНИЕ: Вознаграждение за Фокус (+1%)
     useEffect(() => {
         let interval = null;
         if (isTimerRunning && timeLeft > 0) {
@@ -226,6 +235,7 @@ function App() {
         } else if (isTimerRunning && timeLeft === 0) {
             setIsTimerRunning(false);
             triggerHaptic('success');
+            setTrustScore(prev => Math.min(100, prev + 1)); // Вознаграждение
             if (activeFocusGoal && activeFocusDate) {
                 const dateStr = activeFocusDate.toDateString();
                 setGoals(prevGoals => prevGoals.map(g => {
@@ -347,7 +357,15 @@ function App() {
         setIsModalOpen(false); triggerHaptic('success');
     };
     
-    const deleteGoal = () => { setGoals(goals.filter(g => g.id !== confirmDeleteGoalId)); setConfirmDeleteGoalId(null); triggerHaptic('success'); };
+    // ВНЕДРЕНИЕ: Штраф за удаление цели (-5%)
+    const deleteGoal = () => { 
+        setGoals(goals.filter(g => g.id !== confirmDeleteGoalId)); 
+        setConfirmDeleteGoalId(null); 
+        setTrustScore(prev => Math.max(0, prev - 5));
+        triggerHaptic('heavy'); // Сменил на тяжелый отклик как маркер потери
+    };
+    
+    // Видения удаляются без штрафа (это группировка)
     const deleteVision = () => {
         setVisions(visions.filter(v => v.id !== confirmDeleteVisionId));
         setGoals(goals.map(g => g.visionId === confirmDeleteVisionId ? { ...g, visionId: null } : g));
@@ -482,6 +500,7 @@ function App() {
         if (!isLongPress.current) { triggerHaptic('light'); setActiveVisionId(activeVisionId === vision.id ? null : vision.id); }
     };
 
+    // ВНЕДРЕНИЕ: Вознаграждение (+1%) или Откат (-1%) для обычных задач
     const toggleGoal = (e, goalObj, dateTarget) => {
         const { canToggle } = checkPermissions(goalObj, dateTarget);
         if (!canToggle) { triggerHaptic('error'); return; }
@@ -489,7 +508,15 @@ function App() {
         setGoals(goals.map(g => {
             if (g.id !== goalObj.id) return g;
             const newHistory = { ...(g.history || {}) };
-            if (!isCurrentlyDone) { newHistory[dateStr] = true; triggerHaptic('success'); } else { delete newHistory[dateStr]; triggerHaptic('light'); }
+            if (!isCurrentlyDone) { 
+                newHistory[dateStr] = true; 
+                setTrustScore(prev => Math.min(100, prev + 1));
+                triggerHaptic('success'); 
+            } else { 
+                delete newHistory[dateStr]; 
+                setTrustScore(prev => Math.max(0, prev - 1));
+                triggerHaptic('light'); 
+            }
             return { ...g, history: newHistory, streak: isCurrentlyDone ? Math.max(0, (g.streak || 0) - 1) : (g.streak || 0) + 1 };
         }));
     };
@@ -515,6 +542,20 @@ function App() {
 
                 {activeTab === 'home' && (
                     <React.Fragment>
+                        
+                        {/* ВНЕДРЕНИЕ: Панель Trust Score */}
+                        <div className="trust-score-container">
+                            <div className="trust-header">
+                                <span>Кредит доверия</span>
+                                <span className={`trust-value ${trustScore < 50 ? 'danger' : trustScore < 80 ? 'warning' : 'safe'}`}>
+                                    {trustScore.toFixed(0)}%
+                                </span>
+                            </div>
+                            <div className="trust-track">
+                                <div className={`trust-fill ${trustScore < 50 ? 'danger' : trustScore < 80 ? 'warning' : 'safe'}`} style={{width: `${trustScore}%`}}></div>
+                            </div>
+                        </div>
+
                         <div className="daily-load-container">
                             <div className="load-header">
                                 <span className="load-title">Нагрузка дня</span>
@@ -702,12 +743,14 @@ function App() {
                                 }}>
                                     Я справлюсь. Продолжить
                                 </button>
+                                {/* ВНЕДРЕНИЕ: Штраф за Капитуляцию (-5%) */}
                                 <button className="btn-give-up-weak" onClick={() => { 
                                     setShowGiveUpModal(false); 
                                     resetTimer(); 
+                                    setTrustScore(prev => Math.max(0, prev - 5));
                                     triggerHaptic('heavy'); 
                                 }}>
-                                    Я слабак, сдаюсь
+                                    Я слабак, сдаюсь (-5%)
                                 </button>
                             </div>
                         </div>
@@ -780,7 +823,6 @@ function App() {
                                         )}
                                         <textarea placeholder="Опиши шаги" value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none' }} />
                                         
-                                        {/* ИСПРАВЛЕНО: ЖЕЛЕЗОБЕТОННАЯ ВЕРСТКА БЛОКА ФОКУСА */}
                                         <div style={{ display: 'flex', flexDirection: 'column', margin: '15px 0 0 0', width: '100%', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '16px', boxSizing: 'border-box' }}>
                                             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: '1.4', textAlign: 'left', width: '100%' }}>
                                                 Отметка тапом отключена. Выполнение засчитается только после завершения таймера в Комнате исполнения.

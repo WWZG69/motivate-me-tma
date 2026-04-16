@@ -448,22 +448,24 @@ function App() {
         });
     };
 
+    // === ОБНОВЛЕННАЯ ЛОГИКА ИИ ===
     const handleAiSubmit = async () => {
         if (!aiQuery.trim()) { triggerHaptic('error'); return; }
         triggerHaptic('light');
         setIsAiScanning(true);
         setAiResult(null);
 
-        // Обход сканера GitHub
         const API_KEY = 'AQ.Ab8RN6LcNaOh3uvU83' + 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg'; 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
+        // В промпт добавлено требование вернуть "emoji"
         const systemPrompt = `Ты — безжалостный тактический ИИ-аналитик. Пользователь даст тебе абстрактную задачу. 
 Твоя цель: декомпозировать ее на 3 конкретных шага.
 Ты ОБЯЗАН вернуть ответ ИСКЛЮЧИТЕЛЬНО в формате валидного JSON.
 Структура JSON:
 {
   "title": "Операция: [Краткое название]",
+  "emoji": "[Один эмодзи, отражающий суть]",
   "steps": [
     {
       "title": "[Название шага]",
@@ -487,7 +489,6 @@ function App() {
                 })
             });
 
-            // ДЕБАГ: Если сервер гугла нас отшивает, читаем его ответ
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`HTTP ${response.status} | ${errorText.substring(0, 60)}`);
@@ -503,9 +504,9 @@ function App() {
             triggerHaptic('success');
         } catch (error) {
             console.error("Ошибка ИИ:", error);
-            // Выводим реальную ошибку прямо в карточку интерфейса!
             setAiResult({
                 title: "Системная Ошибка",
+                emoji: "⚠️",
                 steps: [
                     { 
                         title: "Лог сети", 
@@ -524,24 +525,36 @@ function App() {
     };
 
     const acceptAiContract = () => {
-        if (!aiResult || aiResult.title === "Системная Ошибка") {
+        // Защита, если ИИ вернул не тот формат или была ошибка
+        if (!aiResult || !aiResult.steps || aiResult.title === "Системная Ошибка") {
             setAiResult(null);
             return;
         }
+        
         const nowObj = new Date();
         const startOfDayStr = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate()).toISOString();
         
+        // 1. СОЗДАЕМ ВИДЕНИЕ
+        const newVisionId = Date.now().toString();
+        const newVision = {
+            id: newVisionId,
+            title: aiResult.title || 'Тактический план',
+            emoji: aiResult.emoji || '🤖',
+            description: `План декомпозирован ИИ по запросу: "${aiQuery}"`
+        };
+
+        // 2. СОЗДАЕМ ШАГИ И ПРИВЯЗЫВАЕМ К ВИДЕНИЮ (visionId)
         const newGoals = aiResult.steps.map((step, idx) => ({
-            id: Date.now() + idx,
-            title: step.title,
-            description: step.desc,
+            id: Date.now() + idx + 100, // +100 чтобы ID точно не совпали
+            title: step.title || 'Шаг',
+            description: step.desc || '',
             type: step.type || 'once',
             deadline: '23:59',
             duration: step.duration || 1,
             ignoreHoliday: false,
             notifications: true,
             startDate: startOfDayStr,
-            visionId: '',
+            visionId: newVisionId, // <-- Привязка к Видению!
             weekDays: [0,1,2,3,4,5,6],
             controlMethod: step.method || 'timer',
             focusTime: step.time || 25,
@@ -550,11 +563,16 @@ function App() {
             createdAt: nowObj.toDateString()
         }));
 
-        setGoals([...newGoals, ...goals]);
+        // Сохраняем стейты
+        setVisions(prev => [newVision, ...prev]);
+        setGoals(prev => [...newGoals, ...prev]);
+        
+        // Очищаем форму ИИ
         setAiQuery('');
         setAiResult(null);
         triggerHaptic('heavy');
     };
+    // =============================
 
     const activeGoalsToday = getActiveGoalsForDate(currentDate);
     const loadCount = activeGoalsToday.length;
@@ -597,8 +615,8 @@ function App() {
                         <React.Fragment>
                             <p className="ai-tactics-desc" style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Абстракция убита. Твой тактический план:</p>
                             <div className="ai-contract-box">
-                                <div className="ai-contract-header">{aiResult.title}</div>
-                                {aiResult.steps.map((step, i) => (
+                                <div className="ai-contract-header">{aiResult.emoji} {aiResult.title}</div>
+                                {aiResult.steps && aiResult.steps.map((step, i) => (
                                     <div key={i} className="ai-contract-step">
                                         {step.title} <span>({step.time} мин)</span>
                                         {step.desc && <div style={{color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px'}}>{step.desc}</div>}

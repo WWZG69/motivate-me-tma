@@ -41,7 +41,8 @@ const Icons = {
     Bell: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     Plus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
     Minus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-    Shield: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Shield: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+    Cpu: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
 };
 
 const TimeWheel = ({ items, value, onChange, width }) => {
@@ -91,7 +92,8 @@ function App() {
     const isSwipeValid = useRef(null); 
     const transitionTimer = useRef(null);
     
-    const [motivationTone, setMotivationTone] = useState('soft');
+    // ИЗМЕНЕНИЕ: Тон бота теперь Стоик (бесплатно) или Токсик (премиум)
+    const [motivationTone, setMotivationTone] = useState('stoic');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     
@@ -99,7 +101,7 @@ function App() {
     const [showPenaltyModal, setShowPenaltyModal] = useState(false);
     const [penaltyInput, setPenaltyInput] = useState('');
     const [showRageQuitAlert, setShowRageQuitAlert] = useState(false);
-    const [showLowTrustAlert, setShowLowTrustAlert] = useState(false); // НОВЫЙ СТЕЙТ БЛОКИРОВКИ
+    const [showLowTrustAlert, setShowLowTrustAlert] = useState(false); 
     
     const [activeFocusGoal, setActiveFocusGoal] = useState(null);
     const [activeFocusDate, setActiveFocusDate] = useState(null);
@@ -132,6 +134,11 @@ function App() {
     
     const [startMonth, setStartMonth] = useState(monthNames[new Date().getMonth()]);
     const [startDay, setStartDay] = useState(new Date().getDate().toString().padStart(2, '0'));
+
+    // СТЕЙТЫ ДЛЯ ИИ-ОНБОРДИНГА
+    const [aiQuery, setAiQuery] = useState('');
+    const [isAiScanning, setIsAiScanning] = useState(false);
+    const [aiResult, setAiResult] = useState(null);
 
     const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, startDate: null, visionId: '', weekDays: [0,1,2,3,4,5,6], controlMethod: 'check', focusTime: 25 };
     const defaultVisionForm = { title: '', emoji: '🎯', description: '' };
@@ -171,7 +178,6 @@ function App() {
 
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_trust', trustScore.toString()); } catch (e) {} }, [trustScore]);
 
-    // Обновляем проверку на открытие модалок
     const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId || showGiveUpModal || showPenaltyModal || showRageQuitAlert || showLowTrustAlert;
     useEffect(() => {
         if (isAnyModalOpen) { document.body.style.overflow = 'hidden'; } 
@@ -426,35 +432,132 @@ function App() {
                 const startD = new Date(g.startDate);
                 startD.setHours(0,0,0,0);
                 const startT = startD.getTime();
-                
                 if (startT > renderTime) return false; 
-                
                 if (g.type === 'habit' && g.weekDays && g.weekDays.length > 0) {
                     if (!g.weekDays.includes(dateTarget.getDay())) return false;
                 }
-                
                 if (g.type === 'sprint') {
                     const durationDays = parseInt(g.duration, 10) || 1;
                     const endD = new Date(startT);
                     endD.setDate(endD.getDate() + durationDays - 1);
                     if (renderTime > endD.getTime()) return false;
                 }
-                
                 if (g.type === 'once') {
                     if (renderTime !== startT) return false;
                 }
-                
                 return true; 
             } catch(e) { return true; } 
         });
+    };
+
+    // ФУНКЦИИ ИИ-ДОПРОСА
+    const handleAiSubmit = () => {
+        if (!aiQuery.trim()) { triggerHaptic('error'); return; }
+        triggerHaptic('light');
+        setIsAiScanning(true);
+        // Моковая задержка для имитации работы LLM (в Фазе 2 здесь будет запрос к серверу)
+        setTimeout(() => {
+            setIsAiScanning(false);
+            setAiResult({
+                title: `Операция: ${aiQuery.substring(0, 20)}...`,
+                steps: [
+                    { title: "Сбор данных", desc: "15 минут: найти все необходимые материалы.", type: "once", method: "timer", time: 15 },
+                    { title: "Черновик", desc: "25 минут полного фокуса на первый шаг.", type: "once", method: "timer", time: 25 },
+                    { title: "Ежедневный пуш", desc: "Уделять этому по 20 минут.", type: "sprint", duration: 5, method: "timer", time: 20 }
+                ]
+            });
+            triggerHaptic('success');
+        }, 2000);
+    };
+
+    const acceptAiContract = () => {
+        if (!aiResult) return;
+        const nowObj = new Date();
+        const startOfDayStr = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate()).toISOString();
+        
+        const newGoals = aiResult.steps.map((step, idx) => ({
+            id: Date.now() + idx,
+            title: step.title,
+            description: step.desc,
+            type: step.type,
+            deadline: '23:59',
+            duration: step.duration || '',
+            ignoreHoliday: false,
+            notifications: true,
+            startDate: startOfDayStr,
+            visionId: '',
+            weekDays: [0,1,2,3,4,5,6],
+            controlMethod: step.method,
+            focusTime: step.time,
+            history: {},
+            streak: 0,
+            createdAt: nowObj.toDateString()
+        }));
+
+        setGoals([...newGoals, ...goals]);
+        setAiQuery('');
+        setAiResult(null);
+        triggerHaptic('heavy');
     };
 
     const activeGoalsToday = getActiveGoalsForDate(currentDate);
     const loadCount = activeGoalsToday.length;
 
     const renderDayCards = (renderDate) => {
-        const dateKey = renderDate.toDateString(); const activeGoals = getActiveGoalsForDate(renderDate);
-        if (activeGoals.length === 0) return <p style={{textAlign:'center', marginTop:'20px', opacity: 0.7}}>Задач на этот день нет.</p>;
+        const activeGoals = getActiveGoalsForDate(renderDate);
+        
+        // ЕСЛИ ЗАДАЧ НЕТ — ВЫВОДИМ ИИ-ТАКТИКУ
+        if (activeGoals.length === 0) {
+            const isToday = renderDate.toDateString() === new Date().toDateString();
+            if (!isToday) return <p style={{textAlign:'center', marginTop:'30px', opacity: 0.5}}>Контракты не найдены.</p>;
+            
+            return (
+                <div className="ai-tactics-container">
+                    <Icons.Cpu style={{ width: '32px', height: '32px', stroke: 'var(--accent)', marginBottom: '15px' }} />
+                    <h3 className="ai-tactics-title">Аналитика пустот</h3>
+                    
+                    {!isAiScanning && !aiResult && (
+                        <React.Fragment>
+                            <p className="ai-tactics-desc">Хватит абстракций. Какую конкретно задачу ты избегаешь прямо сейчас? Опиши суть.</p>
+                            <input 
+                                type="text" 
+                                className="dark-input ai-tactics-input" 
+                                placeholder="Например: 'Начать учить английский'" 
+                                value={aiQuery} 
+                                onChange={(e) => setAiQuery(e.target.value)} 
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleAiSubmit(); }}
+                            />
+                            <button className="btn-ai-submit" onClick={handleAiSubmit}>Декомпозировать</button>
+                        </React.Fragment>
+                    )}
+
+                    {isAiScanning && (
+                        <div className="ai-loading-scan">
+                            <span>СИНТЕЗ ТАКТИКИ...</span>
+                            <div className="scan-line"></div>
+                        </div>
+                    )}
+
+                    {aiResult && !isAiScanning && (
+                        <React.Fragment>
+                            <p className="ai-tactics-desc" style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Абстракция убита. Твой тактический план:</p>
+                            <div className="ai-contract-box">
+                                <div className="ai-contract-header">Контракт на 3 шага</div>
+                                {aiResult.steps.map((step, i) => (
+                                    <div key={i} className="ai-contract-step">
+                                        {step.title} <span>({step.time} мин)</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <button className="btn-ai-submit" style={{ marginTop: '15px' }} onClick={acceptAiContract}>Принять контракт</button>
+                            <button className="btn-return-task" style={{ width: '100%', marginTop: '5px' }} onClick={() => setAiResult(null)}>Сброс</button>
+                        </React.Fragment>
+                    )}
+                </div>
+            );
+        }
+
+        const dateKey = renderDate.toDateString(); 
         return activeGoals.map(g => {
             const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; 
             const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
@@ -566,7 +669,6 @@ function App() {
                     </div>
                 )}
 
-                {/* НОВЫЙ АЛЕРТ: БЛОКИРОВКА ПРИ РЕЙТИНГЕ < 50% */}
                 {showLowTrustAlert && (
                     <div className="glass-overlay-centered" style={{ zIndex: 10000 }}>
                         <div className="give-up-modal" style={{ border: '1px solid #ff3b30', boxShadow: '0 10px 40px rgba(255, 59, 48, 0.3)' }}>
@@ -594,23 +696,25 @@ function App() {
 
                 {activeTab === 'home' && (
                     <React.Fragment>
-                        <div className="daily-load-container">
-                            <div className="load-header">
-                                <span className="load-title">Нагрузка дня</span>
-                                <span className="load-count">{loadCount} {loadCount === 1 ? 'задача' : (loadCount > 1 && loadCount < 5) ? 'задачи' : 'задач'}</span>
+                        {loadCount > 0 && (
+                            <div className="daily-load-container">
+                                <div className="load-header">
+                                    <span className="load-title">Нагрузка дня</span>
+                                    <span className="load-count">{loadCount} {loadCount === 1 ? 'задача' : (loadCount > 1 && loadCount < 5) ? 'задачи' : 'задач'}</span>
+                                </div>
+                                <div className="load-bar">
+                                    {[1, 2, 3, 4, 5, 6].map(i => {
+                                        let fillClass = '';
+                                        if (loadCount >= i || (i === 6 && loadCount >= 6)) {
+                                            if (loadCount <= 3) fillClass = 'safe';
+                                            else if (loadCount <= 5) fillClass = 'warning';
+                                            else fillClass = 'danger';
+                                        }
+                                        return <div key={i} className={`load-segment ${fillClass}`}></div>;
+                                    })}
+                                </div>
                             </div>
-                            <div className="load-bar">
-                                {[1, 2, 3, 4, 5, 6].map(i => {
-                                    let fillClass = '';
-                                    if (loadCount >= i || (i === 6 && loadCount >= 6)) {
-                                        if (loadCount <= 3) fillClass = 'safe';
-                                        else if (loadCount <= 5) fillClass = 'warning';
-                                        else fillClass = 'danger';
-                                    }
-                                    return <div key={i} className={`load-segment ${fillClass}`}></div>;
-                                })}
-                            </div>
-                        </div>
+                        )}
 
                         {visions.length > 0 && (
                             <div className="visions-scroll-track">
@@ -763,7 +867,8 @@ function App() {
                         <hr className="divider" />
                         <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', margin: '15px 0 8px 0' }}>Тон поддержки бота:</label>
                         <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)} style={{marginBottom: 0}}>
-                            <option value="soft">Мягкий</option><option value="hard">Жесткий</option>
+                            <option value="stoic">Стоик (Бесплатно)</option>
+                            <option value="toxic">Токсичный Сержант (Премиум)</option>
                         </select>
                     </div>
                 )}
@@ -849,7 +954,6 @@ function App() {
                     <div className="glass-overlay-centered" onClick={() => setActionMenuGoal(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
                             <button className="glass-btn-circle edit" onClick={() => { 
-                                // НОВАЯ ЛОГИКА БЛОКИРОВКИ РЕДАКТИРОВАНИЯ
                                 if (trustScore < 50) {
                                     setActionMenuGoal(null);
                                     setShowLowTrustAlert(true);

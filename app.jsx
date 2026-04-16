@@ -456,7 +456,7 @@ function App() {
 
         // Обход сканера GitHub
         const API_KEY = 'AQ.Ab8RN6LcNaOh3uvU83' + 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg'; 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
         const systemPrompt = `Ты — безжалостный тактический ИИ-аналитик. Пользователь даст тебе абстрактную задачу. 
 Твоя цель: декомпозировать ее на 3 конкретных шага.

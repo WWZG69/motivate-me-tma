@@ -33,7 +33,7 @@ const Icons = {
     Pause: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
     Refresh: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>,
     Pencil: () => <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
-    Trash: () => <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2 2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
+    Trash: () => <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
     Check: () => <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
     Close: () => <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
     Text: (props) => <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round"/><line x1="4" y1="12" x2="20" y2="12" strokeLinecap="round"/><line x1="4" y1="18" x2="14" y2="18" strokeLinecap="round"/></svg>,
@@ -71,6 +71,8 @@ const TimeWheel = ({ items, value, onChange, width }) => {
     );
 };
 
+const PENALTY_PHRASE = "Я сдаюсь и сжигаю свой рейтинг";
+
 function App() {
     const [showSplash, setShowSplash] = useState(true);
     const [activeTab, setActiveTab] = useState('home');
@@ -92,7 +94,12 @@ function App() {
     const [motivationTone, setMotivationTone] = useState('soft');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
+    
     const [showGiveUpModal, setShowGiveUpModal] = useState(false);
+    const [showPenaltyModal, setShowPenaltyModal] = useState(false);
+    const [penaltyInput, setPenaltyInput] = useState('');
+    const [showRageQuitAlert, setShowRageQuitAlert] = useState(false);
+    const [showLowTrustAlert, setShowLowTrustAlert] = useState(false); // НОВЫЙ СТЕЙТ БЛОКИРОВКИ
     
     const [activeFocusGoal, setActiveFocusGoal] = useState(null);
     const [activeFocusDate, setActiveFocusDate] = useState(null);
@@ -142,6 +149,17 @@ function App() {
     }, [startMonth]);
 
     useEffect(() => {
+        try {
+            const didRageQuit = localStorage.getItem('motivateMe_v20_rageQuit');
+            if (didRageQuit === 'true') {
+                localStorage.removeItem('motivateMe_v20_rageQuit');
+                setTrustScore(prev => Math.max(0, prev - 15));
+                setShowRageQuitAlert(true);
+            }
+        } catch(e) {}
+    }, []);
+
+    useEffect(() => {
         if (daysInMonth && startDay && !daysInMonth.includes(startDay)) setStartDay('01');
     }, [daysInMonth, startDay]);
 
@@ -153,7 +171,8 @@ function App() {
 
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_trust', trustScore.toString()); } catch (e) {} }, [trustScore]);
 
-    const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId || showGiveUpModal;
+    // Обновляем проверку на открытие модалок
+    const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId || showGiveUpModal || showPenaltyModal || showRageQuitAlert || showLowTrustAlert;
     useEffect(() => {
         if (isAnyModalOpen) { document.body.style.overflow = 'hidden'; } 
         else { document.body.style.overflow = ''; }
@@ -229,9 +248,11 @@ function App() {
     useEffect(() => {
         let interval = null;
         if (isTimerRunning && timeLeft > 0) {
+            localStorage.setItem('motivateMe_v20_rageQuit', 'true');
             interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
         } else if (isTimerRunning && timeLeft === 0) {
             setIsTimerRunning(false);
+            localStorage.removeItem('motivateMe_v20_rageQuit'); 
             triggerHaptic('success');
             setTrustScore(prev => Math.min(100, prev + 1));
             if (activeFocusGoal && activeFocusDate) {
@@ -530,6 +551,36 @@ function App() {
             <div className="container">
                 {isModalOpen && <div className="glass-backdrop" onClick={closeCreateModal}></div>}
                 
+                {showRageQuitAlert && (
+                    <div className="glass-overlay-centered" style={{ zIndex: 10000 }}>
+                        <div className="give-up-modal" style={{ border: '1px solid #ff3b30', boxShadow: '0 10px 40px rgba(255, 59, 48, 0.3)' }}>
+                            <h2 className="give-up-title" style={{ color: '#ff3b30' }}>Побег зафиксирован</h2>
+                            <p className="give-up-text">
+                                Вы прервали прошлую сессию, просто закрыв приложение. Это дезертирство.
+                            </p>
+                            <div style={{ fontSize: '28px', fontWeight: '800', color: '#ff3b30', marginBottom: '25px' }}>-15% Рейтинга</div>
+                            <button className="btn-continue-pulsing" onClick={() => { setShowRageQuitAlert(false); triggerHaptic('heavy'); }} style={{ background: '#ff3b30', boxShadow: 'none' }}>
+                                Я принимаю последствия
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* НОВЫЙ АЛЕРТ: БЛОКИРОВКА ПРИ РЕЙТИНГЕ < 50% */}
+                {showLowTrustAlert && (
+                    <div className="glass-overlay-centered" style={{ zIndex: 10000 }}>
+                        <div className="give-up-modal" style={{ border: '1px solid #ff3b30', boxShadow: '0 10px 40px rgba(255, 59, 48, 0.3)' }}>
+                            <h2 className="give-up-title" style={{ color: '#ff3b30' }}>Доступ закрыт</h2>
+                            <p className="give-up-text">
+                                Твой Кредит Доверия упал ниже 50%. Ты потерял право изменять дедлайны и условия своих целей. Выполняй задачи вовремя, чтобы вернуть контроль.
+                            </p>
+                            <button className="btn-continue-pulsing" onClick={() => { setShowLowTrustAlert(false); triggerHaptic('light'); }} style={{ background: '#ff3b30', boxShadow: 'none' }}>
+                                Понял
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 <div className="header-notcoin-style">
                     <div className="header-left">
                         <img src="image_0.png" alt="Logo" className="m-logo-small" />
@@ -732,11 +783,62 @@ function App() {
                                 </button>
                                 <button className="btn-give-up-weak" onClick={() => { 
                                     setShowGiveUpModal(false); 
-                                    resetTimer(); 
-                                    setTrustScore(prev => Math.max(0, prev - 5));
-                                    triggerHaptic('heavy'); 
+                                    setPenaltyInput('');
+                                    setShowPenaltyModal(true); 
+                                    triggerHaptic('light'); 
                                 }}>
                                     Я слабак, сдаюсь (-5%)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showPenaltyModal && (
+                    <div className="glass-overlay-centered" style={{ zIndex: 9999 }}>
+                        <div className="penalty-modal">
+                            <h2 className="penalty-title">Цена слабости</h2>
+                            <p className="penalty-text">
+                                Чтобы сдаться легально, введи фразу ниже вручную. Копирование и вставка заблокированы.
+                            </p>
+                            
+                            <div className="penalty-phrase-box">
+                                {PENALTY_PHRASE}
+                            </div>
+                            
+                            <textarea
+                                className="dark-input penalty-textarea custom-scrollbar"
+                                value={penaltyInput}
+                                onChange={(e) => setPenaltyInput(e.target.value)}
+                                onPaste={(e) => { e.preventDefault(); triggerHaptic('error'); }}
+                                onDrop={(e) => { e.preventDefault(); }}
+                                placeholder="Начинай писать..."
+                                autoComplete="off"
+                                autoCorrect="off"
+                                spellCheck="false"
+                            />
+                            
+                            <div className="penalty-actions">
+                                <button className={`btn-confirm-penalty ${penaltyInput === PENALTY_PHRASE ? 'active' : 'disabled'}`} onClick={() => { 
+                                    if (penaltyInput === PENALTY_PHRASE) {
+                                        localStorage.removeItem('motivateMe_v20_rageQuit'); 
+                                        setShowPenaltyModal(false);
+                                        resetTimer();
+                                        setTrustScore(prev => Math.max(0, prev - 5));
+                                        triggerHaptic('heavy');
+                                    } else {
+                                        triggerHaptic('error');
+                                    }
+                                }}>
+                                    Подтвердить провал (-5%)
+                                </button>
+                                
+                                <button className="btn-return-task" onClick={() => {
+                                    setShowPenaltyModal(false);
+                                    setIsTimerRunning(true);
+                                    triggerHaptic('success');
+                                }}>
+                                    Вернуться к задаче
                                 </button>
                             </div>
                         </div>
@@ -746,7 +848,21 @@ function App() {
                 {actionMenuGoal && (
                     <div className="glass-overlay-centered" onClick={() => setActionMenuGoal(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
-                            <button className="glass-btn-circle edit" onClick={() => { setForm({...actionMenuGoal}); setEditingId(actionMenuGoal.id); setCreateMode('micro'); setActionMenuGoal(null); setCreateStep('text'); setIsModalOpen(true); }}><Icons.Pencil /></button>
+                            <button className="glass-btn-circle edit" onClick={() => { 
+                                // НОВАЯ ЛОГИКА БЛОКИРОВКИ РЕДАКТИРОВАНИЯ
+                                if (trustScore < 50) {
+                                    setActionMenuGoal(null);
+                                    setShowLowTrustAlert(true);
+                                    triggerHaptic('error');
+                                } else {
+                                    setForm({...actionMenuGoal}); 
+                                    setEditingId(actionMenuGoal.id); 
+                                    setCreateMode('micro'); 
+                                    setActionMenuGoal(null); 
+                                    setCreateStep('text'); 
+                                    setIsModalOpen(true); 
+                                }
+                            }}><Icons.Pencil /></button>
                             <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteGoalId(actionMenuGoal.id); setActionMenuGoal(null); }}><Icons.Trash /></button>
                         </div>
                     </div>

@@ -103,13 +103,11 @@ body::before {
 @keyframes splashFadeOut { from { opacity: 1; } to { opacity: 0; } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* ИСПРАВЛЕНО: Увеличил padding-top до 85px для защиты от системных кнопок */
 .container { display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; padding-top: 85px; padding-bottom: 140px; position: relative; z-index: 1; }
 
 /* =========================================
-   ШАПКА + КРЕДИТ ДОВЕРИЯ (ОПУЩЕНА НИЖЕ)
+   ШАПКА + КРЕДИТ ДОВЕРИЯ
 ========================================= */
-/* ИСПРАВЛЕНО: Добавил margin-top 10px, чтобы визуально опустить всю шапку еще ниже */
 .header-notcoin-style { position: relative; display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box; padding: 0 20px 20px 20px; z-index: 10; max-width: 440px; margin: 10px auto 0 auto; }
 .header-left { display: flex; align-items: center; gap: 10px; }
 .m-logo-small { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; background: #fff; transform: rotate(-10deg); box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin: 0; }
@@ -227,12 +225,12 @@ body::before {
 .glass-overlay-centered { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-glass-overlay); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1000; display: flex; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; transition: background-color 0.3s; }
 
 /* =========================================
-   ОКНО ЛОВУШКИ (СДАЕШЬСЯ?)
+   ОКНО ЛОВУШКИ (СДАЕШЬСЯ?) И АНТИ-КОПИПАСТ
 ========================================= */
-.give-up-modal { background: var(--bg-card); border-radius: 28px; padding: 30px 20px; width: 85%; max-width: 320px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 16px 40px rgba(0,0,0,0.5); animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
-.give-up-title { font-size: 24px; font-weight: 800; color: var(--text-main); margin: 0 0 10px 0; }
-.give-up-text { font-size: 14px; color: var(--text-muted); line-height: 1.5; margin: 0 0 30px 0; }
-.give-up-actions { display: flex; flex-direction: column; gap: 15px; }
+.give-up-modal, .penalty-modal { background: var(--bg-card); border-radius: 28px; padding: 30px 20px; width: 85%; max-width: 340px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 16px 40px rgba(0,0,0,0.5); animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
+.give-up-title, .penalty-title { font-size: 24px; font-weight: 800; color: var(--text-main); margin: 0 0 10px 0; }
+.give-up-text, .penalty-text { font-size: 14px; color: var(--text-muted); line-height: 1.5; margin: 0 0 20px 0; }
+.give-up-actions, .penalty-actions { display: flex; flex-direction: column; gap: 15px; }
 
 .btn-continue-pulsing { width: 100%; padding: 16px; border-radius: 16px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 800; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); animation: pulseAccent 2s infinite; transition: transform 0.2s; }
 .btn-continue-pulsing:active { transform: scale(0.95); }
@@ -241,6 +239,18 @@ body::before {
 .btn-give-up-weak:active { opacity: 0.8; }
 
 @keyframes pulseAccent { 0% { transform: scale(1); box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); } 50% { transform: scale(1.03); box-shadow: 0 8px 25px rgba(255, 140, 0, 0.6); } 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); } }
+
+.penalty-phrase-box { background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.3); color: #ff3b30; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: 800; margin-bottom: 20px; user-select: none; -webkit-user-select: none; pointer-events: none; }
+.penalty-textarea { height: 80px; resize: none; font-size: 16px; text-align: center; font-weight: bold; border-color: var(--border-color); color: var(--text-main); margin-bottom: 20px; }
+.penalty-textarea:focus { border-color: #ff3b30 !important; }
+
+.btn-confirm-penalty { width: 100%; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 800; border: none; transition: all 0.3s ease; }
+.btn-confirm-penalty.disabled { background: var(--bg-input); color: var(--text-muted); opacity: 0.5; pointer-events: none; }
+.btn-confirm-penalty.active { background: #ff3b30; color: #fff; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 59, 48, 0.4); }
+.btn-confirm-penalty.active:active { transform: scale(0.95); }
+
+.btn-return-task { background: transparent; border: none; color: var(--text-muted); font-size: 14px; font-weight: bold; cursor: pointer; padding: 10px; transition: color 0.2s; }
+.btn-return-task:active { color: var(--text-main); }
 
 /* =========================================
    СТЕКЛЯННОЕ МЕНЮ ДЕЙСТВИЙ
@@ -346,13 +356,9 @@ input:checked + .slider:before { transform: translateX(20px); }
 .heatmap-cell.level-2 { background: rgba(255, 140, 0, 0.6); }
 .heatmap-cell.level-3 { background: var(--accent); }
 
-/* Настройки */
 select.custom-select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 15px center; background-size: 16px; color: var(--text-main); padding-right: 40px; }
 select.custom-select.dark-input option { color: #000; }
 
-/* =========================================
-   ИДЕАЛЬНАЯ КНОПКА ТЕМЫ И КИНЕМАТОГРАФИЧНЫЙ RIPPLE
-========================================= */
 .theme-toggle-btn { width: 48px; height: 48px; border-radius: 50%; background: var(--bg-input); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent); transition: transform 0.2s; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
 .theme-toggle-btn:active { transform: scale(0.9); }
 .theme-toggle-btn svg { width: 24px; height: 24px; stroke: currentColor; fill: none; }
@@ -362,6 +368,7 @@ select.custom-select.dark-input option { color: #000; }
 
 @keyframes rippleExpand { to { transform: translate(-50%, -50%) scale(350); } }
 @keyframes rippleCollapse { 0% { transform: translate(-50%, -50%) scale(350); } 100% { transform: translate(-50%, -50%) scale(0); } }
+
 /* =========================================
    ИИ-ТАКТИКА (ПУСТОЙ ЭКРАН)
 ========================================= */

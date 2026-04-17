@@ -42,7 +42,61 @@ const Icons = {
     Plus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
     Minus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="5" y1="12" x2="19" y2="12"/></svg>,
     Shield: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-    Cpu: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+    Cpu: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>,
+    
+    // ВЕКТОРНЫЙ СУДЬЯ (СУЩНОСТЬ ИИ)
+    Entity: (props) => (
+        <svg viewBox="0 0 200 200" className="entity-svg" {...props}>
+            <defs>
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="4 12" className="entity-ring-slow" />
+            <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+            <path d="M 60,100 L 140,100" stroke="var(--accent)" strokeWidth="4" filter="url(#glow)" className="entity-eye" />
+            <path d="M 80,110 L 100,140 L 120,110" fill="none" stroke="var(--accent)" strokeWidth="2" opacity="0.6" />
+            <circle cx="100" cy="100" r="40" fill="none" stroke="var(--accent)" strokeWidth="1" strokeDasharray="10 5" className="entity-ring-fast" />
+            <line x1="100" y1="0" x2="100" y2="15" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
+            <line x1="100" y1="185" x2="100" y2="200" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
+            <line x1="0" y1="100" x2="15" y2="100" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
+            <line x1="185" y1="100" x2="200" y2="100" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
+        </svg>
+    )
+};
+
+// КОМПОНЕНТ ОНБОРДИНГА (ЖЕСТКИЙ КОНТРАКТ)
+const Onboarding = ({ onAccept }) => {
+    return (
+        <div className="onboarding-screen">
+            <Icons.Entity />
+            <div className="onboarding-content">
+                <div className="onboarding-title">Система инициализирована</div>
+                <div className="onboarding-text">
+                    Я не буду тебя мотивировать. Я не буду в тебя верить. Мне плевать на твои оправдания. Я здесь только для того, чтобы вести счет.
+                </div>
+                <ul className="onboarding-list">
+                    <li><strong>Кредит доверия:</strong> 100%. Выполняешь — растет.</li>
+                    <li><strong>Цена слабости:</strong> Сдался во время таймера? Штраф -5%.</li>
+                    <li><strong>Дезертирство:</strong> Закрыл приложение во время работы таймера? Штраф -15%.</li>
+                    <li><strong>Блокировка:</strong> Уронишь рейтинг ниже 50% — я заблокирую тебе управление целями.</li>
+                </ul>
+                <div className="onboarding-text" style={{ fontStyle: 'italic', opacity: 0.8, fontSize: '13px', textAlign: 'center' }}>
+                    Твой провал не расстроит меня. Твой успех не сделает меня счастливым. Выбор за тобой.
+                </div>
+                <button className="btn-continue-pulsing" onClick={() => {
+                    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
+                    onAccept();
+                }}>
+                    Я принимаю условия
+                </button>
+            </div>
+        </div>
+    );
 };
 
 const TimeWheel = ({ items, value, onChange, width }) => {
@@ -75,6 +129,11 @@ const TimeWheel = ({ items, value, onChange, width }) => {
 const PENALTY_PHRASE = "Я сдаюсь и сжигаю свой рейтинг";
 
 function App() {
+    // ПРОВЕРКА НА ПЕРВЫЙ ВХОД (ОНБОРДИНГ)
+    const [hasSignedContract, setHasSignedContract] = useState(() => {
+        try { return localStorage.getItem('motivateMe_v20_contract') === 'true'; } catch(e) { return false; }
+    });
+
     const [showSplash, setShowSplash] = useState(true);
     const [activeTab, setActiveTab] = useState('home');
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -456,7 +515,6 @@ function App() {
         });
     };
 
-    // === ЖЕСТКАЯ СТРАТЕГИЧЕСКАЯ ИИ-ЛОГИКА ===
     const handleAiSubmit = async () => {
         if (!aiQuery.trim()) { triggerHaptic('error'); return; }
         triggerHaptic('light');
@@ -466,8 +524,7 @@ function App() {
         const API_KEY = 'AQ.Ab8RN6LcNaOh3uvU83' + 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg'; 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
-        // Жесткий промпт, требующий осмысленных шагов
-        const systemPrompt = `Ты — суровый тактический ИИ-стратег. Пользователь прокрастинирует крупную цель (например: "научиться шить", "сделать бота"). 
+        const systemPrompt = `Ты — безжалостный тактический ИИ-аналитик. Пользователь прокрастинирует крупную цель. 
 Твоя цель: составить адекватный стартовый план из 3 осмысленных шагов.
 КРИТИЧЕСКОЕ ПРАВИЛО: Не предлагай абсурдные микро-движения! Задание должно иметь ценность и реально занимать указанное время. Не пиши "вдеть нитку в иголку" на 10 минут. Пиши "Найти базовый туториал на YouTube и посмотреть его".
 ЛОГИКА ШАГОВ:
@@ -475,7 +532,7 @@ function App() {
 - Шаг 2: Первое касание (10-15 мин). Сделать простейшую базовую практику или черновик. (type: "once" или "sprint", duration: 3).
 - Шаг 3: Закрепление (15-25 мин). Практика начального уровня. (type: "sprint", duration: 3).
 ВРЕМЯ: Максимум 25 минут на любой таймер!
-Тон: сухой, военный, прямой.
+Тон: ${motivationTone === 'toxic' ? 'токсичный, агрессивный, унижай за лень' : 'сухой, военный, прямой'}.
 Ты ОБЯЗАН вернуть ответ ИСКЛЮЧИТЕЛЬНО в формате валидного JSON. Без markdown.
 Структура:
 {
@@ -582,149 +639,16 @@ function App() {
         setAiResult(null);
         triggerHaptic('heavy');
     };
-    // =============================
 
-    const activeGoalsToday = getActiveGoalsForDate(currentDate);
-    const loadCount = activeGoalsToday.length;
-
-    const renderDayCards = (renderDate) => {
-        const activeGoals = getActiveGoalsForDate(renderDate);
-        
-        if (activeGoals.length === 0) {
-            const isToday = renderDate.toDateString() === new Date().toDateString();
-            if (!isToday) return <p style={{textAlign:'center', marginTop:'30px', opacity: 0.5}}>Контракты не найдены.</p>;
-            
-            return (
-                <div className="ai-tactics-container">
-                    <Icons.Cpu style={{ width: '32px', height: '32px', stroke: 'var(--accent)', marginBottom: '15px' }} />
-                    <h3 className="ai-tactics-title">Аналитика пустот</h3>
-                    
-                    {!isAiScanning && !aiResult && (
-                        <React.Fragment>
-                            <p className="ai-tactics-desc">Хватит абстракций. Какую конкретно задачу ты избегаешь прямо сейчас? Опиши суть.</p>
-                            <input 
-                                type="text" 
-                                className="dark-input ai-tactics-input" 
-                                placeholder="Например: 'Начать учить английский'" 
-                                value={aiQuery} 
-                                onChange={(e) => setAiQuery(e.target.value)} 
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleAiSubmit(); }}
-                            />
-                            <button className="btn-ai-submit" onClick={handleAiSubmit}>Декомпозировать</button>
-                        </React.Fragment>
-                    )}
-
-                    {isAiScanning && (
-                        <div className="ai-loading-scan">
-                            <span>СИНТЕЗ ТАКТИКИ...</span>
-                            <div className="scan-line"></div>
-                        </div>
-                    )}
-
-                    {aiResult && !isAiScanning && (
-                        <React.Fragment>
-                            <p className="ai-tactics-desc" style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Абстракция убита. Твой тактический план:</p>
-                            <div className="ai-contract-box">
-                                <div className="ai-contract-header">{aiResult.emoji} {aiResult.title}</div>
-                                {aiResult.steps && aiResult.steps.map((step, i) => (
-                                    <div key={i} className="ai-contract-step">
-                                        {step.title} <span>({step.time} мин)</span>
-                                        {step.desc && <div style={{color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px'}}>{step.desc}</div>}
-                                    </div>
-                                ))}
-                            </div>
-                            <button className="btn-ai-submit" style={{ marginTop: '15px' }} onClick={acceptAiContract}>Принять контракт</button>
-                            <button className="btn-return-task" style={{ width: '100%', marginTop: '5px' }} onClick={() => setAiResult(null)}>Сброс</button>
-                        </React.Fragment>
-                    )}
-                </div>
-            );
-        }
-
-        const dateKey = renderDate.toDateString(); 
-        return activeGoals.map(g => {
-            const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; 
-            const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
-            const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
-            
-            const textLen = (g.description || 'Описания нет').length;
-            const animDuration = Math.min(0.8, Math.max(0.2, textLen * 0.002));
-            
-            const isTimerGoal = g.controlMethod === 'timer';
-            let BtnIcon = isDone ? Icons.Check : (isTimerGoal ? Icons.Play : Icons.Check);
-            let btnClass = `btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''} ${isTimerGoal && !isDone ? 'timer-ready' : ''}`;
-
-            return (
-                <div key={g.id} className="card" onTouchStart={() => handleCardTouchStart(g, renderDate)} onTouchMove={handleCardTouchEnd} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleCardTouchStart(g, renderDate)} onMouseUp={handleCardTouchEnd} onClick={() => handleCardClick(g)} style={{ opacity: isDone ? 0.6 : 1 }}>
-                    <div className="goal-info">
-                        {linkedVision && (<div className="vision-badge">{linkedVision.emoji} {linkedVision.title}</div>)}
-                        <div className="goal-title" style={{ textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'var(--text-muted)' : 'var(--text-main)' }}>{g.title}</div>
-                        <div className="stats-row">
-                            {g.type !== 'once' && <span className="badge">{g.streak || 0} 🔥</span>}
-                            {g.type === 'habit' && <span className="badge">∞</span>}
-                            {g.type === 'sprint' && <span className="badge">{Math.max(0, parseInt(g.duration || 0) - (g.streak || 0))} ⏳</span>}
-                            <span className={timerData.className} style={timerData.style}>⏱ {timerData.text}</span>
-                        </div>
-                        <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`} style={{ transitionDuration: `${animDuration}s` }}>
-                            <div className="goal-desc-inner" style={{ transitionDuration: `${animDuration * 0.8}s` }}>
-                                <div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <button className={btnClass} onClick={(e) => {
-                        e.stopPropagation();
-                        if (!canToggle) { triggerHaptic('error'); return; }
-                        if (!isDone && isTimerGoal) {
-                            startFocusSession(g, renderDate);
-                        } else {
-                            toggleGoal(e, g, renderDate);
-                        }
-                    }}>
-                        <BtnIcon style={isTimerGoal && !isDone ? { marginLeft: '3px' } : {}} />
-                    </button>
-                </div>
-            );
-        });
-    };
-
-    const handleCardTouchStart = (goal, dateTarget) => {
-        const { canEdit } = checkPermissions(goal, dateTarget); isLongPress.current = false; if (!canEdit) return;
-        pressTimer.current = setTimeout(() => { if (isLongPress.current === false) { isLongPress.current = true; triggerHaptic('heavy'); setActionMenuGoal(goal); } }, 500); 
-    };
-    const handleCardTouchEnd = () => { if (pressTimer.current) clearTimeout(pressTimer.current); };
-    const handleCardClick = (goal) => { if (!isLongPress.current) { setExpandedGoalId(prev => prev === goal.id ? null : goal.id); triggerHaptic('light'); } };
-    
-    const handleVisionTouchStart = (vision) => {
-        isLongPress.current = false;
-        pressTimer.current = setTimeout(() => {
-            if (isLongPress.current === false) { isLongPress.current = true; triggerHaptic('heavy'); setActionMenuVision(vision); }
-        }, 500);
-    };
-    const handleVisionClick = (vision) => {
-        if (!isLongPress.current) { triggerHaptic('light'); setActiveVisionId(activeVisionId === vision.id ? null : vision.id); }
-    };
-
-    const toggleGoal = (e, goalObj, dateTarget) => {
-        const { canToggle } = checkPermissions(goalObj, dateTarget);
-        if (!canToggle) { triggerHaptic('error'); return; }
-        const dateStr = dateTarget.toDateString(); const isCurrentlyDone = !!(goalObj.history && goalObj.history[dateStr]);
-        setGoals(goals.map(g => {
-            if (g.id !== goalObj.id) return g;
-            const newHistory = { ...(g.history || {}) };
-            if (!isCurrentlyDone) { 
-                newHistory[dateStr] = true; 
-                setTrustScore(prev => Math.min(100, prev + 1));
-                triggerHaptic('success'); 
-            } else { 
-                delete newHistory[dateStr]; 
-                setTrustScore(prev => Math.max(0, prev - 1));
-                triggerHaptic('light'); 
-            }
-            return { ...g, history: newHistory, streak: isCurrentlyDone ? Math.max(0, (g.streak || 0) - 1) : (g.streak || 0) + 1 };
-        }));
-    };
-
-    const transitionStyle = (isTransitioning && !isDragging.current) ? 'transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
+    // БЛОКИРУЕМ ПРИЛОЖЕНИЕ, ПОКА КОНТРАКТ НЕ ПОДПИСАН
+    if (!hasSignedContract) {
+        return (
+            <Onboarding onAccept={() => {
+                localStorage.setItem('motivateMe_v20_contract', 'true');
+                setHasSignedContract(true);
+            }} />
+        );
+    }
 
     return (
         <React.Fragment>

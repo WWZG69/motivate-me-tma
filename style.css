@@ -104,7 +104,7 @@ body::before {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* ЭКРАН ИНИЦИАЦИИ (КОНТРАКТ) */
-.onboarding-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9000; background: #000; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; box-sizing: border-box; overflow-y: auto; color: #fff; }
+.onboarding-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9000; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; overflow-y: auto; color: #fff; }
 .entity-svg { width: 160px; height: 160px; margin-bottom: 30px; animation: entityFloat 4s ease-in-out infinite; flex-shrink: 0; }
 .entity-ring-slow { transform-origin: center; animation: spinRotate 25s linear infinite; }
 .entity-ring-fast { transform-origin: center; animation: spinRotateReverse 15s linear infinite; }
@@ -116,11 +116,11 @@ body::before {
 @keyframes eyePulse { 0% { stroke-width: 2; opacity: 0.4; } 100% { stroke-width: 6; opacity: 1; filter: drop-shadow(0 0 8px var(--accent)); } }
 
 .onboarding-content { max-width: 360px; width: 100%; display: flex; flex-direction: column; opacity: 0; animation: fadeIn 1s ease 0.5s forwards; }
-.onboarding-title { font-size: 14px; font-weight: 800; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; font-family: monospace; }
-.onboarding-text { font-size: 15px; color: rgba(255,255,255,0.8); line-height: 1.6; margin-bottom: 25px; }
+.onboarding-title { font-size: 14px; font-weight: 800; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; font-family: monospace; text-align: center; }
+.onboarding-text { font-size: 15px; color: rgba(255,255,255,0.8); line-height: 1.6; margin-bottom: 25px; text-align: center; }
 .onboarding-list { list-style: none; padding: 0; margin: 0 0 30px 0; border-left: 2px solid var(--border-color); }
-.onboarding-list li { position: relative; padding: 10px 0 10px 15px; font-size: 14px; color: rgba(255,255,255,0.7); }
-.onboarding-list li::before { content: ''; position: absolute; left: -2px; top: 18px; width: 2px; height: 10px; background: var(--accent); }
+.onboarding-list li { position: relative; padding: 10px 0 10px 15px; font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.4; }
+.onboarding-list li::before { content: ''; position: absolute; left: -2px; top: 16px; width: 2px; height: 10px; background: var(--accent); }
 .onboarding-list strong { color: #fff; }
 
 .container { display: flex; flex-direction: column; align-items: center; width: 100vw; overflow-x: hidden; min-height: 100vh; box-sizing: border-box; padding-top: 85px; padding-bottom: 140px; position: relative; z-index: 1; }

@@ -422,33 +422,44 @@ function App() {
         } catch(e) { return { text: "00:00", className: 'badge failed-timer', style: {} }; }
     };
 
+    // === ИСПРАВЛЕННАЯ ЛОГИКА ФИЛЬТРАЦИИ ДАТ ===
     const getActiveGoalsForDate = (dateTarget) => {
-        const renderTime = dateTarget.getTime();
+        // Жестко привязываем дату рендера к 00:00:00 локального времени
+        const normalizedDateTarget = new Date(dateTarget);
+        normalizedDateTarget.setHours(0, 0, 0, 0);
+        const renderTime = normalizedDateTarget.getTime();
+
         return goals.filter(g => { 
             if (activeVisionId && g.visionId != activeVisionId) return false;
             try { 
                 const startD = new Date(g.startDate);
-                startD.setHours(0,0,0,0);
+                startD.setHours(0, 0, 0, 0);
                 const startT = startD.getTime();
+                
                 if (startT > renderTime) return false; 
+                
                 if (g.type === 'habit' && g.weekDays && g.weekDays.length > 0) {
                     if (!g.weekDays.includes(dateTarget.getDay())) return false;
                 }
+                
                 if (g.type === 'sprint') {
                     const durationDays = parseInt(g.duration, 10) || 1;
                     const endD = new Date(startT);
                     endD.setDate(endD.getDate() + durationDays - 1);
                     if (renderTime > endD.getTime()) return false;
                 }
+                
                 if (g.type === 'once') {
+                    // Теперь время рендера и время старта всегда совпадают идеально
                     if (renderTime !== startT) return false;
                 }
+                
                 return true; 
             } catch(e) { return true; } 
         });
     };
 
-    // === ОБНОВЛЕННАЯ ЛОГИКА ИИ ===
+    // === ОБНОВЛЕННАЯ ЛОГИКА ИИ (Жесткие лимиты времени) ===
     const handleAiSubmit = async () => {
         if (!aiQuery.trim()) { triggerHaptic('error'); return; }
         triggerHaptic('light');
@@ -458,21 +469,27 @@ function App() {
         const API_KEY = 'AQ.Ab8RN6LcNaOh3uvU83' + 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg'; 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
-        // В промпт добавлено требование вернуть "emoji"
-        const systemPrompt = `Ты — безжалостный тактический ИИ-аналитик. Пользователь даст тебе абстрактную задачу. 
-Твоя цель: декомпозировать ее на 3 конкретных шага.
-Ты ОБЯЗАН вернуть ответ ИСКЛЮЧИТЕЛЬНО в формате валидного JSON.
-Структура JSON:
+        // Жесткий промпт: запрет на большие таймеры, принуждение к микрошагам
+        const systemPrompt = `Ты — безжалостный тактический ИИ-аналитик. Пользователь прокрастинирует задачу. 
+Твоя цель: убить абстракцию через микро-шаги. Разбей задачу на 3 примитивных, быстрых действия.
+ПРАВИЛА ВРЕМЕНИ (КРИТИЧНО!):
+- Время (time) не может превышать 25 минут!
+- Шаг 1: Элементарное действие на 5-10 минут (type: "once").
+- Шаг 2: Первое погружение на 10-15 минут (type: "sprint", duration: 3).
+- Шаг 3: Закрепление, максимум 25 минут (type: "once" или "sprint").
+Метод контроля (method) всегда "timer".
+Ты ОБЯЗАН вернуть ИСКЛЮЧИТЕЛЬНО валидный JSON. Без markdown.
+Структура:
 {
   "title": "Операция: [Краткое название]",
-  "emoji": "[Один эмодзи, отражающий суть]",
+  "emoji": "[Один эмодзи]",
   "steps": [
     {
       "title": "[Название шага]",
-      "desc": "[Описание действия.]",
+      "desc": "[Строгий приказ]",
       "type": "once",
       "method": "timer",
-      "time": 25,
+      "time": 10,
       "duration": 1
     }
   ]
@@ -525,7 +542,6 @@ function App() {
     };
 
     const acceptAiContract = () => {
-        // Защита, если ИИ вернул не тот формат или была ошибка
         if (!aiResult || !aiResult.steps || aiResult.title === "Системная Ошибка") {
             setAiResult(null);
             return;
@@ -534,7 +550,6 @@ function App() {
         const nowObj = new Date();
         const startOfDayStr = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate()).toISOString();
         
-        // 1. СОЗДАЕМ ВИДЕНИЕ
         const newVisionId = Date.now().toString();
         const newVision = {
             id: newVisionId,
@@ -543,9 +558,8 @@ function App() {
             description: `План декомпозирован ИИ по запросу: "${aiQuery}"`
         };
 
-        // 2. СОЗДАЕМ ШАГИ И ПРИВЯЗЫВАЕМ К ВИДЕНИЮ (visionId)
         const newGoals = aiResult.steps.map((step, idx) => ({
-            id: Date.now() + idx + 100, // +100 чтобы ID точно не совпали
+            id: Date.now() + idx + 100, 
             title: step.title || 'Шаг',
             description: step.desc || '',
             type: step.type || 'once',
@@ -554,7 +568,7 @@ function App() {
             ignoreHoliday: false,
             notifications: true,
             startDate: startOfDayStr,
-            visionId: newVisionId, // <-- Привязка к Видению!
+            visionId: newVisionId,
             weekDays: [0,1,2,3,4,5,6],
             controlMethod: step.method || 'timer',
             focusTime: step.time || 25,
@@ -563,11 +577,9 @@ function App() {
             createdAt: nowObj.toDateString()
         }));
 
-        // Сохраняем стейты
         setVisions(prev => [newVision, ...prev]);
         setGoals(prev => [...newGoals, ...prev]);
         
-        // Очищаем форму ИИ
         setAiQuery('');
         setAiResult(null);
         triggerHaptic('heavy');

@@ -15,6 +15,21 @@ const weekDaysArr = [
     { val: 4, label: 'Чт' }, { val: 5, label: 'Пт' }, { val: 6, label: 'Сб' }, { val: 0, label: 'Вс' }
 ];
 
+// Безопасный компонент Векторного Судьи (без SVG-фильтров, которые крашат мобильные браузеры)
+const EntityIcon = (props) => (
+    <svg viewBox="0 0 200 200" className="entity-svg" {...props}>
+        <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="4 12" className="entity-ring-slow" />
+        <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+        <path d="M 60,100 L 140,100" stroke="var(--accent)" strokeWidth="4" className="entity-eye" />
+        <path d="M 80,110 L 100,140 L 120,110" fill="none" stroke="var(--accent)" strokeWidth="2" opacity="0.6" />
+        <circle cx="100" cy="100" r="40" fill="none" stroke="var(--accent)" strokeWidth="1" strokeDasharray="10 5" className="entity-ring-fast" />
+        <line x1="100" y1="0" x2="100" y2="15" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
+        <line x1="100" y1="185" x2="100" y2="200" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
+        <line x1="0" y1="100" x2="15" y2="100" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
+        <line x1="185" y1="100" x2="200" y2="100" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
+    </svg>
+);
+
 const Icons = {
     Goals: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><circle cx="12" cy="12" r="9" /><line x1="12" y1="2" x2="12" y2="5" strokeLinecap="round"/><line x1="12" y1="19" x2="12" y2="22" strokeLinecap="round"/><line x1="2" y1="12" x2="5" y2="12" strokeLinecap="round"/><line x1="19" y1="12" x2="22" y2="12" strokeLinecap="round"/><circle cx="12" cy="12" r="0.5" fill={props.active ? "var(--accent)" : "var(--icon-color)"} /></svg> ),
     Focus: (props) => ( <svg viewBox="0 0 24 24" className="tab-icon" stroke={props.active ? "var(--accent)" : "var(--icon-color)"} {...props}><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="3" /></svg> ),
@@ -43,37 +58,13 @@ const Icons = {
     Minus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="5" y1="12" x2="19" y2="12"/></svg>,
     Shield: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
     Cpu: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>,
-    
-    // ВЕКТОРНЫЙ СУДЬЯ (СУЩНОСТЬ ИИ)
-    Entity: (props) => (
-        <svg viewBox="0 0 200 200" className="entity-svg" {...props}>
-            <defs>
-                <filter id="glow">
-                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
-                    <feMerge>
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                </filter>
-            </defs>
-            <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="4 12" className="entity-ring-slow" />
-            <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
-            <path d="M 60,100 L 140,100" stroke="var(--accent)" strokeWidth="4" filter="url(#glow)" className="entity-eye" />
-            <path d="M 80,110 L 100,140 L 120,110" fill="none" stroke="var(--accent)" strokeWidth="2" opacity="0.6" />
-            <circle cx="100" cy="100" r="40" fill="none" stroke="var(--accent)" strokeWidth="1" strokeDasharray="10 5" className="entity-ring-fast" />
-            <line x1="100" y1="0" x2="100" y2="15" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
-            <line x1="100" y1="185" x2="100" y2="200" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
-            <line x1="0" y1="100" x2="15" y2="100" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
-            <line x1="185" y1="100" x2="200" y2="100" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
-        </svg>
-    )
+    Entity: EntityIcon
 };
 
-// КОМПОНЕНТ ОНБОРДИНГА (ЖЕСТКИЙ КОНТРАКТ)
 const Onboarding = ({ onAccept }) => {
     return (
         <div className="onboarding-screen">
-            <Icons.Entity />
+            <EntityIcon />
             <div className="onboarding-content">
                 <div className="onboarding-title">Система инициализирована</div>
                 <div className="onboarding-text">
@@ -129,7 +120,6 @@ const TimeWheel = ({ items, value, onChange, width }) => {
 const PENALTY_PHRASE = "Я сдаюсь и сжигаю свой рейтинг";
 
 function App() {
-    // ПРОВЕРКА НА ПЕРВЫЙ ВХОД (ОНБОРДИНГ)
     const [hasSignedContract, setHasSignedContract] = useState(() => {
         try { return localStorage.getItem('motivateMe_v20_contract') === 'true'; } catch(e) { return false; }
     });

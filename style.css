@@ -113,7 +113,7 @@ body::before {
 @keyframes spinRotate { 100% { transform: rotate(360deg); } }
 @keyframes spinRotateReverse { 100% { transform: rotate(-360deg); } }
 @keyframes entityFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-@keyframes eyePulse { 0% { stroke-width: 2; opacity: 0.4; } 100% { stroke-width: 6; opacity: 1; filter: drop-shadow(0 0 8px var(--accent)); } }
+@keyframes eyePulse { 0% { stroke-width: 4; opacity: 0.8; } 100% { stroke-width: 8; opacity: 1; } }
 
 .onboarding-content { max-width: 360px; width: 100%; display: flex; flex-direction: column; opacity: 0; animation: fadeIn 1s ease 0.5s forwards; }
 .onboarding-title { font-size: 14px; font-weight: 800; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; font-family: monospace; text-align: center; }

@@ -83,6 +83,15 @@ function App() {
         return Array.from({length: days}, (_, i) => (i + 1).toString().padStart(2, '0'));
     }, [startMonth]);
 
+    // ВОССТАНОВЛЕННАЯ ПЕРЕМЕННАЯ БЛОКИРОВКИ ЭКРАНА
+    const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId || showGiveUpModal || showPenaltyModal || showRageQuitAlert || showLowTrustAlert || showRulesModal;
+
+    useEffect(() => {
+        if (isAnyModalOpen) { document.body.style.overflow = 'hidden'; } 
+        else { document.body.style.overflow = ''; }
+        return () => { document.body.style.overflow = ''; };
+    }, [isAnyModalOpen]);
+
     useEffect(() => {
         try {
             if (window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
@@ -360,7 +369,6 @@ function App() {
         }));
     };
 
-    // ВОТ ОНИ: ВОССТАНОВЛЕННЫЕ ПЕРЕМЕННЫЕ
     const activeGoalsToday = getActiveGoalsForDate(currentDate);
     const loadCount = activeGoalsToday.length;
 

@@ -477,28 +477,39 @@ function App() {
         const API_KEY = 'AQ.Ab8RN6LcNaOh3uvU83' + 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg'; 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
-        const systemPrompt = `Ты — безжалостный тактический ИИ-аналитик. Пользователь прокрастинирует крупную цель. 
-Твоя цель: составить адекватный стартовый план из 3 осмысленных шагов.
-КРИТИЧЕСКОЕ ПРАВИЛО: Не предлагай абсурдные микро-движения! Задание должно иметь ценность и реально занимать указанное время. Не пиши "вдеть нитку в иголку" на 10 минут. Пиши "Найти базовый туториал на YouTube и посмотреть его".
+        // ОБНОВЛЕННЫЙ ПРОМПТ С УЧЕТОМ СДВИГА ПО ДНЯМ (dayOffset)
+        const systemPrompt = `Ты — безжалостный тактический ИИ-аналитик и эксперт-ментор. Пользователь прокрастинирует цель. Твоя задача: составить стартовый план из 3 шагов.
+
+АЛГОРИТМ АНАЛИЗА:
+1. Определи профессиональную сферу (например: программирование, музыка, дизайн).
+2. Вспомни best practices для новичков от профи в этой сфере.
+3. Преврати советы в 3 практических шага.
+
+ПРАВИЛА НАГРУЗКИ (КРИТИЧЕСКО ВАЖНО):
+Суммарный стресс должен быть минимальным. Выбери ОДИН из двух путей:
+- ПУТЬ А (Легкий старт): Если шаги быстрые, ставь всем "dayOffset": 0. Суммарное время ВСЕХ 3 шагов не должно превышать 30 минут (например: 5 мин, 10 мин, 15 мин).
+- ПУТЬ Б (Глубокое погружение): Если специфика требует 20-30 минут на шаг, РАЗБЕЙ их на 3 дня (dayOffset: 0, dayOffset: 1, dayOffset: 2). 
+
 ЛОГИКА ШАГОВ:
-- Шаг 1: Разведка/Подготовка (5-10 мин). Найти информацию, составить список, подготовить стол. (type: "once").
-- Шаг 2: Первое касание (10-15 мин). Сделать простейшую базовую практику или черновик. (type: "once" или "sprint", duration: 3).
-- Шаг 3: Закрепление (15-25 мин). Практика начального уровня. (type: "sprint", duration: 3).
-ВРЕМЯ: Максимум 25 минут на любой таймер!
-Тон: ${motivationTone === 'toxic' ? 'токсичный, агрессивный, унижай за лень' : 'сухой, военный, прямой'}.
-Ты ОБЯЗАН вернуть ответ ИСКЛЮЧИТЕЛЬНО в формате валидного JSON. Без markdown.
+- Шаг 1: Референс/Теория (type: "once").
+- Шаг 2: Настройка среды/Каркас (type: "once" или "sprint").
+- Шаг 3: Первое грязное действие (type: "sprint").
+
+Тон: ${motivationTone === 'toxic' ? 'токсичный, высокомерный эксперт, унижай за лень' : 'сухой, военный, прямой'}.
+Верни ТОЛЬКО валидный JSON. Без markdown.
 Структура:
 {
   "title": "Операция: [Краткое название]",
-  "emoji": "[Один эмодзи]",
+  "emoji": "[Эмодзи]",
   "steps": [
     {
-      "title": "[Название шага]",
-      "desc": "[Строгий приказ]",
+      "title": "[Название]",
+      "desc": "[Приказ]",
       "type": "once",
       "method": "timer",
       "time": 10,
-      "duration": 1
+      "duration": 1,
+      "dayOffset": 0 
     }
   ]
 }`;
@@ -516,11 +527,10 @@ function App() {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(`HTTP ${response.status} | ${errorText.substring(0, 60)}`);
+                throw new Error(`HTTP ${response.status}`);
             }
 
             const data = await response.json();
-            
             let aiText = data.candidates[0].content.parts[0].text;
             aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim(); 
             
@@ -532,16 +542,7 @@ function App() {
             setAiResult({
                 title: "Системная Ошибка",
                 emoji: "⚠️",
-                steps: [
-                    { 
-                        title: "Лог сети", 
-                        desc: error.message || "Network Error / CORS", 
-                        type: "once", 
-                        method: "check", 
-                        time: 0, 
-                        duration: 1 
-                    }
-                ]
+                steps: [ { title: "Сбой связи", desc: "Network Error / CORS", type: "once", method: "check", time: 0, duration: 1, dayOffset: 0 } ]
             });
             triggerHaptic('error');
         } finally {
@@ -551,13 +552,10 @@ function App() {
 
     const acceptAiContract = () => {
         if (!aiResult || !aiResult.steps || aiResult.title === "Системная Ошибка") {
-            setAiResult(null);
-            return;
+            setAiResult(null); return;
         }
         
         const nowObj = new Date();
-        const startOfDayStr = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate()).toISOString();
-        
         const newVisionId = Date.now().toString();
         const newVision = {
             id: newVisionId,
@@ -566,24 +564,32 @@ function App() {
             description: `План декомпозирован ИИ по запросу: "${aiQuery}"`
         };
 
-        const newGoals = aiResult.steps.map((step, idx) => ({
-            id: Date.now() + idx + 100, 
-            title: step.title || 'Шаг',
-            description: step.desc || '',
-            type: step.type || 'once',
-            deadline: '23:59',
-            duration: step.duration || 1,
-            ignoreHoliday: false,
-            notifications: true,
-            startDate: startOfDayStr,
-            visionId: newVisionId,
-            weekDays: [0,1,2,3,4,5,6],
-            controlMethod: step.method || 'timer',
-            focusTime: step.time || 25,
-            history: {},
-            streak: 0,
-            createdAt: nowObj.toDateString()
-        }));
+        // РАСПРЕДЕЛЯЕМ ЗАДАЧИ ПО ДНЯМ НА ОСНОВЕ dayOffset
+        const newGoals = aiResult.steps.map((step, idx) => {
+            const targetDate = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate());
+            if (step.dayOffset) {
+                targetDate.setDate(targetDate.getDate() + step.dayOffset);
+            }
+            
+            return {
+                id: Date.now() + idx + 100, 
+                title: step.title || 'Шаг',
+                description: step.desc || '',
+                type: step.type || 'once',
+                deadline: '23:59',
+                duration: step.duration || 1,
+                ignoreHoliday: false,
+                notifications: true,
+                startDate: targetDate.toISOString(),
+                visionId: newVisionId,
+                weekDays: [0,1,2,3,4,5,6],
+                controlMethod: step.method || 'timer',
+                focusTime: step.time || 25,
+                history: {},
+                streak: 0,
+                createdAt: nowObj.toDateString()
+            };
+        });
 
         setVisions(prev => [newVision, ...prev]);
         setGoals(prev => [...newGoals, ...prev]);
@@ -675,12 +681,17 @@ function App() {
                             <p className="ai-tactics-desc" style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Абстракция убита. Твой тактический план:</p>
                             <div className="ai-contract-box">
                                 <div className="ai-contract-header">{aiResult.emoji} {aiResult.title}</div>
-                                {aiResult.steps && aiResult.steps.map((step, i) => (
-                                    <div key={i} className="ai-contract-step">
-                                        {step.title} <span>({step.time} мин)</span>
-                                        {step.desc && <div style={{color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px'}}>{step.desc}</div>}
-                                    </div>
-                                ))}
+                                {aiResult.steps && aiResult.steps.map((step, i) => {
+                                    let dayLabel = "Сегодня";
+                                    if (step.dayOffset === 1) dayLabel = "Завтра";
+                                    if (step.dayOffset === 2) dayLabel = "Послезавтра";
+                                    return (
+                                        <div key={i} className="ai-contract-step">
+                                            {step.title} <span>({step.time} мин • {dayLabel})</span>
+                                            {step.desc && <div style={{color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px'}}>{step.desc}</div>}
+                                        </div>
+                                    );
+                                })}
                             </div>
                             <button className="btn-ai-submit" style={{ marginTop: '15px' }} onClick={acceptAiContract}>Принять контракт</button>
                             <button className="btn-return-task" style={{ width: '100%', marginTop: '5px' }} onClick={() => setAiResult(null)}>Сброс</button>

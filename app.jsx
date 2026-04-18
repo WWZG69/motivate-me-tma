@@ -360,6 +360,10 @@ function App() {
         }));
     };
 
+    // ВОТ ОНИ: ВОССТАНОВЛЕННЫЕ ПЕРЕМЕННЫЕ
+    const activeGoalsToday = getActiveGoalsForDate(currentDate);
+    const loadCount = activeGoalsToday.length;
+
     const renderDayCards = (renderDate) => {
         const activeGoals = getActiveGoalsForDate(renderDate);
         if (activeGoals.length === 0) {

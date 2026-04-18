@@ -1,9 +1,12 @@
 // ==========================================
 // ФАЙЛ: components.jsx
+// Описание: Глобальные компоненты интерфейса
 // ==========================================
+
 const { EntityIcon } = window;
 const { useEffect, useRef } = React;
 
+// 1. Компонент жесткого Онбординга (Контракт)
 window.Onboarding = ({ onAccept }) => {
     return (
         <div className="onboarding-screen">
@@ -33,6 +36,7 @@ window.Onboarding = ({ onAccept }) => {
     );
 };
 
+// 2. Компонент Кодекса Системы (Правила)
 window.RulesModal = ({ onClose }) => {
     return (
         <div className="glass-overlay-centered" style={{ zIndex: 9999 }}>
@@ -43,7 +47,7 @@ window.RulesModal = ({ onClose }) => {
                     <ul className="onboarding-list" style={{borderLeftColor: 'var(--border-color)', margin: '15px 0'}}>
                         <li><strong>Кредит доверия:</strong> Начинается со 100%. Выполняешь задачи в срок — получаешь +1%.</li>
                         <li><strong>Сдача:</strong> Отмена идущего таймера фокуса снимает -5%.</li>
-                        <li><strong>Дезертирство:</strong> Закрытие приложения во время таймера расценивается как побег. Штраф -15%.</li>
+                        <li><strong>Дезертирство:</strong> Закрытие приложения во время работы таймера расценивается как побег. Штраф -15%.</li>
                         <li><strong>Штраф за ложь:</strong> Игнорирование задачи в течение дня снижает доверие на -1%.</li>
                         <li><strong>Локаут:</strong> Если Кредит Доверия падает ниже 50%, ты теряешь право редактировать или удалять свои цели.</li>
                     </ul>
@@ -59,6 +63,7 @@ window.RulesModal = ({ onClose }) => {
     );
 };
 
+// 3. Компонент Рулетки Времени (Стиль iOS)
 window.TimeWheel = ({ items, value, onChange, width }) => {
     const ref = useRef(null);
     const itemHeight = 44; 

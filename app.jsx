@@ -477,7 +477,6 @@ function App() {
         const API_KEY = 'AQ.Ab8RN6LcNaOh3uvU83' + 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg'; 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
-        // ОБНОВЛЕННЫЙ ПРОМПТ С УЧЕТОМ СДВИГА ПО ДНЯМ (dayOffset)
         const systemPrompt = `Ты — безжалостный тактический ИИ-аналитик и эксперт-ментор. Пользователь прокрастинирует цель. Твоя задача: составить стартовый план из 3 шагов.
 
 АЛГОРИТМ АНАЛИЗА:
@@ -564,7 +563,6 @@ function App() {
             description: `План декомпозирован ИИ по запросу: "${aiQuery}"`
         };
 
-        // РАСПРЕДЕЛЯЕМ ЗАДАЧИ ПО ДНЯМ НА ОСНОВЕ dayOffset
         const newGoals = aiResult.steps.map((step, idx) => {
             const targetDate = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate());
             if (step.dayOffset) {
@@ -887,12 +885,36 @@ function App() {
                 {activeTab === 'progress' && (
                     <div className="timer-panel">
                         <h3 style={{ textAlign: 'center', margin: '0 0 5px 0', fontSize: '20px' }}>Комната исполнения</h3>
+                        
                         <div className="focus-goal-label">
                             {activeFocusGoal ? activeFocusGoal.title : "Свободный фокус"}
                         </div>
+                        
+                        {/* ДОБАВЛЕНА СВОДКА ЗАДАЧИ */}
+                        {activeFocusGoal && activeFocusGoal.description && (
+                            <div style={{
+                                fontSize: '13px',
+                                color: 'var(--text-muted)',
+                                textAlign: 'center',
+                                marginBottom: '20px',
+                                lineHeight: '1.4',
+                                width: '100%',
+                                background: 'var(--bg-input)',
+                                padding: '15px',
+                                borderRadius: '16px',
+                                border: '1px solid var(--border-input)',
+                                boxSizing: 'border-box',
+                                maxHeight: '150px',
+                                overflowY: 'auto'
+                            }} className="custom-scrollbar">
+                                {activeFocusGoal.description}
+                            </div>
+                        )}
+
                         <div className="timer-display">
                             {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
                         </div>
+                        
                         <div className="timer-controls">
                             <button className="btn-timer-reset" onClick={() => { 
                                 const isGoalTimer = activeFocusGoal && activeFocusGoal.focusTime ? (activeFocusGoal.focusTime * 60) : (25 * 60);

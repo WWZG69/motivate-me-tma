@@ -83,7 +83,6 @@ function App() {
         return Array.from({length: days}, (_, i) => (i + 1).toString().padStart(2, '0'));
     }, [startMonth]);
 
-    // ВОССТАНОВЛЕННАЯ ПЕРЕМЕННАЯ БЛОКИРОВКИ ЭКРАНА
     const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId || showGiveUpModal || showPenaltyModal || showRageQuitAlert || showLowTrustAlert || showRulesModal;
 
     useEffect(() => {
@@ -198,6 +197,13 @@ function App() {
         }
         return { totalDone, bestStreak, last7Days, maxDaily, heatmapDays };
     }, [goals]);
+
+    // ВОТ ВОССТАНОВЛЕННАЯ ФУНКЦИЯ ДЛЯ ВЫЧИСЛЕНИЯ ДНЕЙ СВАЙПА
+    const getOffsetDate = (baseDate, days) => { 
+        const d = new Date(baseDate); 
+        d.setDate(d.getDate() + days); 
+        return d; 
+    };
 
     const startFocusSession = (goal, dateTarget) => { triggerHaptic('light'); setActiveFocusGoal(goal); setActiveFocusDate(dateTarget); setTimeLeft((goal.focusTime || 25) * 60); setActiveTab('progress'); };
     const resetTimer = () => { setIsTimerRunning(false); setActiveFocusGoal(null); setTimeLeft(25 * 60); triggerHaptic('light'); };
@@ -368,9 +374,6 @@ function App() {
             return { ...g, history: nh, streak: isDone ? Math.max(0, (g.streak || 0) - 1) : (g.streak || 0) + 1 };
         }));
     };
-
-    const activeGoalsToday = getActiveGoalsForDate(currentDate);
-    const loadCount = activeGoalsToday.length;
 
     const renderDayCards = (renderDate) => {
         const activeGoals = getActiveGoalsForDate(renderDate);

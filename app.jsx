@@ -1,4 +1,4 @@
-// PRE-BOOT THEME SYNC (ЗАЩИТА ОТ МЕРЦАНИЯ ФОНА НА СТАРТЕ)
+// PRE-BOOT THEME SYNC
 try {
     if (localStorage.getItem('motivateMe_theme') === 'light') {
         document.body.classList.add('light-theme');
@@ -15,7 +15,6 @@ const weekDaysArr = [
     { val: 4, label: 'Чт' }, { val: 5, label: 'Пт' }, { val: 6, label: 'Сб' }, { val: 0, label: 'Вс' }
 ];
 
-// Безопасный компонент Векторного Судьи
 const EntityIcon = (props) => (
     <svg viewBox="0 0 200 200" className="entity-svg" {...props}>
         <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="4 12" className="entity-ring-slow" />
@@ -58,6 +57,8 @@ const Icons = {
     Minus: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="5" y1="12" x2="19" y2="12"/></svg>,
     Shield: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
     Cpu: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>,
+    Info: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+    Sparkles: (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 3v3m0 12v3M3 12h3m12 0h3M6.3 6.3l2.1 2.1m7.2 7.2l2.1 2.1M6.3 17.7l2.1-2.1m7.2-7.2l2.1-2.1" /><circle cx="12" cy="12" r="3" /></svg>,
     Entity: EntityIcon
 };
 
@@ -84,6 +85,32 @@ const Onboarding = ({ onAccept }) => {
                     onAccept();
                 }}>
                     Я принимаю условия
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const RulesModal = ({ onClose }) => {
+    return (
+        <div className="glass-overlay-centered" style={{ zIndex: 9999 }}>
+            <div className="give-up-modal" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+                <h2 className="give-up-title" style={{color: 'var(--accent)'}}>Кодекс Системы</h2>
+                <div className="onboarding-text" style={{textAlign: 'left', marginTop: '15px'}}>
+                    <p>Система не прощает слабость. Каждое твое действие имеет цену.</p>
+                    <ul className="onboarding-list" style={{borderLeftColor: 'var(--border-color)', margin: '15px 0'}}>
+                        <li><strong>Кредит доверия:</strong> Начинается со 100%. Выполняешь задачи в срок — получаешь +1%.</li>
+                        <li><strong>Сдача:</strong> Отмена идущего таймера фокуса снимает -5%.</li>
+                        <li><strong>Дезертирство:</strong> Закрытие или перезагрузка приложения во время работы таймера расценивается как побег. Штраф -15%.</li>
+                        <li><strong>Штраф за ложь:</strong> Игнорирование задачи в течение дня снижает доверие на -1%.</li>
+                        <li><strong>Локаут:</strong> Если Кредит Доверия падает ниже 50%, ты теряешь право редактировать или удалять свои цели, пока не докажешь свою дисциплину.</li>
+                    </ul>
+                </div>
+                <button className="btn-continue-pulsing" onClick={() => { 
+                    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    onClose(); 
+                }}>
+                    Понятно
                 </button>
             </div>
         </div>
@@ -137,13 +164,6 @@ function App() {
     
     const [isHeatmapExpanded, setIsHeatmapExpanded] = useState(false); 
     
-    const touchStartX = useRef(0);
-    const touchStartY = useRef(0);
-    const touchStartTime = useRef(0); 
-    const isDragging = useRef(false);
-    const isSwipeValid = useRef(null); 
-    const transitionTimer = useRef(null);
-    
     const [motivationTone, setMotivationTone] = useState('stoic');
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -153,6 +173,7 @@ function App() {
     const [penaltyInput, setPenaltyInput] = useState('');
     const [showRageQuitAlert, setShowRageQuitAlert] = useState(false);
     const [showLowTrustAlert, setShowLowTrustAlert] = useState(false); 
+    const [showRulesModal, setShowRulesModal] = useState(false);
     
     const [activeFocusGoal, setActiveFocusGoal] = useState(null);
     const [activeFocusDate, setActiveFocusDate] = useState(null);
@@ -189,6 +210,7 @@ function App() {
     const [aiQuery, setAiQuery] = useState('');
     const [isAiScanning, setIsAiScanning] = useState(false);
     const [aiResult, setAiResult] = useState(null);
+    const [isGeneratingGoal, setIsGeneratingGoal] = useState(false);
 
     const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, startDate: null, visionId: '', weekDays: [0,1,2,3,4,5,6], controlMethod: 'check', focusTime: 25 };
     const defaultVisionForm = { title: '', emoji: '🎯', description: '' };
@@ -228,7 +250,7 @@ function App() {
 
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_trust', trustScore.toString()); } catch (e) {} }, [trustScore]);
 
-    const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId || showGiveUpModal || showPenaltyModal || showRageQuitAlert || showLowTrustAlert;
+    const isAnyModalOpen = isModalOpen || !!actionMenuGoal || !!actionMenuVision || !!confirmDeleteGoalId || !!confirmDeleteVisionId || showGiveUpModal || showPenaltyModal || showRageQuitAlert || showLowTrustAlert || showRulesModal;
     useEffect(() => {
         if (isAnyModalOpen) { document.body.style.overflow = 'hidden'; } 
         else { document.body.style.overflow = ''; }
@@ -408,6 +430,56 @@ function App() {
             if (next < 1) next = 1;
             return {...prev, focusTime: next};
         });
+    };
+
+    // === ИИ МАГИЯ ВНУТРИ КАРТОЧКИ ===
+    const generateGoalDetailsWithAI = async () => {
+        if (!form.title.trim() || isGeneratingGoal) return;
+        triggerHaptic('light');
+        setIsGeneratingGoal(true);
+
+        const API_KEY = 'AQ.Ab8RN6LcNaOh3uvU83' + 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg'; 
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+
+        const systemPrompt = `Ты тактический ИИ. Пользователь кратко написал, что хочет сделать в поле title. 
+Оформи это в конкретную микро-задачу.
+- Улучши название (коротко).
+- Напиши емкое описание-приказ.
+- Выбери тип: "once" (разово), "habit" (привычка), "sprint" (спринт).
+- Назначь фокусное время (focusTime) от 5 до 25 минут.
+Верни ТОЛЬКО JSON: {"title": "", "description": "", "type": "", "focusTime": 25}`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: `Ввод пользователя: "${form.title}"` }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: { temperature: 0.3 } 
+                })
+            });
+
+            if (!response.ok) throw new Error('API Error');
+            const data = await response.json();
+            let aiText = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim(); 
+            const parsed = JSON.parse(aiText);
+            
+            setForm(prev => ({
+                ...prev,
+                title: parsed.title || prev.title,
+                description: parsed.description || prev.description,
+                type: parsed.type || 'once',
+                focusTime: parsed.focusTime || 25,
+                controlMethod: 'timer'
+            }));
+            triggerHaptic('success');
+        } catch (error) {
+            console.error(error);
+            triggerHaptic('error');
+        } finally {
+            setIsGeneratingGoal(false);
+        }
     };
 
     const saveGoal = () => {
@@ -800,6 +872,9 @@ function App() {
             <div className="container">
                 {isModalOpen && <div className="glass-backdrop" onClick={closeCreateModal}></div>}
                 
+                {/* МОДАЛКА ПРАВИЛ */}
+                {showRulesModal && <RulesModal onClose={() => setShowRulesModal(false)} />}
+                
                 {showRageQuitAlert && (
                     <div className="glass-overlay-centered" style={{ zIndex: 10000 }}>
                         <div className="give-up-modal" style={{ border: '1px solid #ff3b30', boxShadow: '0 10px 40px rgba(255, 59, 48, 0.3)' }}>
@@ -1011,6 +1086,13 @@ function App() {
                             </button>
                         </div>
                         <hr className="divider" />
+                        
+                        <div className="setting-row" style={{marginBottom: '20px', cursor: 'pointer'}} onClick={() => { triggerHaptic('light'); setShowRulesModal(true); }}>
+                            <span style={{fontWeight: 'bold', fontSize: '16px', color: 'var(--accent)'}}>Кодекс Системы</span>
+                            <Icons.Info style={{width: '24px', height: '24px', stroke: 'var(--accent)'}} />
+                        </div>
+                        <hr className="divider" />
+                        
                         <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', margin: '15px 0 8px 0' }}>Тон поддержки бота:</label>
                         <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)} style={{marginBottom: 0}}>
                             <option value="stoic">Стоик (Бесплатно)</option>
@@ -1166,14 +1248,34 @@ function App() {
                             <React.Fragment>
                                 {createStep === 'text' && (
                                     <div className="panel-step">
-                                        <input placeholder="Название" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="dark-input" />
+                                        <div style={{position: 'relative', display: 'flex', alignItems: 'center'}}>
+                                            <input 
+                                                placeholder="Название (кратко)" 
+                                                value={form.title} 
+                                                onChange={e => setForm({...form, title: e.target.value})} 
+                                                className="dark-input" 
+                                                style={{paddingRight: form.title.trim() ? '45px' : '14px'}}
+                                            />
+                                            {form.title.trim() && (
+                                                <div 
+                                                    onClick={generateGoalDetailsWithAI}
+                                                    style={{position: 'absolute', right: '10px', top: '12px', cursor: 'pointer', opacity: isGeneratingGoal ? 0.5 : 1}}
+                                                >
+                                                    {isGeneratingGoal ? (
+                                                        <div className="scan-line" style={{width: '20px'}}></div>
+                                                    ) : (
+                                                        <Icons.Sparkles style={{width: '20px', height: '20px', stroke: 'var(--accent)'}} />
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                         {visions.length > 0 && (
                                             <select className="custom-select dark-input" value={form.visionId || ''} onChange={e => setForm({...form, visionId: e.target.value})}>
                                                 <option value="">Без глобальной цели</option>
                                                 {visions.map(v => <option key={v.id} value={v.id}>{v.emoji} {v.title}</option>)}
                                             </select>
                                         )}
-                                        <textarea placeholder="Опиши шаги" value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none' }} />
+                                        <textarea placeholder="Опиши суть..." value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none' }} />
                                         
                                         <div style={{ display: 'flex', flexDirection: 'column', margin: '15px 0 0 0', width: '100%', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '16px', boxSizing: 'border-box' }}>
                                             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: '1.4', textAlign: 'left', width: '100%' }}>

@@ -198,7 +198,6 @@ function App() {
         return { totalDone, bestStreak, last7Days, maxDaily, heatmapDays };
     }, [goals]);
 
-    // ВОТ ВОССТАНОВЛЕННАЯ ФУНКЦИЯ ДЛЯ ВЫЧИСЛЕНИЯ ДНЕЙ СВАЙПА
     const getOffsetDate = (baseDate, days) => { 
         const d = new Date(baseDate); 
         d.setDate(d.getDate() + days); 
@@ -374,6 +373,10 @@ function App() {
             return { ...g, history: nh, streak: isDone ? Math.max(0, (g.streak || 0) - 1) : (g.streak || 0) + 1 };
         }));
     };
+
+    // ВОТ ОНИ: ВОССТАНОВЛЕННЫЕ ПЕРЕМЕННЫЕ
+    const activeGoalsToday = getActiveGoalsForDate(currentDate);
+    const loadCount = activeGoalsToday.length;
 
     const renderDayCards = (renderDate) => {
         const activeGoals = getActiveGoalsForDate(renderDate);

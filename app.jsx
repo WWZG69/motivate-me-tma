@@ -12,7 +12,7 @@ try {
 
 const { useState, useEffect, useRef, useMemo } = React;
 
-// Подтягиваем компоненты из других файлов
+// Подтягиваем компоненты из глобальной памяти (из icons.jsx и components.jsx)
 const Icons = window.Icons;
 const Onboarding = window.Onboarding;
 const RulesModal = window.RulesModal;
@@ -88,24 +88,26 @@ function App() {
     const [createStep, setCreateStep] = useState('text'); 
     const [editingId, setEditingId] = useState(null); 
     
-    const [actionMenuGoal, setActionMenuGoal] = useState(null);
-    const [confirmDeleteGoalId, setConfirmDeleteGoalId] = useState(null);
-    const [actionMenuVision, setActionMenuVision] = useState(null);
-    const [confirmDeleteVisionId, setConfirmDeleteVisionId] = useState(null);
-    
     const [startMonth, setStartMonth] = useState(monthNames[new Date().getMonth()]);
     const [startDay, setStartDay] = useState(new Date().getDate().toString().padStart(2, '0'));
 
     const [aiQuery, setAiQuery] = useState('');
     const [isAiScanning, setIsAiScanning] = useState(false);
     const [aiResult, setAiResult] = useState(null);
+    
     const [isGeneratingGoal, setIsGeneratingGoal] = useState(false);
+    const [isGeneratingVision, setIsGeneratingVision] = useState(false);
 
     const defaultForm = { title: '', description: '', type: 'habit', deadline: '23:59', duration: '', ignoreHoliday: false, notifications: true, startDate: null, visionId: '', weekDays: [0,1,2,3,4,5,6], controlMethod: 'check', focusTime: 25 };
     const defaultVisionForm = { title: '', emoji: '🎯', description: '' };
 
     const [form, setForm] = useState(defaultForm);
     const [visionForm, setVisionForm] = useState(defaultVisionForm);
+    
+    const [actionMenuGoal, setActionMenuGoal] = useState(null);
+    const [confirmDeleteGoalId, setConfirmDeleteGoalId] = useState(null);
+    const [actionMenuVision, setActionMenuVision] = useState(null);
+    const [confirmDeleteVisionId, setConfirmDeleteVisionId] = useState(null);
 
     const hoursList = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'));
     const minutesList = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
@@ -254,10 +256,7 @@ function App() {
     };
 
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
-
-    const applyDateShift = (shift) => {
-        setCurrentDate(prev => { const newDate = new Date(prev); newDate.setDate(newDate.getDate() + shift); return newDate; });
-    };
+    const applyDateShift = (shift) => { setCurrentDate(prev => { const newDate = new Date(prev); newDate.setDate(newDate.getDate() + shift); return newDate; }); };
 
     const animateToDate = (daysShift) => {
         setExpandedGoalId(null); triggerHaptic('light');
@@ -321,6 +320,9 @@ function App() {
         });
     };
 
+    // =====================================
+    // ИИ МАГИЯ: ГЕНЕРАЦИЯ ЗАДАЧИ (МИКРО)
+    // =====================================
     const generateGoalDetailsWithAI = async () => {
         if (!form.title.trim() || isGeneratingGoal) return;
         triggerHaptic('light');
@@ -329,22 +331,37 @@ function App() {
         const API_KEY = 'AQ.Ab8RN6LcNaOh3uvU83' + 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg'; 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
-        const systemPrompt = `Ты тактический ИИ. Пользователь кратко написал, что хочет сделать в поле title. 
-Оформи это в конкретную микро-задачу.
-- Улучши название (коротко).
-- Напиши емкое описание-приказ.
-- Выбери тип: "once" (разово), "habit" (привычка), "sprint" (спринт).
-- Назначь фокусное время (focusTime) от 5 до 25 минут.
-Верни ТОЛЬКО JSON: {"title": "", "description": "", "type": "", "focusTime": 25}`;
+        // Формируем список текущих видений для ИИ
+        const visionsContext = visions.length > 0 
+            ? `Текущие глобальные цели пользователя:\n${visions.map(v => `- ID: ${v.id}, Название: ${v.title}`).join('\n')}`
+            : `У пользователя пока нет глобальных целей.`;
+
+        const systemPrompt = `Ты тактический ИИ. Пользователь кратко написал набросок задачи.
+Твоя цель — превратить это в идеальную карточку.
+
+ПРАВИЛА ФОРМАТА (controlMethod):
+1. Если это ЗАДАЧА В МОМЕНТЕ (проснуться, выпить таблетку, позвонить, проверить почту):
+   -> "controlMethod": "check", "focusTime": 0.
+   -> Установи логичный "deadline". Например: "Просыпаться в 6" -> deadline: "06:15".
+2. Если это РАБОТА, требующая ПОГРУЖЕНИЯ (кодить, читать, медитировать, тренировка):
+   -> "controlMethod": "timer". Задай "focusTime" от 15 до 60 мин. "deadline": "23:59".
+
+СВЯЗЬ С ГЛОБАЛЬНОЙ ЦЕЛЬЮ:
+Проанализируй список глобальных целей:
+${visionsContext}
+Если задача явно относится к одной из них, верни её ID в поле "visionId". Если нет -> "".
+
+Верни ТОЛЬКО JSON: 
+{"title": "Улучшенное название", "description": "Короткая жесткая инструкция", "type": "once/habit/sprint", "controlMethod": "timer/check", "focusTime": 25, "deadline": "23:59", "visionId": "id или пусто"}`;
 
         try {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: `Ввод пользователя: "${form.title}"` }] }],
+                    contents: [{ parts: [{ text: `Запрос: "${form.title}"` }] }],
                     systemInstruction: { parts: [{ text: systemPrompt }] },
-                    generationConfig: { temperature: 0.3 } 
+                    generationConfig: { temperature: 0.2 } 
                 })
             });
 
@@ -358,8 +375,10 @@ function App() {
                 title: parsed.title || prev.title,
                 description: parsed.description || prev.description,
                 type: parsed.type || 'once',
-                focusTime: parsed.focusTime || 25,
-                controlMethod: 'timer'
+                controlMethod: parsed.controlMethod || 'check',
+                focusTime: parsed.focusTime || 0,
+                deadline: parsed.deadline || '23:59',
+                visionId: parsed.visionId || prev.visionId
             }));
             triggerHaptic('success');
         } catch (error) {
@@ -367,6 +386,98 @@ function App() {
             triggerHaptic('error');
         } finally {
             setIsGeneratingGoal(false);
+        }
+    };
+
+    // =====================================
+    // ИИ МАГИЯ: ГЕНЕРАЦИЯ ВИДЕНИЯ (МАКРО) И ЕГО ШАГОВ
+    // =====================================
+    const generateVisionDetailsWithAI = async () => {
+        if (!visionForm.title.trim() || isGeneratingVision) return;
+        triggerHaptic('light');
+        setIsGeneratingVision(true);
+
+        const API_KEY = 'AQ.Ab8RN6LcNaOh3uvU83' + 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg'; 
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+
+        const systemPrompt = `Ты — ИИ-архитектор жизней. Пользователь ввел абстрактную мечту/цель.
+Сделай из нее Глобальное Видение (Vision) и автоматически создай 3 первых тактических шага для старта.
+
+ЛОГИКА ШАГОВ (Нагрузка):
+Чтобы не перегрузить юзера, раскидай 3 шага на 3 дня (dayOffset: 0, 1, 2).
+Для работы в потоке используй "method": "timer" (focusTime: 25).
+Для мгновенных действий используй "method": "check" (focusTime: 0).
+
+Тон: ${motivationTone === 'toxic' ? 'токсичный, жестко бей по эго, заставляй работать' : 'сухой, военный, прагматичный'}.
+
+Верни ТОЛЬКО JSON:
+{
+  "visionTitle": "Коротко и амбициозно",
+  "visionEmoji": "🚀",
+  "visionDesc": "Жесткое обоснование, почему эта цель важна и почему нельзя сдаваться.",
+  "steps": [
+    { "title": "Шаг 1", "desc": "Приказ", "type": "once", "method": "timer", "focusTime": 25, "dayOffset": 0 }
+  ]
+}`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: `Цель: "${visionForm.title}"` }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: { temperature: 0.3 } 
+                })
+            });
+
+            if (!response.ok) throw new Error('API Error');
+            const data = await response.json();
+            let aiText = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim(); 
+            const parsed = JSON.parse(aiText);
+            
+            const newVisionId = Date.now().toString();
+            const newVision = {
+                id: newVisionId,
+                title: parsed.visionTitle || visionForm.title,
+                emoji: parsed.visionEmoji || '🔥',
+                description: parsed.visionDesc || 'Сгенерировано ИИ.'
+            };
+
+            const nowObj = new Date();
+            const newGoals = (parsed.steps || []).map((step, idx) => {
+                const targetDate = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate());
+                if (step.dayOffset) targetDate.setDate(targetDate.getDate() + step.dayOffset);
+                return {
+                    id: Date.now() + idx + 100, 
+                    title: step.title || 'Шаг',
+                    description: step.desc || '',
+                    type: step.type || 'once',
+                    deadline: '23:59',
+                    duration: step.duration || 1,
+                    ignoreHoliday: false,
+                    notifications: true,
+                    startDate: targetDate.toISOString(),
+                    visionId: newVisionId,
+                    weekDays: [0,1,2,3,4,5,6],
+                    controlMethod: step.method || 'timer',
+                    focusTime: step.focusTime || 25,
+                    history: {},
+                    streak: 0,
+                    createdAt: nowObj.toDateString()
+                };
+            });
+
+            setVisions(prev => [newVision, ...prev]);
+            if (newGoals.length > 0) setGoals(prev => [...newGoals, ...prev]);
+            
+            setIsModalOpen(false);
+            triggerHaptic('heavy');
+        } catch (error) {
+            console.error(error);
+            triggerHaptic('error');
+        } finally {
+            setIsGeneratingVision(false);
         }
     };
 
@@ -468,6 +579,9 @@ function App() {
         });
     };
 
+    // =====================================
+    // ИИ МАГИЯ: АНАЛИТИКА ПУСТОТ (ГЛАВНЫЙ ЭКРАН)
+    // =====================================
     const handleAiSubmit = async () => {
         if (!aiQuery.trim()) { triggerHaptic('error'); return; }
         triggerHaptic('light');
@@ -477,39 +591,19 @@ function App() {
         const API_KEY = 'AQ.Ab8RN6LcNaOh3uvU83' + 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg'; 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
-        const systemPrompt = `Ты — безжалостный тактический ИИ-аналитик и эксперт-ментор. Пользователь прокрастинирует цель. Твоя задача: составить стартовый план из 3 шагов.
+        const systemPrompt = `Ты — тактический ИИ-эксперт. Пользователь прокрастинирует цель. Твоя задача: составить стартовый план из 3 шагов.
 
-АЛГОРИТМ АНАЛИЗА:
-1. Определи профессиональную сферу (например: программирование, музыка, дизайн).
-2. Вспомни best practices для новичков от профи в этой сфере.
-3. Преврати советы в 3 практических шага.
-
-ПРАВИЛА НАГРУЗКИ (КРИТИЧЕСКО ВАЖНО):
-Суммарный стресс должен быть минимальным. Выбери ОДИН из двух путей:
-- ПУТЬ А (Легкий старт): Если шаги быстрые, ставь всем "dayOffset": 0. Суммарное время ВСЕХ 3 шагов не должно превышать 30 минут (например: 5 мин, 10 мин, 15 мин).
-- ПУТЬ Б (Глубокое погружение): Если специфика требует 20-30 минут на шаг, РАЗБЕЙ их на 3 дня (dayOffset: 0, dayOffset: 1, dayOffset: 2). 
-
-ЛОГИКА ШАГОВ:
-- Шаг 1: Референс/Теория (type: "once").
-- Шаг 2: Настройка среды/Каркас (type: "once" или "sprint").
-- Шаг 3: Первое грязное действие (type: "sprint").
-
+АЛГОРИТМ: Вспомни best practices профи и преврати их в 3 простых шага.
+ПРАВИЛА НАГРУЗКИ: Раскидай 3 шага на 3 дня (dayOffset: 0, 1, 2).
+Метод: Для фокуса используй "method": "timer" (и focusTime), для мгновенных действий "check" (focusTime: 0).
 Тон: ${motivationTone === 'toxic' ? 'токсичный, высокомерный эксперт, унижай за лень' : 'сухой, военный, прямой'}.
-Верни ТОЛЬКО валидный JSON. Без markdown.
-Структура:
+
+Верни ТОЛЬКО JSON:
 {
   "title": "Операция: [Краткое название]",
   "emoji": "[Эмодзи]",
   "steps": [
-    {
-      "title": "[Название]",
-      "desc": "[Приказ]",
-      "type": "once",
-      "method": "timer",
-      "time": 10,
-      "duration": 1,
-      "dayOffset": 0 
-    }
+    { "title": "[Название]", "desc": "[Приказ]", "type": "once", "method": "timer", "focusTime": 25, "duration": 1, "dayOffset": 0 }
   ]
 }`;
 
@@ -524,25 +618,14 @@ function App() {
                 })
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error('API Error');
             const data = await response.json();
-            let aiText = data.candidates[0].content.parts[0].text;
-            aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim(); 
-            
-            const parsedData = JSON.parse(aiText);
-            setAiResult(parsedData);
+            let aiText = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim(); 
+            setAiResult(JSON.parse(aiText));
             triggerHaptic('success');
         } catch (error) {
-            console.error("Ошибка ИИ:", error);
-            setAiResult({
-                title: "Системная Ошибка",
-                emoji: "⚠️",
-                steps: [ { title: "Сбой связи", desc: "Network Error / CORS", type: "once", method: "check", time: 0, duration: 1, dayOffset: 0 } ]
-            });
+            console.error(error);
+            setAiResult({ title: "Ошибка", emoji: "⚠️", steps: [] });
             triggerHaptic('error');
         } finally {
             setIsAiScanning(false);
@@ -550,10 +633,7 @@ function App() {
     };
 
     const acceptAiContract = () => {
-        if (!aiResult || !aiResult.steps || aiResult.title === "Системная Ошибка") {
-            setAiResult(null); return;
-        }
-        
+        if (!aiResult || !aiResult.steps) { setAiResult(null); return; }
         const nowObj = new Date();
         const newVisionId = Date.now().toString();
         const newVision = {
@@ -565,10 +645,7 @@ function App() {
 
         const newGoals = aiResult.steps.map((step, idx) => {
             const targetDate = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate());
-            if (step.dayOffset) {
-                targetDate.setDate(targetDate.getDate() + step.dayOffset);
-            }
-            
+            if (step.dayOffset) targetDate.setDate(targetDate.getDate() + step.dayOffset);
             return {
                 id: Date.now() + idx + 100, 
                 title: step.title || 'Шаг',
@@ -582,7 +659,7 @@ function App() {
                 visionId: newVisionId,
                 weekDays: [0,1,2,3,4,5,6],
                 controlMethod: step.method || 'timer',
-                focusTime: step.time || 25,
+                focusTime: step.focusTime || 25,
                 history: {},
                 streak: 0,
                 createdAt: nowObj.toDateString()
@@ -591,19 +668,14 @@ function App() {
 
         setVisions(prev => [newVision, ...prev]);
         setGoals(prev => [...newGoals, ...prev]);
-        
-        setAiQuery('');
-        setAiResult(null);
-        triggerHaptic('heavy');
+        setAiQuery(''); setAiResult(null); triggerHaptic('heavy');
     };
 
     const handleCardTouchStart = (goal, dateTarget) => {
         const { canEdit } = checkPermissions(goal, dateTarget); isLongPress.current = false; if (!canEdit) return;
         pressTimer.current = setTimeout(() => { if (isLongPress.current === false) { isLongPress.current = true; triggerHaptic('heavy'); setActionMenuGoal(goal); } }, 500); 
     };
-    
     const handleCardTouchEnd = () => { if (pressTimer.current) clearTimeout(pressTimer.current); };
-    
     const handleCardClick = (goal) => { if (!isLongPress.current) { setExpandedGoalId(prev => prev === goal.id ? null : goal.id); triggerHaptic('light'); } };
     
     const handleVisionTouchStart = (vision) => {
@@ -612,7 +684,6 @@ function App() {
             if (isLongPress.current === false) { isLongPress.current = true; triggerHaptic('heavy'); setActionMenuVision(vision); }
         }, 500);
     };
-    
     const handleVisionClick = (vision) => {
         if (!isLongPress.current) { triggerHaptic('light'); setActiveVisionId(activeVisionId === vision.id ? null : vision.id); }
     };
@@ -625,13 +696,9 @@ function App() {
             if (g.id !== goalObj.id) return g;
             const newHistory = { ...(g.history || {}) };
             if (!isCurrentlyDone) { 
-                newHistory[dateStr] = true; 
-                setTrustScore(prev => Math.min(100, prev + 1));
-                triggerHaptic('success'); 
+                newHistory[dateStr] = true; setTrustScore(prev => Math.min(100, prev + 1)); triggerHaptic('success'); 
             } else { 
-                delete newHistory[dateStr]; 
-                setTrustScore(prev => Math.max(0, prev - 1));
-                triggerHaptic('light'); 
+                delete newHistory[dateStr]; setTrustScore(prev => Math.max(0, prev - 1)); triggerHaptic('light'); 
             }
             return { ...g, history: newHistory, streak: isCurrentlyDone ? Math.max(0, (g.streak || 0) - 1) : (g.streak || 0) + 1 };
         }));
@@ -642,53 +709,29 @@ function App() {
 
     const renderDayCards = (renderDate) => {
         const activeGoals = getActiveGoalsForDate(renderDate);
-        
         if (activeGoals.length === 0) {
             const isToday = renderDate.toDateString() === new Date().toDateString();
             if (!isToday) return <p style={{textAlign:'center', marginTop:'30px', opacity: 0.5}}>Контракты не найдены.</p>;
-            
             return (
                 <div className="ai-tactics-container">
                     <Icons.Cpu style={{ width: '32px', height: '32px', stroke: 'var(--accent)', marginBottom: '15px' }} />
                     <h3 className="ai-tactics-title">Аналитика пустот</h3>
-                    
                     {!isAiScanning && !aiResult && (
                         <React.Fragment>
-                            <p className="ai-tactics-desc">Хватит абстракций. Какую конкретно задачу ты избегаешь прямо сейчас? Опиши суть.</p>
-                            <input 
-                                type="text" 
-                                className="dark-input ai-tactics-input" 
-                                placeholder="Например: 'Начать учить английский'" 
-                                value={aiQuery} 
-                                onChange={(e) => setAiQuery(e.target.value)} 
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleAiSubmit(); }}
-                            />
+                            <p className="ai-tactics-desc">Какую конкретно задачу ты избегаешь прямо сейчас?</p>
+                            <input type="text" className="dark-input ai-tactics-input" placeholder="Например: 'Начать учить английский'" value={aiQuery} onChange={(e) => setAiQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAiSubmit(); }} />
                             <button className="btn-ai-submit" onClick={handleAiSubmit}>Декомпозировать</button>
                         </React.Fragment>
                     )}
-
-                    {isAiScanning && (
-                        <div className="ai-loading-scan">
-                            <span>СИНТЕЗ ТАКТИКИ...</span>
-                            <div className="scan-line"></div>
-                        </div>
-                    )}
-
+                    {isAiScanning && ( <div className="ai-loading-scan"><span>СИНТЕЗ ТАКТИКИ...</span><div className="scan-line"></div></div> )}
                     {aiResult && !isAiScanning && (
                         <React.Fragment>
                             <p className="ai-tactics-desc" style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Абстракция убита. Твой тактический план:</p>
                             <div className="ai-contract-box">
                                 <div className="ai-contract-header">{aiResult.emoji} {aiResult.title}</div>
-                                {aiResult.steps && aiResult.steps.map((step, i) => {
-                                    let dayLabel = "Сегодня";
-                                    if (step.dayOffset === 1) dayLabel = "Завтра";
-                                    if (step.dayOffset === 2) dayLabel = "Послезавтра";
-                                    return (
-                                        <div key={i} className="ai-contract-step">
-                                            {step.title} <span>({step.time} мин • {dayLabel})</span>
-                                            {step.desc && <div style={{color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px'}}>{step.desc}</div>}
-                                        </div>
-                                    );
+                                {(aiResult.steps || []).map((step, i) => {
+                                    let dayLabel = "Сегодня"; if (step.dayOffset === 1) dayLabel = "Завтра"; if (step.dayOffset === 2) dayLabel = "Послезавтра";
+                                    return ( <div key={i} className="ai-contract-step">{step.title} <span>({step.focusTime === 0 ? 'Мгновенно' : `${step.focusTime} мин`} • {dayLabel})</span> {step.desc && <div style={{color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px'}}>{step.desc}</div>}</div> );
                                 })}
                             </div>
                             <button className="btn-ai-submit" style={{ marginTop: '15px' }} onClick={acceptAiContract}>Принять контракт</button>
@@ -704,10 +747,7 @@ function App() {
             const isDone = !!(g.history && g.history[dateKey]); const isExpanded = expandedGoalId === g.id; 
             const { canToggle } = checkPermissions(g, renderDate); const timerData = getTimerData(g, isDone, renderDate);
             const linkedVision = g.visionId ? visions.find(v => v.id == g.visionId) : null;
-            
-            const textLen = (g.description || 'Описания нет').length;
-            const animDuration = Math.min(0.8, Math.max(0.2, textLen * 0.002));
-            
+            const textLen = (g.description || '').length; const animDuration = Math.min(0.8, Math.max(0.2, textLen * 0.002));
             const isTimerGoal = g.controlMethod === 'timer';
             let BtnIcon = isDone ? Icons.Check : (isTimerGoal ? Icons.Play : Icons.Check);
             let btnClass = `btn-complete ${isDone ? 'done' : ''} ${!canToggle ? 'disabled' : ''} ${isTimerGoal && !isDone ? 'timer-ready' : ''}`;
@@ -725,18 +765,13 @@ function App() {
                         </div>
                         <div className={`goal-desc-wrapper ${isExpanded ? 'expanded' : ''}`} style={{ transitionDuration: `${animDuration}s` }}>
                             <div className="goal-desc-inner" style={{ transitionDuration: `${animDuration * 0.8}s` }}>
-                                <div className="goal-desc">{g.description || 'Описания нет. Просто бери и делай!'}</div>
+                                <div className="goal-desc">{g.description || 'Описания нет.'}</div>
                             </div>
                         </div>
                     </div>
                     <button className={btnClass} onClick={(e) => {
-                        e.stopPropagation();
-                        if (!canToggle) { triggerHaptic('error'); return; }
-                        if (!isDone && isTimerGoal) {
-                            startFocusSession(g, renderDate);
-                        } else {
-                            toggleGoal(e, g, renderDate);
-                        }
+                        e.stopPropagation(); if (!canToggle) { triggerHaptic('error'); return; }
+                        if (!isDone && isTimerGoal) startFocusSession(g, renderDate); else toggleGoal(e, g, renderDate);
                     }}>
                         <BtnIcon style={isTimerGoal && !isDone ? { marginLeft: '3px' } : {}} />
                     </button>
@@ -747,40 +782,22 @@ function App() {
 
     const transitionStyle = (isTransitioning && !isDragging.current) ? 'transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
 
-    if (!hasSignedContract) {
-        return (
-            <Onboarding onAccept={() => {
-                try { localStorage.setItem('motivateMe_v20_contract', 'true'); } catch(e) {}
-                setHasSignedContract(true);
-            }} />
-        );
-    }
+    if (!hasSignedContract) return <Onboarding onAccept={() => { try { localStorage.setItem('motivateMe_v20_contract', 'true'); } catch(e) {} setHasSignedContract(true); }} />;
 
     return (
         <React.Fragment>
-            {showSplash && (
-                <div className="simple-splash-overlay">
-                    <img src="image_0.png" alt="Logo" className="splash-logo" />
-                    <h1 className="splash-title">MotivateMe</h1>
-                </div>
-            )}
-
+            {showSplash && <div className="simple-splash-overlay"><img src="image_0.png" alt="Logo" className="splash-logo" /><h1 className="splash-title">MotivateMe</h1></div>}
             <div className="container">
                 {isModalOpen && <div className="glass-backdrop" onClick={closeCreateModal}></div>}
-                
                 {showRulesModal && <RulesModal onClose={() => setShowRulesModal(false)} />}
                 
                 {showRageQuitAlert && (
                     <div className="glass-overlay-centered" style={{ zIndex: 10000 }}>
                         <div className="give-up-modal" style={{ border: '1px solid #ff3b30', boxShadow: '0 10px 40px rgba(255, 59, 48, 0.3)' }}>
                             <h2 className="give-up-title" style={{ color: '#ff3b30' }}>Побег зафиксирован</h2>
-                            <p className="give-up-text">
-                                Вы прервали прошлую сессию, просто закрыв приложение. Это дезертирство.
-                            </p>
+                            <p className="give-up-text">Вы прервали прошлую сессию, просто закрыв приложение. Это дезертирство.</p>
                             <div style={{ fontSize: '28px', fontWeight: '800', color: '#ff3b30', marginBottom: '25px' }}>-15% Рейтинга</div>
-                            <button className="btn-continue-pulsing" onClick={() => { setShowRageQuitAlert(false); triggerHaptic('heavy'); }} style={{ background: '#ff3b30', boxShadow: 'none' }}>
-                                Я принимаю последствия
-                            </button>
+                            <button className="btn-continue-pulsing" onClick={() => { setShowRageQuitAlert(false); triggerHaptic('heavy'); }} style={{ background: '#ff3b30', boxShadow: 'none' }}>Я принимаю последствия</button>
                         </div>
                     </div>
                 )}
@@ -789,24 +806,16 @@ function App() {
                     <div className="glass-overlay-centered" style={{ zIndex: 10000 }}>
                         <div className="give-up-modal" style={{ border: '1px solid #ff3b30', boxShadow: '0 10px 40px rgba(255, 59, 48, 0.3)' }}>
                             <h2 className="give-up-title" style={{ color: '#ff3b30' }}>Доступ закрыт</h2>
-                            <p className="give-up-text">
-                                Твой Кредит Доверия упал ниже 50%. Ты потерял право изменять дедлайны и условия своих целей. Выполняй задачи вовремя, чтобы вернуть контроль.
-                            </p>
-                            <button className="btn-continue-pulsing" onClick={() => { setShowLowTrustAlert(false); triggerHaptic('light'); }} style={{ background: '#ff3b30', boxShadow: 'none' }}>
-                                Понял
-                            </button>
+                            <p className="give-up-text">Твой Кредит Доверия упал ниже 50%. Ты потерял право изменять дедлайны и условия своих целей.</p>
+                            <button className="btn-continue-pulsing" onClick={() => { setShowLowTrustAlert(false); triggerHaptic('light'); }} style={{ background: '#ff3b30', boxShadow: 'none' }}>Понял</button>
                         </div>
                     </div>
                 )}
 
                 <div className="header-notcoin-style">
-                    <div className="header-left">
-                        <img src="image_0.png" alt="Logo" className="m-logo-small" />
-                        <h1 className="main-title-small">MotivateMe</h1>
-                    </div>
+                    <div className="header-left"><img src="image_0.png" alt="Logo" className="m-logo-small" /><h1 className="main-title-small">MotivateMe</h1></div>
                     <div className={`trust-badge ${trustScore < 50 ? 'danger' : trustScore < 80 ? 'warning' : 'safe'}`}>
-                        <Icons.Shield style={{width: '16px', height: '16px', marginRight: '4px'}} />
-                        {trustScore.toFixed(0)}%
+                        <Icons.Shield style={{width: '16px', height: '16px', marginRight: '4px'}} />{trustScore.toFixed(0)}%
                     </div>
                 </div>
 
@@ -814,42 +823,28 @@ function App() {
                     <React.Fragment>
                         {loadCount > 0 && (
                             <div className="daily-load-container">
-                                <div className="load-header">
-                                    <span className="load-title">Нагрузка дня</span>
-                                    <span className="load-count">{loadCount} {loadCount === 1 ? 'задача' : (loadCount > 1 && loadCount < 5) ? 'задачи' : 'задач'}</span>
-                                </div>
+                                <div className="load-header"><span className="load-title">Нагрузка дня</span><span className="load-count">{loadCount} {loadCount === 1 ? 'задача' : (loadCount > 1 && loadCount < 5) ? 'задачи' : 'задач'}</span></div>
                                 <div className="load-bar">
                                     {[1, 2, 3, 4, 5, 6].map(i => {
                                         let fillClass = '';
                                         if (loadCount >= i || (i === 6 && loadCount >= 6)) {
-                                            if (loadCount <= 3) fillClass = 'safe';
-                                            else if (loadCount <= 5) fillClass = 'warning';
-                                            else fillClass = 'danger';
+                                            if (loadCount <= 3) fillClass = 'safe'; else if (loadCount <= 5) fillClass = 'warning'; else fillClass = 'danger';
                                         }
                                         return <div key={i} className={`load-segment ${fillClass}`}></div>;
                                     })}
                                 </div>
                             </div>
                         )}
-
                         {visions.length > 0 && (
                             <div className="visions-scroll-track">
                                 {visions.map(v => {
                                     const linkedGoals = goals.filter(g => g.visionId == v.id);
                                     const totalStreak = linkedGoals.reduce((sum, g) => sum + (g.streak || 0), 0);
-                                    let totalDone = 0;
-                                    linkedGoals.forEach(g => { if(g.history) totalDone += Object.keys(g.history).length; });
+                                    let totalDone = 0; linkedGoals.forEach(g => { if(g.history) totalDone += Object.keys(g.history).length; });
                                     const isActive = activeVisionId === v.id;
                                     return (
-                                        <div key={v.id} className={`vision-card ${isActive ? 'active' : ''}`} 
-                                             onTouchStart={() => handleVisionTouchStart(v)} 
-                                             onTouchMove={handleCardTouchEnd} onTouchEnd={handleCardTouchEnd} 
-                                             onMouseDown={() => handleVisionTouchStart(v)} onMouseUp={handleCardTouchEnd} 
-                                             onClick={() => handleVisionClick(v)}>
-                                            <div className="vision-card-header">
-                                                <div className="vision-emoji-large">{v.emoji}</div>
-                                                {isActive && <div className="vision-active-badge">Выбрано</div>}
-                                            </div>
+                                        <div key={v.id} className={`vision-card ${isActive ? 'active' : ''}`} onTouchStart={() => handleVisionTouchStart(v)} onTouchMove={handleCardTouchEnd} onTouchEnd={handleCardTouchEnd} onMouseDown={() => handleVisionTouchStart(v)} onMouseUp={handleCardTouchEnd} onClick={() => handleVisionClick(v)}>
+                                            <div className="vision-card-header"><div className="vision-emoji-large">{v.emoji}</div>{isActive && <div className="vision-active-badge">Выбрано</div>}</div>
                                             <div className="vision-card-title">{v.title}</div>
                                             <div className="vision-card-stats">
                                                 <div className="v-stat"><span className="v-stat-val">{totalStreak}</span><span className="v-stat-label">Огонь 🔥</span></div>
@@ -861,20 +856,15 @@ function App() {
                                 })}
                             </div>
                         )}
-
                         <div className="swipe-area" onTouchStart={onSwipeStart} onTouchMove={onSwipeMove} onTouchEnd={onSwipeEnd} style={{ pointerEvents: isAnyModalOpen ? 'none' : 'auto' }}>
                             <div className="date-nav-container">
-                                <button className="date-nav-btn" onClick={() => animateToDate(-1)}><Icons.ChevronLeft /></button>
-                                <button className="date-nav-btn" onClick={() => animateToDate(1)}><Icons.ChevronRight /></button>
+                                <button className="date-nav-btn" onClick={() => animateToDate(-1)}><Icons.ChevronLeft /></button><button className="date-nav-btn" onClick={() => animateToDate(1)}><Icons.ChevronRight /></button>
                             </div>
                             <div className="cards-track" style={{ transform: `translateX(calc(-100vw + ${offsetPx}px))`, transition: transitionStyle }}>
                                 {[-1, 0, 1].map(shift => {
                                     const renderDate = getOffsetDate(currentDate, shift);
                                     return (
-                                        <div className="cards-pane" key={renderDate.toDateString()}>
-                                            <div className="date-display-row">{renderDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</div>
-                                            {renderDayCards(renderDate)}
-                                        </div>
+                                        <div className="cards-pane" key={renderDate.toDateString()}><div className="date-display-row">{renderDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</div>{renderDayCards(renderDate)}</div>
                                     );
                                 })}
                             </div>
@@ -885,62 +875,21 @@ function App() {
                 {activeTab === 'progress' && (
                     <div className="timer-panel">
                         <h3 style={{ textAlign: 'center', margin: '0 0 5px 0', fontSize: '20px' }}>Комната исполнения</h3>
-                        
-                        <div className="focus-goal-label">
-                            {activeFocusGoal ? activeFocusGoal.title : "Свободный фокус"}
-                        </div>
-                        
-                        {/* ДОБАВЛЕНА СВОДКА ЗАДАЧИ */}
+                        <div className="focus-goal-label">{activeFocusGoal ? activeFocusGoal.title : "Свободный фокус"}</div>
                         {activeFocusGoal && activeFocusGoal.description && (
-                            <div style={{
-                                fontSize: '13px',
-                                color: 'var(--text-muted)',
-                                textAlign: 'center',
-                                marginBottom: '20px',
-                                lineHeight: '1.4',
-                                width: '100%',
-                                background: 'var(--bg-input)',
-                                padding: '15px',
-                                borderRadius: '16px',
-                                border: '1px solid var(--border-input)',
-                                boxSizing: 'border-box',
-                                maxHeight: '150px',
-                                overflowY: 'auto'
-                            }} className="custom-scrollbar">
+                            <div style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '20px', lineHeight: '1.4', width: '100%', background: 'var(--bg-input)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-input)', boxSizing: 'border-box', maxHeight: '150px', overflowY: 'auto' }} className="custom-scrollbar">
                                 {activeFocusGoal.description}
                             </div>
                         )}
-
-                        <div className="timer-display">
-                            {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
-                        </div>
-                        
+                        <div className="timer-display">{String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}</div>
                         <div className="timer-controls">
                             <button className="btn-timer-reset" onClick={() => { 
                                 const isGoalTimer = activeFocusGoal && activeFocusGoal.focusTime ? (activeFocusGoal.focusTime * 60) : (25 * 60);
-                                if (timeLeft < isGoalTimer && timeLeft > 0) {
-                                    setIsTimerRunning(false);
-                                    setShowGiveUpModal(true);
-                                    triggerHaptic('heavy');
-                                } else {
-                                    resetTimer(); 
-                                }
-                            }}>
-                                <Icons.Refresh />
-                            </button>
-                            
+                                if (timeLeft < isGoalTimer && timeLeft > 0) { setIsTimerRunning(false); setShowGiveUpModal(true); triggerHaptic('heavy'); } else { resetTimer(); }
+                            }}><Icons.Refresh /></button>
                             <button className="btn-timer-main" onClick={() => { 
-                                if (isTimerRunning) {
-                                    setIsTimerRunning(false); 
-                                    setShowGiveUpModal(true); 
-                                    triggerHaptic('heavy');
-                                } else {
-                                    setIsTimerRunning(true);
-                                    triggerHaptic('light');
-                                }
-                            }}>
-                                {isTimerRunning ? <Icons.Pause /> : <Icons.Play style={{marginLeft: '4px'}} />}
-                            </button>
+                                if (isTimerRunning) { setIsTimerRunning(false); setShowGiveUpModal(true); triggerHaptic('heavy'); } else { setIsTimerRunning(true); triggerHaptic('light'); }
+                            }}>{isTimerRunning ? <Icons.Pause /> : <Icons.Play style={{marginLeft: '4px'}} />}</button>
                             <div style={{ width: '48px' }}></div> 
                         </div>
                     </div>
@@ -949,47 +898,28 @@ function App() {
                 {activeTab === 'social' && (
                     <div className="stats-wrapper">
                         <div className="stats-row-cards">
-                            <div className="stat-card">
-                                <div className="stat-value">{statsData.totalDone}</div>
-                                <div className="stat-label">Задач завершено</div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-value">{statsData.bestStreak} <span style={{fontSize:'18px'}}>🔥</span></div>
-                                <div className="stat-label">Лучший стрик</div>
-                            </div>
+                            <div className="stat-card"><div className="stat-value">{statsData.totalDone}</div><div className="stat-label">Задач завершено</div></div>
+                            <div className="stat-card"><div className="stat-value">{statsData.bestStreak} <span style={{fontSize:'18px'}}>🔥</span></div><div className="stat-label">Лучший стрик</div></div>
                         </div>
-                        
                         <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto' }}>
                             <h3 style={{ margin: '0 0 20px 0', fontSize: '16px' }}>Активность за 7 дней</h3>
                             <div className="bar-chart">
                                 {statsData.last7Days.map(day => (
-                                    <div key={day.iso} className="bar-col">
-                                        <div className="bar-track"><div className="bar-fill" style={{ height: `${(day.count / statsData.maxDaily) * 100}%` }}></div></div>
-                                        <div className="bar-label">{day.day}</div>
-                                    </div>
+                                    <div key={day.iso} className="bar-col"><div className="bar-track"><div className="bar-fill" style={{ height: `${(day.count / statsData.maxDaily) * 100}%` }}></div></div><div className="bar-label">{day.day}</div></div>
                                 ))}
                             </div>
                         </div>
-
                         <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto 12px auto', padding: '20px' }} onClick={() => {triggerHaptic('light'); setIsHeatmapExpanded(!isHeatmapExpanded)}}>
-                            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', textAlign: 'center' }}>
-                                Пульс активности ({isHeatmapExpanded ? '365' : '90'} дней)
-                            </h3>
-                            
+                            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', textAlign: 'center' }}>Пульс активности ({isHeatmapExpanded ? '365' : '90'} дней)</h3>
                             <div style={{ display: 'grid', gridTemplateRows: isHeatmapExpanded ? '1fr' : '0fr', transition: 'grid-template-rows 0.7s cubic-bezier(0.25, 1, 0.5, 1)' }}>
                                 <div style={{ overflow: 'hidden' }}>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'flex-start', width: '100%', marginBottom: '6px' }}>
-                                        {statsData.heatmapDays.slice(0, -90).map(day => (
-                                            <div key={day.iso} className={`heatmap-cell level-${day.level}`} style={{ width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0 }}></div>
-                                        ))}
+                                        {statsData.heatmapDays.slice(0, -90).map(day => ( <div key={day.iso} className={`heatmap-cell level-${day.level}`} style={{ width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0 }}></div> ))}
                                     </div>
                                 </div>
                             </div>
-                            
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'flex-start', width: '100%' }}>
-                                {statsData.heatmapDays.slice(-90).map(day => (
-                                    <div key={day.iso} className={`heatmap-cell level-${day.level}`} style={{ width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0 }}></div>
-                                ))}
+                                {statsData.heatmapDays.slice(-90).map(day => ( <div key={day.iso} className={`heatmap-cell level-${day.level}`} style={{ width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0 }}></div> ))}
                             </div>
                         </div>
                     </div>
@@ -999,23 +929,16 @@ function App() {
                     <div className="card" style={{ display: 'block', maxWidth: '360px', margin: '0 auto' }}>
                         <h3 style={{ textAlign: 'center', margin: '0 0 20px 0' }}>Настройки</h3>
                         <div className="setting-row" style={{marginBottom: '20px'}}>
-                            <span style={{fontWeight: 'bold', fontSize: '16px'}}>Тема оформления</span>
-                            <button className="theme-toggle-btn" onClick={toggleTheme}>
-                                {isLightTheme ? <Icons.Moon /> : <Icons.Sun />}
-                            </button>
+                            <span style={{fontWeight: 'bold', fontSize: '16px'}}>Тема оформления</span><button className="theme-toggle-btn" onClick={toggleTheme}>{isLightTheme ? <Icons.Moon /> : <Icons.Sun />}</button>
                         </div>
                         <hr className="divider" />
-                        
                         <div className="setting-row" style={{marginBottom: '20px', cursor: 'pointer'}} onClick={() => { triggerHaptic('light'); setShowRulesModal(true); }}>
-                            <span style={{fontWeight: 'bold', fontSize: '16px', color: 'var(--accent)'}}>Кодекс Системы</span>
-                            <Icons.Info style={{width: '24px', height: '24px', stroke: 'var(--accent)'}} />
+                            <span style={{fontWeight: 'bold', fontSize: '16px', color: 'var(--accent)'}}>Кодекс Системы</span><Icons.Info style={{width: '24px', height: '24px', stroke: 'var(--accent)'}} />
                         </div>
                         <hr className="divider" />
-                        
                         <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', margin: '15px 0 8px 0' }}>Тон поддержки бота:</label>
                         <select className="custom-select dark-input" value={motivationTone} onChange={e => setMotivationTone(e.target.value)} style={{marginBottom: 0}}>
-                            <option value="stoic">Стоик (Бесплатно)</option>
-                            <option value="toxic">Токсичный Сержант (Премиум)</option>
+                            <option value="stoic">Стоик (Бесплатно)</option><option value="toxic">Токсичный Сержант (Премиум)</option>
                         </select>
                     </div>
                 )}
@@ -1026,21 +949,8 @@ function App() {
                             <h2 className="give-up-title">Решил сдаться?</h2>
                             <p className="give-up-text">Время идёт. Твои цели сами себя не достигнут. Ты можешь бросить всё прямо сейчас и остаться там же, где был вчера. Или можешь взять себя в руки.</p>
                             <div className="give-up-actions">
-                                <button className="btn-continue-pulsing" onClick={() => { 
-                                    setShowGiveUpModal(false); 
-                                    setIsTimerRunning(true); 
-                                    triggerHaptic('success'); 
-                                }}>
-                                    Я справлюсь. Продолжить
-                                </button>
-                                <button className="btn-give-up-weak" onClick={() => { 
-                                    setShowGiveUpModal(false); 
-                                    setPenaltyInput('');
-                                    setShowPenaltyModal(true); 
-                                    triggerHaptic('light'); 
-                                }}>
-                                    Я слабак, сдаюсь (-5%)
-                                </button>
+                                <button className="btn-continue-pulsing" onClick={() => { setShowGiveUpModal(false); setIsTimerRunning(true); triggerHaptic('success'); }}>Я справлюсь. Продолжить</button>
+                                <button className="btn-give-up-weak" onClick={() => { setShowGiveUpModal(false); setPenaltyInput(''); setShowPenaltyModal(true); triggerHaptic('light'); }}>Я слабак, сдаюсь (-5%)</button>
                             </div>
                         </div>
                     </div>
@@ -1050,48 +960,14 @@ function App() {
                     <div className="glass-overlay-centered" style={{ zIndex: 9999 }}>
                         <div className="penalty-modal">
                             <h2 className="penalty-title">Цена слабости</h2>
-                            <p className="penalty-text">
-                                Чтобы сдаться легально, введи фразу ниже вручную. Копирование и вставка заблокированы.
-                            </p>
-                            
-                            <div className="penalty-phrase-box">
-                                {PENALTY_PHRASE}
-                            </div>
-                            
-                            <textarea
-                                className="dark-input penalty-textarea custom-scrollbar"
-                                value={penaltyInput}
-                                onChange={(e) => setPenaltyInput(e.target.value)}
-                                onPaste={(e) => { e.preventDefault(); triggerHaptic('error'); }}
-                                onDrop={(e) => { e.preventDefault(); }}
-                                placeholder="Начинай писать..."
-                                autoComplete="off"
-                                autoCorrect="off"
-                                spellCheck="false"
-                            />
-                            
+                            <p className="penalty-text">Чтобы сдаться легально, введи фразу ниже вручную. Копирование и вставка заблокированы.</p>
+                            <div className="penalty-phrase-box">{PENALTY_PHRASE}</div>
+                            <textarea className="dark-input penalty-textarea custom-scrollbar" value={penaltyInput} onChange={(e) => setPenaltyInput(e.target.value)} onPaste={(e) => { e.preventDefault(); triggerHaptic('error'); }} onDrop={(e) => { e.preventDefault(); }} placeholder="Начинай писать..." autoComplete="off" autoCorrect="off" spellCheck="false" />
                             <div className="penalty-actions">
                                 <button className={`btn-confirm-penalty ${penaltyInput === PENALTY_PHRASE ? 'active' : 'disabled'}`} onClick={() => { 
-                                    if (penaltyInput === PENALTY_PHRASE) {
-                                        try { localStorage.removeItem('motivateMe_v20_rageQuit'); } catch(e) {}
-                                        setShowPenaltyModal(false);
-                                        resetTimer();
-                                        setTrustScore(prev => Math.max(0, prev - 5));
-                                        triggerHaptic('heavy');
-                                    } else {
-                                        triggerHaptic('error');
-                                    }
-                                }}>
-                                    Подтвердить провал (-5%)
-                                </button>
-                                
-                                <button className="btn-return-task" onClick={() => {
-                                    setShowPenaltyModal(false);
-                                    setIsTimerRunning(true);
-                                    triggerHaptic('success');
-                                }}>
-                                    Вернуться к задаче
-                                </button>
+                                    if (penaltyInput === PENALTY_PHRASE) { try { localStorage.removeItem('motivateMe_v20_rageQuit'); } catch(e) {} setShowPenaltyModal(false); resetTimer(); setTrustScore(prev => Math.max(0, prev - 5)); triggerHaptic('heavy'); } else { triggerHaptic('error'); }
+                                }}>Подтвердить провал (-5%)</button>
+                                <button className="btn-return-task" onClick={() => { setShowPenaltyModal(false); setIsTimerRunning(true); triggerHaptic('success'); }}>Вернуться к задаче</button>
                             </div>
                         </div>
                     </div>
@@ -1101,18 +977,8 @@ function App() {
                     <div className="glass-overlay-centered" onClick={() => setActionMenuGoal(null)}>
                         <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
                             <button className="glass-btn-circle edit" onClick={() => { 
-                                if (trustScore < 50) {
-                                    setActionMenuGoal(null);
-                                    setShowLowTrustAlert(true);
-                                    triggerHaptic('error');
-                                } else {
-                                    setForm({...actionMenuGoal}); 
-                                    setEditingId(actionMenuGoal.id); 
-                                    setCreateMode('micro'); 
-                                    setActionMenuGoal(null); 
-                                    setCreateStep('text'); 
-                                    setIsModalOpen(true); 
-                                }
+                                if (trustScore < 50) { setActionMenuGoal(null); setShowLowTrustAlert(true); triggerHaptic('error'); } 
+                                else { setForm({...actionMenuGoal}); setEditingId(actionMenuGoal.id); setCreateMode('micro'); setActionMenuGoal(null); setCreateStep('text'); setIsModalOpen(true); }
                             }}><Icons.Pencil /></button>
                             <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteGoalId(actionMenuGoal.id); setActionMenuGoal(null); }}><Icons.Trash /></button>
                         </div>
@@ -1159,32 +1025,26 @@ function App() {
                             <div className="panel-step">
                                 <div style={{ display: 'flex', gap: '10px' }}>
                                     <input type="text" maxLength="2" value={visionForm.emoji} onChange={e => setVisionForm({...visionForm, emoji: e.target.value})} className="dark-input" style={{ width: '60px', textAlign: 'center', fontSize: '20px', padding: '14px 0' }} />
-                                    <input placeholder="Глобальная цель" value={visionForm.title} onChange={e => setVisionForm({...visionForm, title: e.target.value})} className="dark-input" style={{ flex: 1 }} />
+                                    <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                                        <input placeholder="Глобальная цель" value={visionForm.title} onChange={e => setVisionForm({...visionForm, title: e.target.value})} className="dark-input" style={{ width: '100%', marginBottom: 0, paddingRight: visionForm.title.trim() ? '45px' : '14px' }} />
+                                        {visionForm.title.trim() && !editingId && (
+                                            <div onClick={generateVisionDetailsWithAI} style={{position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', opacity: isGeneratingVision ? 0.5 : 1}}>
+                                                {isGeneratingVision ? <div className="scan-line" style={{width: '20px'}}></div> : <Icons.Sparkles style={{width: '20px', height: '20px', stroke: 'var(--accent)'}} />}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <textarea placeholder="Почему для тебя это важно?" value={visionForm.description} onChange={e => setVisionForm({...visionForm, description: e.target.value})} className="dark-input custom-scrollbar" style={{ minHeight: '80px', resize: 'none' }} />
+                                <textarea placeholder="Почему для тебя это важно?" value={visionForm.description} onChange={e => setVisionForm({...visionForm, description: e.target.value})} className="dark-input custom-scrollbar" style={{ minHeight: '80px', resize: 'none', marginTop: '15px' }} />
                             </div>
                         ) : (
                             <React.Fragment>
                                 {createStep === 'text' && (
                                     <div className="panel-step">
                                         <div style={{position: 'relative', display: 'flex', alignItems: 'center'}}>
-                                            <input 
-                                                placeholder="Название (кратко)" 
-                                                value={form.title} 
-                                                onChange={e => setForm({...form, title: e.target.value})} 
-                                                className="dark-input" 
-                                                style={{paddingRight: form.title.trim() ? '45px' : '14px'}}
-                                            />
+                                            <input placeholder="Название (кратко)" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="dark-input" style={{paddingRight: form.title.trim() ? '45px' : '14px'}} />
                                             {form.title.trim() && (
-                                                <div 
-                                                    onClick={generateGoalDetailsWithAI}
-                                                    style={{position: 'absolute', right: '10px', top: '12px', cursor: 'pointer', opacity: isGeneratingGoal ? 0.5 : 1}}
-                                                >
-                                                    {isGeneratingGoal ? (
-                                                        <div className="scan-line" style={{width: '20px'}}></div>
-                                                    ) : (
-                                                        <Icons.Sparkles style={{width: '20px', height: '20px', stroke: 'var(--accent)'}} />
-                                                    )}
+                                                <div onClick={generateGoalDetailsWithAI} style={{position: 'absolute', right: '10px', top: '12px', cursor: 'pointer', opacity: isGeneratingGoal ? 0.5 : 1}}>
+                                                    {isGeneratingGoal ? <div className="scan-line" style={{width: '20px'}}></div> : <Icons.Sparkles style={{width: '20px', height: '20px', stroke: 'var(--accent)'}} />}
                                                 </div>
                                             )}
                                         </div>
@@ -1197,9 +1057,7 @@ function App() {
                                         <textarea placeholder="Опиши суть..." value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none' }} />
                                         
                                         <div style={{ display: 'flex', flexDirection: 'column', margin: '15px 0 0 0', width: '100%', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '16px', boxSizing: 'border-box' }}>
-                                            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: '1.4', textAlign: 'left', width: '100%' }}>
-                                                Отметка тапом отключена. Выполнение засчитается только после завершения таймера в Комнате исполнения.
-                                            </p>
+                                            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: '1.4', textAlign: 'left', width: '100%' }}>Отметка тапом отключена. Выполнение засчитается только после завершения таймера в Комнате исполнения.</p>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                                                 <span style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--text-main)' }}>Требует фокуса</span>
                                                 <label className="ios-switch" style={{ flexShrink: 0, margin: 0 }}>
@@ -1207,33 +1065,17 @@ function App() {
                                                     <span className="slider"></span>
                                                 </label>
                                             </div>
-                                            
                                             {form.controlMethod === 'timer' && (
                                                 <div style={{ display: 'flex', flexDirection: 'column', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-input)', animation: 'fadeIn 0.3s' }}>
                                                     <div style={{ fontSize: '14px', color: 'var(--text-main)', fontWeight: 'bold', marginBottom: '12px', textAlign: 'left' }}>Время (минут):</div>
                                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px', width: '100%' }}>
-                                                        <button className="glass-btn-circle" style={{ width: '48px', height: '48px', minWidth: '48px', margin: 0 }} onClick={(e) => adjustFocusTime(-5, e)}>
-                                                            <Icons.Minus style={{ width: '24px', height: '24px', stroke: 'var(--text-main)' }} />
-                                                        </button>
-                                                        
-                                                        <input 
-                                                            type="number" 
-                                                            className="dark-input" 
-                                                            style={{ flex: 1, margin: 0, textAlign: 'center', fontSize: '24px', fontWeight: '800', padding: '12px', letterSpacing: '1px' }} 
-                                                            value={form.focusTime === '' ? '' : form.focusTime} 
-                                                            onFocus={() => setForm({...form, focusTime: ''})}
-                                                            onBlur={() => { if (form.focusTime === '' || form.focusTime <= 0) setForm({...form, focusTime: 25}); }}
-                                                            onChange={e => setForm({...form, focusTime: parseInt(e.target.value) || ''})} 
-                                                        />
-                                                        
-                                                        <button className="glass-btn-circle" style={{ width: '48px', height: '48px', minWidth: '48px', margin: 0 }} onClick={(e) => adjustFocusTime(5, e)}>
-                                                            <Icons.Plus style={{ width: '24px', height: '24px', stroke: 'var(--text-main)' }} />
-                                                        </button>
+                                                        <button className="glass-btn-circle" style={{ width: '48px', height: '48px', minWidth: '48px', margin: 0 }} onClick={(e) => adjustFocusTime(-5, e)}><Icons.Minus style={{ width: '24px', height: '24px', stroke: 'var(--text-main)' }} /></button>
+                                                        <input type="number" className="dark-input" style={{ flex: 1, margin: 0, textAlign: 'center', fontSize: '24px', fontWeight: '800', padding: '12px', letterSpacing: '1px' }} value={form.focusTime === '' ? '' : form.focusTime} onFocus={() => setForm({...form, focusTime: ''})} onBlur={() => { if (form.focusTime === '' || form.focusTime <= 0) setForm({...form, focusTime: 25}); }} onChange={e => setForm({...form, focusTime: parseInt(e.target.value) || ''})} />
+                                                        <button className="glass-btn-circle" style={{ width: '48px', height: '48px', minWidth: '48px', margin: 0 }} onClick={(e) => adjustFocusTime(5, e)}><Icons.Plus style={{ width: '24px', height: '24px', stroke: 'var(--text-main)' }} /></button>
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
-
                                     </div>
                                 )}
                                 {createStep === 'time' && (

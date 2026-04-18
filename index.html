@@ -5,20 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MotivateMe</title>
     
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=8">
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
 
-    <script type="text/babel" src="icons.jsx?v=1"></script>
-    <script type="text/babel" src="components.jsx?v=1"></script>
-    <script type="text/babel" src="app.jsx?v=4"></script>
+    <script>
+        // Меняй эту цифру, чтобы мгновенно сбросить кэш у всех файлов сразу
+        const APP_VERSION = "8"; 
+        
+        Promise.all([
+            fetch(`icons.jsx?v=${APP_VERSION}`).then(r => r.text()),
+            fetch(`components.jsx?v=${APP_VERSION}`).then(r => r.text()),
+            fetch(`app.jsx?v=${APP_VERSION}`).then(r => r.text())
+        ])
+        .then(([iconsCode, componentsCode, appCode]) => {
+            // Склеиваем файлы в строгом порядке
+            const fullCode = iconsCode + '\n\n' + componentsCode + '\n\n' + appCode;
+            
+            // Компилируем и запускаем
+            const transpiled = Babel.transform(fullCode, { presets: ['react'] }).code;
+            const script = document.createElement('script');
+            script.textContent = transpiled;
+            document.body.appendChild(script);
+        })
+        .catch(err => {
+            console.error("Критическая ошибка загрузки:", err);
+            document.getElementById('root').innerHTML = `<h3 style="color:red; text-align:center; margin-top:50px;">Ошибка загрузки модулей. Проверьте консоль.</h3>`;
+        });
+    </script>
 </body>
 </html>

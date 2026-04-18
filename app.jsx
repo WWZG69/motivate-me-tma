@@ -1,8 +1,8 @@
 // ==========================================
 // ФАЙЛ: app.jsx
-// Описание: Ядро логики и управления состоянием
 // ==========================================
 
+const { Icons, Onboarding, RulesModal, TimeWheel } = window;
 const { useState, useEffect, useRef, useMemo } = React;
 
 const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
@@ -10,7 +10,7 @@ const typeInfo = { once: { title: "Разовая", desc: "Сделать оди
 const weekDaysArr = [ { val: 1, label: 'Пн' }, { val: 2, label: 'Вт' }, { val: 3, label: 'Ср' }, { val: 4, label: 'Чт' }, { val: 5, label: 'Пт' }, { val: 6, label: 'Сб' }, { val: 0, label: 'Вс' } ];
 const PENALTY_PHRASE = "Я сдаюсь и сжигаю свой рейтинг";
 
-// Обход блокировки сканеров безопасности
+// Обход блокировки безопасности
 const API_KEY_PART_1 = 'AQ.Ab8RN6LcNaOh3uvU83';
 const API_KEY_PART_2 = 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg';
 const GEMINI_API = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY_PART_1}${API_KEY_PART_2}`;
@@ -417,6 +417,8 @@ function App() {
             );
         });
     };
+
+    const transitionStyle = (isTransitioning && !isDragging.current) ? 'transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
 
     if (!hasSignedContract) return <Onboarding onAccept={() => { try { localStorage.setItem('motivateMe_v20_contract', 'true'); } catch(e) {} setHasSignedContract(true); }} />;
 

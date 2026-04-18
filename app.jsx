@@ -131,7 +131,11 @@ function App() {
     const [offsetPx, setOffsetPx] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     
-    const [isLightTheme, setIsLightTheme] = useState(() => localStorage.getItem('motivateMe_theme') === 'light');
+    // БЕЗОПАСНАЯ ПРОВЕРКА ТЕМЫ ДЛЯ ИНКОГНИТО
+    const [isLightTheme, setIsLightTheme] = useState(() => {
+        try { return localStorage.getItem('motivateMe_theme') === 'light'; } catch(e) { return false; }
+    });
+    
     const [isHeatmapExpanded, setIsHeatmapExpanded] = useState(false); 
     
     const touchStartX = useRef(0);
@@ -217,10 +221,11 @@ function App() {
         if (daysInMonth && startDay && !daysInMonth.includes(startDay)) setStartDay('01');
     }, [daysInMonth, startDay]);
 
+    // БЕЗОПАСНОЕ СОХРАНЕНИЕ ТЕМЫ ДЛЯ ИНКОГНИТО
     useEffect(() => {
         if (isLightTheme) document.body.classList.add('light-theme');
         else document.body.classList.remove('light-theme');
-        localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark');
+        try { localStorage.setItem('motivateMe_theme', isLightTheme ? 'light' : 'dark'); } catch(e) {}
     }, [isLightTheme]);
 
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_trust', trustScore.toString()); } catch (e) {} }, [trustScore]);
@@ -298,14 +303,15 @@ function App() {
     useEffect(() => { try { localStorage.setItem('motivateMe_v20_visions', JSON.stringify(visions)); } catch (e) {} }, [visions]);
     useEffect(() => { const timer = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(timer); }, []);
     
+    // БЕЗОПАСНАЯ РАБОТА С ТАЙМЕРОМ ДЛЯ ИНКОГНИТО
     useEffect(() => {
         let interval = null;
         if (isTimerRunning && timeLeft > 0) {
-            localStorage.setItem('motivateMe_v20_rageQuit', 'true');
+            try { localStorage.setItem('motivateMe_v20_rageQuit', 'true'); } catch(e) {}
             interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
         } else if (isTimerRunning && timeLeft === 0) {
             setIsTimerRunning(false);
-            localStorage.removeItem('motivateMe_v20_rageQuit'); 
+            try { localStorage.removeItem('motivateMe_v20_rageQuit'); } catch(e) {}
             triggerHaptic('success');
             setTrustScore(prev => Math.min(100, prev + 1));
             if (activeFocusGoal && activeFocusDate) {
@@ -630,11 +636,11 @@ function App() {
         triggerHaptic('heavy');
     };
 
-    // БЛОКИРУЕМ ПРИЛОЖЕНИЕ, ПОКА КОНТРАКТ НЕ ПОДПИСАН
+    // БЛОКИРУЕМ ПРИЛОЖЕНИЕ, ПОКА КОНТРАКТ НЕ ПОДПИСАН (БЕЗОПАСНАЯ ЗАПИСЬ ДЛЯ ИНКОГНИТО)
     if (!hasSignedContract) {
         return (
             <Onboarding onAccept={() => {
-                localStorage.setItem('motivateMe_v20_contract', 'true');
+                try { localStorage.setItem('motivateMe_v20_contract', 'true'); } catch(e) {}
                 setHasSignedContract(true);
             }} />
         );
@@ -875,291 +881,4 @@ function App() {
                     <div className="glass-overlay-centered" style={{ zIndex: 9999 }}>
                         <div className="give-up-modal">
                             <h2 className="give-up-title">Решил сдаться?</h2>
-                            <p className="give-up-text">Время идёт. Твои цели сами себя не достигнут. Ты можешь бросить всё прямо сейчас и остаться там же, где был вчера. Или можешь взять себя в руки.</p>
-                            <div className="give-up-actions">
-                                <button className="btn-continue-pulsing" onClick={() => { 
-                                    setShowGiveUpModal(false); 
-                                    setIsTimerRunning(true); 
-                                    triggerHaptic('success'); 
-                                }}>
-                                    Я справлюсь. Продолжить
-                                </button>
-                                <button className="btn-give-up-weak" onClick={() => { 
-                                    setShowGiveUpModal(false); 
-                                    setPenaltyInput('');
-                                    setShowPenaltyModal(true); 
-                                    triggerHaptic('light'); 
-                                }}>
-                                    Я слабак, сдаюсь (-5%)
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {showPenaltyModal && (
-                    <div className="glass-overlay-centered" style={{ zIndex: 9999 }}>
-                        <div className="penalty-modal">
-                            <h2 className="penalty-title">Цена слабости</h2>
-                            <p className="penalty-text">
-                                Чтобы сдаться легально, введи фразу ниже вручную. Копирование и вставка заблокированы.
-                            </p>
-                            
-                            <div className="penalty-phrase-box">
-                                {PENALTY_PHRASE}
-                            </div>
-                            
-                            <textarea
-                                className="dark-input penalty-textarea custom-scrollbar"
-                                value={penaltyInput}
-                                onChange={(e) => setPenaltyInput(e.target.value)}
-                                onPaste={(e) => { e.preventDefault(); triggerHaptic('error'); }}
-                                onDrop={(e) => { e.preventDefault(); }}
-                                placeholder="Начинай писать..."
-                                autoComplete="off"
-                                autoCorrect="off"
-                                spellCheck="false"
-                            />
-                            
-                            <div className="penalty-actions">
-                                <button className={`btn-confirm-penalty ${penaltyInput === PENALTY_PHRASE ? 'active' : 'disabled'}`} onClick={() => { 
-                                    if (penaltyInput === PENALTY_PHRASE) {
-                                        localStorage.removeItem('motivateMe_v20_rageQuit'); 
-                                        setShowPenaltyModal(false);
-                                        resetTimer();
-                                        setTrustScore(prev => Math.max(0, prev - 5));
-                                        triggerHaptic('heavy');
-                                    } else {
-                                        triggerHaptic('error');
-                                    }
-                                }}>
-                                    Подтвердить провал (-5%)
-                                </button>
-                                
-                                <button className="btn-return-task" onClick={() => {
-                                    setShowPenaltyModal(false);
-                                    setIsTimerRunning(true);
-                                    triggerHaptic('success');
-                                }}>
-                                    Вернуться к задаче
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {actionMenuGoal && (
-                    <div className="glass-overlay-centered" onClick={() => setActionMenuGoal(null)}>
-                        <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
-                            <button className="glass-btn-circle edit" onClick={() => { 
-                                if (trustScore < 50) {
-                                    setActionMenuGoal(null);
-                                    setShowLowTrustAlert(true);
-                                    triggerHaptic('error');
-                                } else {
-                                    setForm({...actionMenuGoal}); 
-                                    setEditingId(actionMenuGoal.id); 
-                                    setCreateMode('micro'); 
-                                    setActionMenuGoal(null); 
-                                    setCreateStep('text'); 
-                                    setIsModalOpen(true); 
-                                }
-                            }}><Icons.Pencil /></button>
-                            <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteGoalId(actionMenuGoal.id); setActionMenuGoal(null); }}><Icons.Trash /></button>
-                        </div>
-                    </div>
-                )}
-                
-                {actionMenuVision && (
-                    <div className="glass-overlay-centered" onClick={() => setActionMenuVision(null)}>
-                        <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
-                            <button className="glass-btn-circle edit" onClick={() => { setVisionForm({...actionMenuVision}); setEditingId(actionMenuVision.id); setCreateMode('macro'); setActionMenuVision(null); setCreateStep('text'); setIsModalOpen(true); }}><Icons.Pencil /></button>
-                            <button className="glass-btn-circle danger" onClick={() => { setConfirmDeleteVisionId(actionMenuVision.id); setActionMenuVision(null); }}><Icons.Trash /></button>
-                        </div>
-                    </div>
-                )}
-
-                {confirmDeleteGoalId && (
-                    <div className="glass-overlay-centered" onClick={() => setConfirmDeleteGoalId(null)}>
-                        <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
-                            <button className="glass-btn-circle success" onClick={deleteGoal}><Icons.Check /></button>
-                            <button className="glass-btn-circle cancel" onClick={() => setConfirmDeleteGoalId(null)}><Icons.Close /></button>
-                        </div>
-                    </div>
-                )}
-                
-                {confirmDeleteVisionId && (
-                    <div className="glass-overlay-centered" onClick={() => setConfirmDeleteVisionId(null)}>
-                        <div className="action-buttons-container" onClick={e => e.stopPropagation()}>
-                            <button className="glass-btn-circle success" onClick={deleteVision}><Icons.Check /></button>
-                            <button className="glass-btn-circle cancel" onClick={() => setConfirmDeleteVisionId(null)}><Icons.Close /></button>
-                        </div>
-                    </div>
-                )}
-
-                {isModalOpen && (
-                    <div className="create-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-                        {!editingId && createStep === 'text' && (
-                            <div className="mode-switcher">
-                                <div className={`mode-btn ${createMode === 'micro' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setCreateMode('micro');}}>Задача</div>
-                                <div className={`mode-btn ${createMode === 'macro' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setCreateMode('macro');}}>Видение</div>
-                            </div>
-                        )}
-                        <h3 style={{margin: '0 0 15px 0', textAlign: 'center', fontSize: '18px'}}>{editingId ? 'Редактировать' : (createMode === 'macro' ? 'Новое Видение' : 'Новая цель')}</h3>
-                        {createMode === 'macro' ? (
-                            <div className="panel-step">
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    <input type="text" maxLength="2" value={visionForm.emoji} onChange={e => setVisionForm({...visionForm, emoji: e.target.value})} className="dark-input" style={{ width: '60px', textAlign: 'center', fontSize: '20px', padding: '14px 0' }} />
-                                    <input placeholder="Глобальная цель" value={visionForm.title} onChange={e => setVisionForm({...visionForm, title: e.target.value})} className="dark-input" style={{ flex: 1 }} />
-                                </div>
-                                <textarea placeholder="Почему для тебя это важно?" value={visionForm.description} onChange={e => setVisionForm({...visionForm, description: e.target.value})} className="dark-input custom-scrollbar" style={{ minHeight: '80px', resize: 'none' }} />
-                            </div>
-                        ) : (
-                            <React.Fragment>
-                                {createStep === 'text' && (
-                                    <div className="panel-step">
-                                        <input placeholder="Название" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="dark-input" />
-                                        {visions.length > 0 && (
-                                            <select className="custom-select dark-input" value={form.visionId || ''} onChange={e => setForm({...form, visionId: e.target.value})}>
-                                                <option value="">Без глобальной цели</option>
-                                                {visions.map(v => <option key={v.id} value={v.id}>{v.emoji} {v.title}</option>)}
-                                            </select>
-                                        )}
-                                        <textarea placeholder="Опиши шаги" value={form.description} onChange={e => { setForm({...form, description: e.target.value}); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight, 140)+'px';}} className="dark-input custom-scrollbar" style={{ minHeight: '60px', maxHeight: '140px', resize: 'none' }} />
-                                        
-                                        <div style={{ display: 'flex', flexDirection: 'column', margin: '15px 0 0 0', width: '100%', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '16px', boxSizing: 'border-box' }}>
-                                            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: '1.4', textAlign: 'left', width: '100%' }}>
-                                                Отметка тапом отключена. Выполнение засчитается только после завершения таймера в Комнате исполнения.
-                                            </p>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                                <span style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--text-main)' }}>Требует фокуса</span>
-                                                <label className="ios-switch" style={{ flexShrink: 0, margin: 0 }}>
-                                                    <input type="checkbox" checked={form.controlMethod === 'timer'} onChange={e => setForm({...form, controlMethod: e.target.checked ? 'timer' : 'check'})} />
-                                                    <span className="slider"></span>
-                                                </label>
-                                            </div>
-                                            
-                                            {form.controlMethod === 'timer' && (
-                                                <div style={{ display: 'flex', flexDirection: 'column', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-input)', animation: 'fadeIn 0.3s' }}>
-                                                    <div style={{ fontSize: '14px', color: 'var(--text-main)', fontWeight: 'bold', marginBottom: '12px', textAlign: 'left' }}>Время (минут):</div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px', width: '100%' }}>
-                                                        <button className="glass-btn-circle" style={{ width: '48px', height: '48px', minWidth: '48px', margin: 0 }} onClick={(e) => adjustFocusTime(-5, e)}>
-                                                            <Icons.Minus style={{ width: '24px', height: '24px', stroke: 'var(--text-main)' }} />
-                                                        </button>
-                                                        
-                                                        <input 
-                                                            type="number" 
-                                                            className="dark-input" 
-                                                            style={{ flex: 1, margin: 0, textAlign: 'center', fontSize: '24px', fontWeight: '800', padding: '12px', letterSpacing: '1px' }} 
-                                                            value={form.focusTime === '' ? '' : form.focusTime} 
-                                                            onFocus={() => setForm({...form, focusTime: ''})}
-                                                            onBlur={() => { if (form.focusTime === '' || form.focusTime <= 0) setForm({...form, focusTime: 25}); }}
-                                                            onChange={e => setForm({...form, focusTime: parseInt(e.target.value) || ''})} 
-                                                        />
-                                                        
-                                                        <button className="glass-btn-circle" style={{ width: '48px', height: '48px', minWidth: '48px', margin: 0 }} onClick={(e) => adjustFocusTime(5, e)}>
-                                                            <Icons.Plus style={{ width: '24px', height: '24px', stroke: 'var(--text-main)' }} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                    </div>
-                                )}
-                                {createStep === 'time' && (
-                                    <div className="panel-step">
-                                        <div className="radio-group">
-                                            <div className={`radio-btn ${(form.type || 'habit') === 'once' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'once'})}}><Icons.Target active={(form.type || 'once') === 'once'} /></div>
-                                            <div className={`radio-btn ${(form.type || 'habit') === 'habit' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'habit'})}}><Icons.Infinity active={(form.type || 'habit') === 'habit'} /></div>
-                                            <div className={`radio-btn ${(form.type || 'habit') === 'sprint' ? 'active' : ''}`} onClick={() => {triggerHaptic('light'); setForm({...form, type: 'sprint'})}}><Icons.Sprint active={(form.type || 'sprint') === 'sprint'} /></div>
-                                        </div>
-                                        <div className="info-box"><div className="info-title">{typeInfo[form.type || 'habit'].title}</div><div className="info-desc">{typeInfo[form.type || 'habit'].desc}</div></div>
-                                        {(form.type || 'habit') === 'habit' && (
-                                            <div style={{marginBottom: '20px'}}>
-                                                <div className="weekdays-selector">
-                                                    {weekDaysArr.map(d => {
-                                                        const isActive = form.weekDays && form.weekDays.includes(d.val);
-                                                        return ( <div key={d.val} className={`weekday-btn ${isActive ? 'active' : ''}`} onClick={() => toggleWeekDay(d.val)}>{d.label}</div> );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
-                                        {(form.type || 'habit') === 'sprint' && (<input type="number" placeholder="Дней соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="dark-input" style={{textAlign: 'center'}} />)}
-                                        <hr className="divider" />
-                                        <div className="wheels-grid">
-                                            <div className="wheel-section">
-                                                <div className="wheel-label">Дедлайн</div>
-                                                <div className="ios-time-picker mini">
-                                                    <TimeWheel items={hoursList} value={(form.deadline || '23:59').split(':')[0]} onChange={h => setForm({...form, deadline: `${h}:${(form.deadline || '23:59').split(':')[1]}`})} width="40px" />
-                                                    <span className="time-colon">:</span>
-                                                    <TimeWheel items={minutesList} value={(form.deadline || '23:59').split(':')[1]} onChange={m => setForm({...form, deadline: `${(form.deadline || '23:59').split(':')[0]}:${m}`})} width="40px" />
-                                                </div>
-                                            </div>
-                                            <div className="wheel-section">
-                                                <div className="wheel-label">Начало</div>
-                                                <div className="ios-time-picker mini">
-                                                    <TimeWheel items={monthNames} value={startMonth} onChange={setStartMonth} width="85px" />
-                                                    <TimeWheel items={daysInMonth} value={startDay} onChange={setStartDay} width="40px" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="setting-row"><span>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} /><span className="slider"></span></label></div>
-                                    </div>
-                                )}
-                                {createStep === 'notifs' && (
-                                    <div className="panel-step">
-                                        <div className="card" style={{margin: '0', maxWidth: '100%', border: '1px solid var(--border-color)', background: 'transparent', boxShadow: 'none'}}>
-                                            <div className="setting-row" style={{width: '100%'}}>
-                                                <span style={{fontWeight: 'bold', fontSize: '15px'}}>Уведомления</span>
-                                                <label className="ios-switch">
-                                                    <input type="checkbox" checked={form.notifications !== false} onChange={e => setForm({...form, notifications: e.target.checked})} />
-                                                    <span className="slider"></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </React.Fragment>
-                        )}
-                    </div>
-                )}
-
-                <div className="bottom-touch-shield"></div>
-                <div className="tab-bar">
-                    {!isModalOpen ? (
-                        <React.Fragment>
-                            <div onClick={() => setActiveTab('home')} className="tab-item"><Icons.Goals active={activeTab === 'home'} /></div>
-                            <div onClick={() => setActiveTab('progress')} className="tab-item"><Icons.Focus active={activeTab === 'progress'} /></div>
-                            <div className="tab-add-wrapper" onClick={openCreateModal}><div className="tab-add-btn-outline"><Icons.Add /></div></div>
-                            <div onClick={() => setActiveTab('social')} className="tab-item"><Icons.Stats active={activeTab === 'social'} /></div>
-                            <div onClick={() => setActiveTab('settings')} className="tab-item"><Icons.Settings active={activeTab === 'settings'} /></div>
-                        </React.Fragment>
-                    ) : (
-                        <React.Fragment>
-                            {createMode === 'micro' ? (
-                                <React.Fragment>
-                                    <div onClick={() => setCreateStep('text')} className="tab-item"><Icons.Text active={createStep === 'text'} /></div>
-                                    <div onClick={() => setCreateStep('time')} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
-                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: 'var(--text-muted)', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
-                                    <div onClick={() => setCreateStep('notifs')} className="tab-item"><Icons.Bell active={createStep === 'notifs'} /></div>
-                                    <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
-                                </React.Fragment>
-                            ) : (
-                                <React.Fragment>
-                                    <div style={{flex: 1}}></div>
-                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: 'var(--text-muted)', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
-                                    <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
-                                    <div style={{flex: 1}}></div>
-                                </React.Fragment>
-                            )}
-                        </React.Fragment>
-                    )}
-                </div>
-            </div>
-        </React.Fragment>
-    );
-}
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
+                            <p className="give-up-text">Время идёт. Твои цели сами себя не достигнут. Ты можешь бросить всё прямо сейчас и остаться там же, где был вчера. Или може

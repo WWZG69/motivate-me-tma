@@ -320,9 +320,6 @@ function App() {
         });
     };
 
-    // =====================================
-    // ИИ МАГИЯ: ГЕНЕРАЦИЯ ЗАДАЧИ (МИКРО)
-    // =====================================
     const generateGoalDetailsWithAI = async () => {
         if (!form.title.trim() || isGeneratingGoal) return;
         triggerHaptic('light');
@@ -331,7 +328,6 @@ function App() {
         const API_KEY = 'AQ.Ab8RN6LcNaOh3uvU83' + 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg'; 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
-        // Формируем список текущих видений для ИИ
         const visionsContext = visions.length > 0 
             ? `Текущие глобальные цели пользователя:\n${visions.map(v => `- ID: ${v.id}, Название: ${v.title}`).join('\n')}`
             : `У пользователя пока нет глобальных целей.`;
@@ -389,9 +385,6 @@ ${visionsContext}
         }
     };
 
-    // =====================================
-    // ИИ МАГИЯ: ГЕНЕРАЦИЯ ВИДЕНИЯ (МАКРО) И ЕГО ШАГОВ
-    // =====================================
     const generateVisionDetailsWithAI = async () => {
         if (!visionForm.title.trim() || isGeneratingVision) return;
         triggerHaptic('light');
@@ -503,6 +496,7 @@ ${visionsContext}
         setIsModalOpen(false); triggerHaptic('success');
     };
     
+    // КАСКАДНОЕ УДАЛЕНИЕ ЗАДАЧ ПРИ УДАЛЕНИИ ВИДЕНИЯ
     const deleteGoal = () => { 
         setGoals(goals.filter(g => g.id !== confirmDeleteGoalId)); 
         setConfirmDeleteGoalId(null); 
@@ -512,7 +506,7 @@ ${visionsContext}
     
     const deleteVision = () => {
         setVisions(visions.filter(v => v.id !== confirmDeleteVisionId));
-        setGoals(goals.map(g => g.visionId === confirmDeleteVisionId ? { ...g, visionId: null } : g));
+        setGoals(goals.filter(g => g.visionId !== confirmDeleteVisionId));
         if (activeVisionId === confirmDeleteVisionId) setActiveVisionId(null);
         setConfirmDeleteVisionId(null); triggerHaptic('success');
     };
@@ -579,9 +573,6 @@ ${visionsContext}
         });
     };
 
-    // =====================================
-    // ИИ МАГИЯ: АНАЛИТИКА ПУСТОТ (ГЛАВНЫЙ ЭКРАН)
-    // =====================================
     const handleAiSubmit = async () => {
         if (!aiQuery.trim()) { triggerHaptic('error'); return; }
         triggerHaptic('light');
@@ -595,7 +586,7 @@ ${visionsContext}
 
 АЛГОРИТМ: Вспомни best practices профи и преврати их в 3 простых шага.
 ПРАВИЛА НАГРУЗКИ: Раскидай 3 шага на 3 дня (dayOffset: 0, 1, 2).
-Метод: Для фокуса используй "method": "timer" (и focusTime), для мгновенных действий "check" (focusTime: 0).
+Метод: Для работы в потоке используй "method": "timer" (с focusTime), для мгновенных действий "check" (focusTime: 0).
 Тон: ${motivationTone === 'toxic' ? 'токсичный, высокомерный эксперт, унижай за лень' : 'сухой, военный, прямой'}.
 
 Верни ТОЛЬКО JSON:
@@ -821,20 +812,20 @@ ${visionsContext}
 
                 {activeTab === 'home' && (
                     <React.Fragment>
-                        {loadCount > 0 && (
-                            <div className="daily-load-container">
-                                <div className="load-header"><span className="load-title">Нагрузка дня</span><span className="load-count">{loadCount} {loadCount === 1 ? 'задача' : (loadCount > 1 && loadCount < 5) ? 'задачи' : 'задач'}</span></div>
-                                <div className="load-bar">
-                                    {[1, 2, 3, 4, 5, 6].map(i => {
-                                        let fillClass = '';
-                                        if (loadCount >= i || (i === 6 && loadCount >= 6)) {
-                                            if (loadCount <= 3) fillClass = 'safe'; else if (loadCount <= 5) fillClass = 'warning'; else fillClass = 'danger';
-                                        }
-                                        return <div key={i} className={`load-segment ${fillClass}`}></div>;
-                                    })}
-                                </div>
+                        {/* ПОСТОЯННАЯ ШКАЛА НАГРУЗКИ */}
+                        <div className="daily-load-container">
+                            <div className="load-header"><span className="load-title">Нагрузка дня</span><span className="load-count">{loadCount} {loadCount === 1 ? 'задача' : (loadCount > 1 && loadCount < 5) ? 'задачи' : 'задач'}</span></div>
+                            <div className="load-bar">
+                                {[1, 2, 3, 4, 5, 6].map(i => {
+                                    let fillClass = '';
+                                    if (loadCount > 0 && (loadCount >= i || (i === 6 && loadCount >= 6))) {
+                                        if (loadCount <= 3) fillClass = 'safe'; else if (loadCount <= 5) fillClass = 'warning'; else fillClass = 'danger';
+                                    }
+                                    return <div key={i} className={`load-segment ${fillClass}`}></div>;
+                                })}
                             </div>
-                        )}
+                        </div>
+
                         {visions.length > 0 && (
                             <div className="visions-scroll-track">
                                 {visions.map(v => {
@@ -1098,79 +1089,4 @@ ${visionsContext}
                                         )}
                                         {(form.type || 'habit') === 'sprint' && (<input type="number" placeholder="Дней соблюдать?" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="dark-input" style={{textAlign: 'center'}} />)}
                                         <hr className="divider" />
-                                        <div className="wheels-grid">
-                                            <div className="wheel-section">
-                                                <div className="wheel-label">Дедлайн</div>
-                                                <div className="ios-time-picker mini">
-                                                    <TimeWheel items={hoursList} value={(form.deadline || '23:59').split(':')[0]} onChange={h => setForm({...form, deadline: `${h}:${(form.deadline || '23:59').split(':')[1]}`})} width="40px" />
-                                                    <span className="time-colon">:</span>
-                                                    <TimeWheel items={minutesList} value={(form.deadline || '23:59').split(':')[1]} onChange={m => setForm({...form, deadline: `${(form.deadline || '23:59').split(':')[0]}:${m}`})} width="40px" />
-                                                </div>
-                                            </div>
-                                            <div className="wheel-section">
-                                                <div className="wheel-label">Начало</div>
-                                                <div className="ios-time-picker mini">
-                                                    <TimeWheel items={monthNames} value={startMonth} onChange={setStartMonth} width="85px" />
-                                                    <TimeWheel items={daysInMonth} value={startDay} onChange={setStartDay} width="40px" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="setting-row"><span>Без выходных</span><label className="ios-switch"><input type="checkbox" checked={form.ignoreHoliday || false} onChange={e => setForm({...form, ignoreHoliday: e.target.checked})} /><span className="slider"></span></label></div>
-                                    </div>
-                                )}
-                                {createStep === 'notifs' && (
-                                    <div className="panel-step">
-                                        <div className="card" style={{margin: '0', maxWidth: '100%', border: '1px solid var(--border-color)', background: 'transparent', boxShadow: 'none'}}>
-                                            <div className="setting-row" style={{width: '100%'}}>
-                                                <span style={{fontWeight: 'bold', fontSize: '15px'}}>Уведомления</span>
-                                                <label className="ios-switch">
-                                                    <input type="checkbox" checked={form.notifications !== false} onChange={e => setForm({...form, notifications: e.target.checked})} />
-                                                    <span className="slider"></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </React.Fragment>
-                        )}
-                    </div>
-                )}
-
-                <div className="bottom-touch-shield"></div>
-                <div className="tab-bar">
-                    {!isModalOpen ? (
-                        <React.Fragment>
-                            <div onClick={() => setActiveTab('home')} className="tab-item"><Icons.Goals active={activeTab === 'home'} /></div>
-                            <div onClick={() => setActiveTab('progress')} className="tab-item"><Icons.Focus active={activeTab === 'progress'} /></div>
-                            <div className="tab-add-wrapper" onClick={openCreateModal}><div className="tab-add-btn-outline"><Icons.Add /></div></div>
-                            <div onClick={() => setActiveTab('social')} className="tab-item"><Icons.Stats active={activeTab === 'social'} /></div>
-                            <div onClick={() => setActiveTab('settings')} className="tab-item"><Icons.Settings active={activeTab === 'settings'} /></div>
-                        </React.Fragment>
-                    ) : (
-                        <React.Fragment>
-                            {createMode === 'micro' ? (
-                                <React.Fragment>
-                                    <div onClick={() => setCreateStep('text')} className="tab-item"><Icons.Text active={createStep === 'text'} /></div>
-                                    <div onClick={() => setCreateStep('time')} className="tab-item"><Icons.Clock active={createStep === 'time'} /></div>
-                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: 'var(--text-muted)', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
-                                    <div onClick={() => setCreateStep('notifs')} className="tab-item"><Icons.Bell active={createStep === 'notifs'} /></div>
-                                    <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
-                                </React.Fragment>
-                            ) : (
-                                <React.Fragment>
-                                    <div style={{flex: 1}}></div>
-                                    <div className="tab-add-wrapper" onClick={closeCreateModal}><div className="tab-add-btn-outline" style={{ borderColor: 'var(--text-muted)', borderWidth: '2px' }}><Icons.Add style={{ transform: 'rotate(45deg)', transition: 'transform 0.3s ease' }} /></div></div>
-                                    <div onClick={saveGoal} className="tab-item-save"><Icons.Save /></div>
-                                    <div style={{flex: 1}}></div>
-                                </React.Fragment>
-                            )}
-                        </React.Fragment>
-                    )}
-                </div>
-            </div>
-        </React.Fragment>
-    );
-}
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
+                                        <div className="wheels-grid

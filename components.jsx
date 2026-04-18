@@ -5,11 +5,11 @@
 
 const { useEffect, useRef } = React;
 
-// 1. Компонент жесткого Онбординга
-window.Onboarding = ({ onAccept }) => {
+// 1. Компонент жесткого Онбординга (Контракт)
+const Onboarding = ({ onAccept }) => {
     return (
         <div className="onboarding-screen">
-            <window.EntityIcon />
+            <EntityIcon />
             <div className="onboarding-content">
                 <div className="onboarding-title">Система инициализирована</div>
                 <div className="onboarding-text">
@@ -35,8 +35,8 @@ window.Onboarding = ({ onAccept }) => {
     );
 };
 
-// 2. Компонент Кодекса Системы (Правила)
-window.RulesModal = ({ onClose }) => {
+// 2. Компонент Кодекса Системы (Правила и штрафы)
+const RulesModal = ({ onClose }) => {
     return (
         <div className="glass-overlay-centered" style={{ zIndex: 9999 }}>
             <div className="give-up-modal" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
@@ -46,9 +46,9 @@ window.RulesModal = ({ onClose }) => {
                     <ul className="onboarding-list" style={{borderLeftColor: 'var(--border-color)', margin: '15px 0'}}>
                         <li><strong>Кредит доверия:</strong> Начинается со 100%. Выполняешь задачи в срок — получаешь +1%.</li>
                         <li><strong>Сдача:</strong> Отмена идущего таймера фокуса снимает -5%.</li>
-                        <li><strong>Дезертирство:</strong> Закрытие или перезагрузка приложения во время работы таймера расценивается как побег. Штраф -15%.</li>
+                        <li><strong>Дезертирство:</strong> Закрытие приложения во время работы таймера расценивается как побег. Штраф -15%.</li>
                         <li><strong>Штраф за ложь:</strong> Игнорирование задачи в течение дня снижает доверие на -1%.</li>
-                        <li><strong>Локаут:</strong> Если Кредит Доверия падает ниже 50%, ты теряешь право редактировать или удалять свои цели, пока не докажешь свою дисциплину.</li>
+                        <li><strong>Локаут:</strong> Если Кредит Доверия падает ниже 50%, ты теряешь право редактировать или удалять свои цели.</li>
                     </ul>
                 </div>
                 <button className="btn-continue-pulsing" onClick={() => { 
@@ -62,8 +62,8 @@ window.RulesModal = ({ onClose }) => {
     );
 };
 
-// 3. Компонент Рулетки Времени (Стиль iOS)
-window.TimeWheel = ({ items, value, onChange, width }) => {
+// 3. Компонент Рулетки Времени (iOS Style)
+const TimeWheel = ({ items, value, onChange, width }) => {
     const ref = useRef(null);
     const itemHeight = 44; 
     

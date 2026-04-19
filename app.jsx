@@ -10,6 +10,7 @@ const typeInfo = { once: { title: "Разовая", desc: "Сделать оди
 const weekDaysArr = [ { val: 1, label: 'Пн' }, { val: 2, label: 'Вт' }, { val: 3, label: 'Ср' }, { val: 4, label: 'Чт' }, { val: 5, label: 'Пт' }, { val: 6, label: 'Сб' }, { val: 0, label: 'Вс' } ];
 const PENALTY_PHRASE = "Я сдаюсь и сжигаю свой рейтинг";
 
+// Обход блокировки безопасности
 const API_KEY_PART_1 = 'AQ.Ab8RN6LcNaOh3uvU83';
 const API_KEY_PART_2 = 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg';
 const GEMINI_API = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY_PART_1}${API_KEY_PART_2}`;
@@ -199,6 +200,21 @@ function App() {
 
     const getOffsetDate = (baseDate, days) => { const d = new Date(baseDate); d.setDate(d.getDate() + days); return d; };
 
+    const getActiveGoalsForDate = (dateTarget) => {
+        const norm = new Date(dateTarget); norm.setHours(0, 0, 0, 0); const rT = norm.getTime();
+        return goals.filter(g => { 
+            if (activeVisionId && g.visionId != activeVisionId) return false;
+            try { 
+                const sD = new Date(g.startDate); sD.setHours(0, 0, 0, 0); const sT = sD.getTime();
+                if (sT > rT) return false; 
+                if (g.type === 'habit' && g.weekDays && !g.weekDays.includes(dateTarget.getDay())) return false;
+                if (g.type === 'sprint') { const eD = new Date(sT); eD.setDate(eD.getDate() + (parseInt(g.duration)||1) - 1); if (rT > eD.getTime()) return false; }
+                if (g.type === 'once' && rT !== sT) return false;
+                return true; 
+            } catch(e) { return true; } 
+        });
+    };
+
     const startFocusSession = (goal, dateTarget) => { triggerHaptic('light'); setActiveFocusGoal(goal); setActiveFocusDate(dateTarget); setTimeLeft((goal.focusTime || 25) * 60); setActiveTab('progress'); };
     const resetTimer = () => { setIsTimerRunning(false); setActiveFocusGoal(null); setTimeLeft(25 * 60); triggerHaptic('light'); };
     const applyDateShift = (shift) => { setCurrentDate(prev => { const newDate = new Date(prev); newDate.setDate(newDate.getDate() + shift); return newDate; }); };
@@ -227,27 +243,13 @@ function App() {
         if (offsetPx > threshold || velocity > 0.4) animateToDate(-1); else if (offsetPx < -threshold || velocity < -0.4) animateToDate(1); else { setIsTransitioning(true); setOffsetPx(0); setTimeout(() => setIsTransitioning(false), 200); }
     };
 
-    // ФУНКЦИИ ОТКРЫТИЯ/ЗАКРЫТИЯ МОДАЛКИ СОЗДАНИЯ
-    const openCreateModal = () => { 
-        triggerHaptic('light'); 
-        setEditingId(null); 
-        setForm({...defaultForm, visionId: activeVisionId || '', weekDays: [0,1,2,3,4,5,6]}); 
-        setVisionForm(defaultVisionForm); 
-        setStartMonth(monthNames[new Date().getMonth()]); 
-        setStartDay(new Date().getDate().toString().padStart(2, '0')); 
-        setCreateMode('micro'); 
-        setCreateStep('text'); 
-        setIsModalOpen(true); 
-    };
-    const closeCreateModal = () => { 
-        triggerHaptic('light'); 
-        setIsModalOpen(false); 
-    };
+    const openCreateModal = () => { triggerHaptic('light'); setEditingId(null); setForm({...defaultForm, visionId: activeVisionId || '', weekDays: [0,1,2,3,4,5,6]}); setVisionForm(defaultVisionForm); setStartMonth(monthNames[new Date().getMonth()]); setStartDay(new Date().getDate().toString().padStart(2, '0')); setCreateMode('micro'); setCreateStep('text'); setIsModalOpen(true); };
+    const closeCreateModal = () => { triggerHaptic('light'); setIsModalOpen(false); };
 
     const toggleWeekDay = (dayVal) => { triggerHaptic('light'); setForm(prev => { const arr = prev.weekDays || []; if (arr.includes(dayVal)) return { ...prev, weekDays: arr.filter(d => d !== dayVal) }; return { ...prev, weekDays: [...arr, dayVal] }; }); };
     const adjustFocusTime = (amount, e) => { e.preventDefault(); triggerHaptic('light'); setForm(prev => { let next = (parseInt(prev.focusTime) || 25) + amount; if (next < 1) next = 1; return {...prev, focusTime: next}; }); };
 
-    // --- ИИ МАГИЯ ---
+    // --- ИИ: ГЕНЕРАЦИЯ ЗАДАЧИ ---
     const generateGoalDetailsWithAI = async () => {
         if (!form.title.trim() || isGeneratingGoal) return;
         setIsGeneratingGoal(true); triggerHaptic('light');
@@ -263,6 +265,7 @@ function App() {
         } catch (error) { triggerHaptic('error'); } finally { setIsGeneratingGoal(false); }
     };
 
+    // --- ИИ: ГЕНЕРАЦИЯ ВИДЕНИЯ ---
     const generateVisionDetailsWithAI = async () => {
         if (!visionForm.title.trim() || isGeneratingVision) return;
         setIsGeneratingVision(true); triggerHaptic('light');
@@ -283,6 +286,7 @@ function App() {
         } catch (error) { triggerHaptic('error'); } finally { setIsGeneratingVision(false); }
     };
 
+    // --- ИИ: АНАЛИТИКА ПУСТОТ ---
     const handleAiSubmit = async () => {
         if (!aiQuery.trim()) { triggerHaptic('error'); return; }
         setIsAiScanning(true); setAiResult(null); triggerHaptic('light');

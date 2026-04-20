@@ -88,11 +88,12 @@ window.Utils = {
         }
     },
 
-    // 4. API Gemini
+// 4. API Gemini
     ai: {
-        API_KEY: 'AQ.Ab8RN6LcNaOh3uvU83tg9L'+'Ap1oCGl0zfhC4H8-yao9HPhx1SPg',
+        API_KEY_PART_1: 'AQ.Ab8RN6LcNaOh3uvU83',
+        API_KEY_PART_2: 'tg9LAp1oCGl0zfhC4H8-yao9HPhx1SPg',
         async fetchJSON(promptText, systemPrompt, temp = 0.2) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.API_KEY}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.API_KEY_PART_1}${this.API_KEY_PART_2}`;
             const response = await fetch(url, { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 

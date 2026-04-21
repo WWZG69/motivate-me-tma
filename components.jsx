@@ -3,7 +3,7 @@
 // Описание: Глобальные компоненты интерфейса
 // ==========================================
 
-const { EntityIcon } = window;
+const { EntityIcon, Utils } = window;
 const { useEffect, useRef } = React;
 
 // 1. Компонент жесткого Онбординга (Контракт)
@@ -26,7 +26,7 @@ window.Onboarding = ({ onAccept }) => {
                     Твой провал не расстроит меня. Твой успех не сделает меня счастливым. Выбор за тобой.
                 </div>
                 <button className="btn-continue-pulsing" onClick={() => {
-                    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
+                    Utils.haptic('heavy');
                     onAccept();
                 }}>
                     Я принимаю условия
@@ -53,7 +53,7 @@ window.RulesModal = ({ onClose }) => {
                     </ul>
                 </div>
                 <button className="btn-continue-pulsing" onClick={() => { 
-                    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    Utils.haptic('light');
                     onClose(); 
                 }}>
                     Понятно
@@ -77,7 +77,7 @@ window.TimeWheel = ({ items, value, onChange, width }) => {
         const idx = Math.round(e.target.scrollTop / itemHeight);
         if (items[idx] && items[idx] !== value) {
             onChange(items[idx]);
-            if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+            Utils.haptic('light');
         }
     };
     

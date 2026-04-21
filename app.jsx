@@ -382,12 +382,11 @@ function App() {
             return (
                 <div className="ai-tactics-container">
                     <Icons.Cpu style={{ width: '32px', height: '32px', stroke: 'var(--accent)', marginBottom: '15px' }} />
-                    <h3 className="ai-tactics-title">Аналитика пустот</h3>
+                    <h3 className="ai-tactics-title" style={{ fontSize: '18px', marginBottom: '15px' }}>Какую задачу ты сейчас избегаешь?</h3>
                     {!isAiScanning && !aiResult && (
                         <React.Fragment>
-                            <p className="ai-tactics-desc">Какую задачу ты избегаешь?</p>
-                            <input type="text" className="dark-input ai-tactics-input" placeholder="Начать учить английский..." value={aiQuery} onChange={e => setAiQuery(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAiSubmit(); }} />
-                            <button className="btn-ai-submit" onClick={handleAiSubmit}>Декомпозировать</button>
+                            <input type="text" className="dark-input ai-tactics-input" placeholder="Например: Открыть редактор и написать..." value={aiQuery} onChange={e => setAiQuery(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAiSubmit(); }} />
+                            <button className="btn-ai-submit" onClick={handleAiSubmit}>Лишить себя выбора</button>
                         </React.Fragment>
                     )}
                     {isAiScanning && <div className="ai-loading-scan"><span>СИНТЕЗ...</span><div className="scan-line"></div></div>}
@@ -397,7 +396,8 @@ function App() {
                                 <div className="ai-contract-header">{aiResult.emoji} {aiResult.title}</div>
                                 {(aiResult.steps || []).map((s, i) => ( <div key={i} className="ai-contract-step">{s.title} <span>({s.focusTime===0?'Мгновенно':`${s.focusTime} мин`} • {s.deadline && s.deadline !== '23:59' ? `Дедлайн ${s.deadline}` : (s.dayOffset===1?'Завтра':(s.dayOffset===2?'Послезавтра':'Сегодня'))})</span>{s.desc && <div style={{color:'var(--text-muted)', fontSize:'12px', marginTop:'4px'}}>{s.desc}</div>}</div> ))}
                             </div>
-                            <button className="btn-ai-submit" style={{ marginTop: '15px' }} onClick={acceptAiContract}>Принять контракт</button><button className="btn-return-task" style={{ width: '100%', marginTop: '5px' }} onClick={() => setAiResult(null)}>Сброс</button>
+                            <button className="btn-ai-submit" style={{ marginTop: '15px' }} onClick={acceptAiContract}>Сделать неизбежным</button>
+                            <button className="btn-return-task" style={{ width: '100%', marginTop: '5px' }} onClick={() => setAiResult(null)}>Сброс</button>
                         </React.Fragment>
                     )}
                 </div>

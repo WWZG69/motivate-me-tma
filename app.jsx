@@ -239,7 +239,11 @@ function App() {
         if (!form.title.trim() || isGeneratingGoal) return;
         setIsGeneratingGoal(true); Utils.haptic('light');
         const visionsContext = visions.length > 0 ? `Глобальные цели юзера:\n${visions.map(v => `- ID: ${v.id}, Название: ${v.title}`).join('\n')}` : `Глобальных целей нет.`;
-        const systemPrompt = `Ты ИИ. Преврати запрос в задачу. ПРАВИЛА: 1. Действие моментальное (проснуться, позвонить) -> "controlMethod": "check", "focusTime": 0, "deadline": логичное время. 2. Работа в потоке -> "controlMethod": "timer", "focusTime": 15-60. Связь с глобальной целью: ${visionsContext}. Верни JSON: {"title": "", "description": "", "type": "once/habit/sprint", "controlMethod": "timer/check", "focusTime": 25, "deadline": "23:59", "visionId": "id или пусто"}`;
+        const systemPrompt = `Ты ИИ-трекер. Преврати запрос в задачу. ПРАВИЛА КАЛИБРОВКИ:
+1. Микро-действия (моментальные: позвонить, отправить, найти, вдеть нитку) -> "controlMethod": "check", "focusTime": 0, "deadline": логичное время.
+2. Работа в потоке (требует концентрации: писать код, читать, шить) -> "controlMethod": "timer", "focusTime": 15-60.
+3. ЗАПРЕЩЕНО давать таймер на минутные дела (например, "вдеть нитку в иголку на 25 мин" - это бред).
+Связь с глобальной целью: ${visionsContext}. Верни JSON: {"title": "", "description": "", "type": "once/habit/sprint", "controlMethod": "timer/check", "focusTime": 25, "deadline": "23:59", "visionId": "id или пусто"}`;
         try {
             const parsed = await Utils.ai.fetchJSON(`Запрос: "${form.title}"`, systemPrompt, 0.2);
             setForm(prev => ({ ...prev, title: parsed.title || prev.title, description: parsed.description || prev.description, type: parsed.type || 'once', controlMethod: parsed.controlMethod || 'check', focusTime: parsed.focusTime || 0, deadline: parsed.deadline || '23:59', visionId: parsed.visionId || prev.visionId }));
@@ -250,7 +254,13 @@ function App() {
     const generateVisionDetailsWithAI = async () => {
         if (!visionForm.title.trim() || isGeneratingVision) return;
         setIsGeneratingVision(true); Utils.haptic('light');
-        const systemPrompt = `Ты ИИ. Создай Видение и 3 тактических шага на 3 дня (dayOffset 0, 1, 2). Метод: поток="timer", моментально="check". Тон: ${motivationTone === 'toxic' ? 'токсичный, жесткий' : 'сухой, военный'}. Верни JSON: {"visionTitle":"", "visionEmoji":"🚀", "visionDesc":"", "steps":[{"title":"", "desc":"", "type":"once", "method":"timer", "focusTime":25, "dayOffset":0}]}`;
+        const systemPrompt = `Ты — безжалостный ИИ-трекер. Создай Видение и 3 тактических шага на 3 дня (dayOffset 0, 1, 2) на основе алгоритмов для новичков.
+ПРАВИЛА КАЛИБРОВКИ:
+1. Микро-действия (купить, открыть, найти) -> "method": "check", "focusTime": 0.
+2. Работа в потоке -> "method": "timer", "focusTime": 15-60.
+3. ЗАПРЕЩЕНО давать таймер на действия, занимающие меньше 5 минут.
+Тон: ${motivationTone === 'toxic' ? 'токсичный, уничижительный сержант' : 'сухой, безэмоциональный констататор'}.
+Верни JSON: {"visionTitle":"", "visionEmoji":"🚀", "visionDesc":"", "steps":[{"title":"", "desc":"", "type":"once", "method":"timer", "focusTime":25, "dayOffset":0}]}`;
         try {
             const parsed = await Utils.ai.fetchJSON(`Мечта: "${visionForm.title}"`, systemPrompt, 0.3);
             const newVisionId = Date.now().toString();
@@ -267,7 +277,36 @@ function App() {
     const handleAiSubmit = async () => {
         if (!aiQuery.trim()) { Utils.haptic('error'); return; }
         setIsAiScanning(true); setAiResult(null); Utils.haptic('light');
-        const systemPrompt = `Ты ИИ. Составь план из 3 шагов. Раскидай на 3 дня (dayOffset 0, 1, 2). Метод: поток="timer", моментально="check". Тон: ${motivationTone === 'toxic' ? 'токсичный' : 'сухой'}. Верни JSON: {"title":"", "emoji":"", "steps":[{"title":"", "desc":"", "type":"once", "method":"timer", "focusTime":25, "dayOffset":0}]}`;
+        const systemPrompt = `Ты — безжалостный ИИ-трекер. Пользователь саботирует задачу. 
+Твоя цель — разбить её на 3 осмысленных, практических шага на сегодня, завтра и послезавтра (dayOffset 0, 1, 2). Опирайся на реальный алгоритм действий для новичков в этой нише.
+
+ПРАВИЛА КАЛИБРОВКИ ЗАДАЧ:
+1. Соразмерность: Объем задачи должен строго соответствовать таймеру. 
+2. Микро-действия (найти контакт, купить ткань, создать файл) -> "method": "check", "focusTime": 0.
+3. Работа в потоке (написание кода, черновой набросок, тренировка) -> "method": "timer", "focusTime": 15-60.
+4. ЗАПРЕЩЕНО: Давать таймер на действия, занимающие меньше 5 минут (например: "вдеть нитку в иголку на 25 минут" — это бред, за такое ты будешь уничтожен).
+
+ПРИМЕР ХОРОШЕГО ШАГА (dayOffset 0): "Подготовить рабочее место и сделать первый тренировочный шов" (timer, 25 мин).
+
+Тон системы: ${motivationTone === 'toxic' 
+    ? 'уничижительный, жесткий сержант, высмеивающий слабость и лень.' 
+    : 'холодный, стоический, безэмоциональный констататор фактов.'}
+
+Формат ответа СТРОГО валидный JSON:
+{
+  "title": "Хлесткое название плана",
+  "emoji": "💀",
+  "steps": [
+    {
+      "title": "Действие (глагол)",
+      "desc": "Жесткое объяснение, почему это нужно сделать именно так",
+      "type": "once",
+      "method": "timer/check",
+      "focusTime": 25,
+      "dayOffset": 0
+    }
+  ]
+}`;
         try {
             const parsed = await Utils.ai.fetchJSON(`Задача: "${aiQuery}"`, systemPrompt, 0.2);
             setAiResult(parsed);

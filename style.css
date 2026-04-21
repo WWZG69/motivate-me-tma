@@ -410,3 +410,10 @@ select.custom-select.dark-input option { color: #000; }
 .ai-contract-step { font-size: 14px; color: var(--text-main); margin-bottom: 10px; padding-left: 14px; position: relative; }
 .ai-contract-step::before { content: ''; position: absolute; left: 0; top: 6px; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
 .ai-contract-step span { color: var(--text-muted); font-size: 12px; margin-left: 5px; }
+
+body {
+    min-height: 100vh;
+    /* Фикс для iOS/Safari */
+    min-height: -webkit-fill-available;
+    background-attachment: fixed !important;
+}

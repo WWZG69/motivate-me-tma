@@ -299,7 +299,7 @@ function App() {
 
 Тон системы: ${motivationTone === 'toxic' 
     ? 'уничижительный, жесткий сержант, высмеивающий слабость.' 
-    : 'холодный, стоический, констататор фактов.'}
+    : 'холодный, стоический, констата фактов.'}
 
 Формат ответа СТРОГО валидный JSON:
 {
@@ -389,11 +389,12 @@ function App() {
                             <input 
                                 type="text" 
                                 className="dark-input ai-tactics-input" 
-                                placeholder="Например: Выучить английский, сменить работу..." 
+                                placeholder="Например: Выучить английский..." 
                                 value={aiQuery} 
                                 onChange={e => setAiQuery(e.target.value)} 
                                 onKeyDown={e => { if (e.key === 'Enter') handleAiSubmit(); }} 
-                                onFocus={(e) => {
+                                style={{ textAlign: 'left', padding: '15px' }}
+                                onClick={(e) => {
                                     const el = e.target;
                                     setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
                                 }}

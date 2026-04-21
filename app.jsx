@@ -382,19 +382,44 @@ function App() {
             return (
                 <div className="ai-tactics-container">
                     <Icons.Cpu style={{ width: '32px', height: '32px', stroke: 'var(--accent)', marginBottom: '15px' }} />
-                    <h3 className="ai-tactics-title" style={{ fontSize: '18px', marginBottom: '15px' }}>Какую задачу ты сейчас избегаешь?</h3>
+                    
                     {!isAiScanning && !aiResult && (
                         <React.Fragment>
-                            <input type="text" className="dark-input ai-tactics-input" placeholder="Например: Открыть редактор и написать..." value={aiQuery} onChange={e => setAiQuery(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAiSubmit(); }} />
+                            <h3 className="ai-tactics-title" style={{ fontSize: '18px', marginBottom: '15px' }}>Назови цель, от которой ты бегаешь.</h3>
+                            <input 
+                                type="text" 
+                                className="dark-input ai-tactics-input" 
+                                placeholder="Например: Выучить английский, сменить работу..." 
+                                value={aiQuery} 
+                                onChange={e => setAiQuery(e.target.value)} 
+                                onKeyDown={e => { if (e.key === 'Enter') handleAiSubmit(); }} 
+                                onFocus={(e) => {
+                                    const el = e.target;
+                                    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                                }}
+                            />
                             <button className="btn-ai-submit" onClick={handleAiSubmit}>Лишить себя выбора</button>
                         </React.Fragment>
                     )}
-                    {isAiScanning && <div className="ai-loading-scan"><span>СИНТЕЗ...</span><div className="scan-line"></div></div>}
+                    
+                    {isAiScanning && (
+                        <div className="ai-loading-scan">
+                            <span>СИНТЕЗ...</span>
+                            <div className="scan-line"></div>
+                        </div>
+                    )}
+                    
                     {aiResult && !isAiScanning && (
                         <React.Fragment>
-                            <div className="ai-contract-box">
+                            <div className="ai-contract-box" style={{ boxSizing: 'border-box', width: '100%' }}>
                                 <div className="ai-contract-header">{aiResult.emoji} {aiResult.title}</div>
-                                {(aiResult.steps || []).map((s, i) => ( <div key={i} className="ai-contract-step">{s.title} <span>({s.focusTime===0?'Мгновенно':`${s.focusTime} мин`} • {s.deadline && s.deadline !== '23:59' ? `Дедлайн ${s.deadline}` : (s.dayOffset===1?'Завтра':(s.dayOffset===2?'Послезавтра':'Сегодня'))})</span>{s.desc && <div style={{color:'var(--text-muted)', fontSize:'12px', marginTop:'4px'}}>{s.desc}</div>}</div> ))}
+                                {(aiResult.steps || []).map((s, i) => ( 
+                                    <div key={i} className="ai-contract-step">
+                                        {s.title} 
+                                        <span>({s.focusTime===0?'Мгновенно':`${s.focusTime} мин`} • {s.deadline && s.deadline !== '23:59' ? `Дедлайн ${s.deadline}` : (s.dayOffset===1?'Завтра':(s.dayOffset===2?'Послезавтра':'Сегодня'))})</span>
+                                        {s.desc && <div style={{color:'var(--text-muted)', fontSize:'12px', marginTop:'4px'}}>{s.desc}</div>}
+                                    </div> 
+                                ))}
                             </div>
                             <button className="btn-ai-submit" style={{ marginTop: '15px' }} onClick={acceptAiContract}>Сделать неизбежным</button>
                             <button className="btn-return-task" style={{ width: '100%', marginTop: '5px' }} onClick={() => setAiResult(null)}>Сброс</button>

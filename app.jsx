@@ -239,11 +239,14 @@ function App() {
         if (!form.title.trim() || isGeneratingGoal) return;
         setIsGeneratingGoal(true); Utils.haptic('light');
         const visionsContext = visions.length > 0 ? `Глобальные цели юзера:\n${visions.map(v => `- ID: ${v.id}, Название: ${v.title}`).join('\n')}` : `Глобальных целей нет.`;
-        const systemPrompt = `Ты ИИ-трекер. Преврати запрос в задачу. ПРАВИЛА КАЛИБРОВКИ:
-1. Микро-действия (моментальные: позвонить, отправить, найти) -> "controlMethod": "check", "focusTime": 0, "deadline": логичное время.
-2. Работа в потоке (требует концентрации) -> "controlMethod": "timer", "focusTime": 15-60.
-3. ЗАПРЕЩЕНО давать таймер на минутные дела.
-Связь с глобальной целью: ${visionsContext}. Верни JSON: {"title": "", "description": "", "type": "once/habit/sprint", "controlMethod": "timer/check", "focusTime": 25, "deadline": "23:59", "visionId": "id или пусто"}`;
+        const systemPrompt = `Ты ИИ-трекер. Преврати запрос в задачу. 
+ПРАВИЛА:
+1. ВРЕМЯ (СУПЕР ВАЖНО): Если в запросе юзер указал конкретное время (например, "в 6 утра"), установи "deadline" точно на это время + 5-10 минут (например, "06:10"), а не "23:59".
+2. ФИЗИЧЕСКИЕ ТРИГГЕРЫ: Задачи вроде "проснуться", "встать", "выпить", "заправить" — это МОМЕНТАЛЬНЫЕ действия -> "controlMethod": "check", "focusTime": 0.
+3. РАБОТА В ПОТОКЕ (чтение, код, уборка) -> "controlMethod": "timer", "focusTime": 15-60.
+4. ЗАПРЕЩЕНО давать таймер на минутные дела.
+Связь с глобальной целью: ${visionsContext}. 
+Верни JSON: {"title": "", "description": "", "type": "once/habit/sprint", "controlMethod": "timer/check", "focusTime": 25, "deadline": "23:59", "visionId": "id или пусто"}`;
         try {
             const parsed = await Utils.ai.fetchJSON(`Запрос: "${form.title}"`, systemPrompt, 0.2);
             setForm(prev => ({ ...prev, title: parsed.title || prev.title, description: parsed.description || prev.description, type: parsed.type || 'once', controlMethod: parsed.controlMethod || 'check', focusTime: parsed.focusTime || 0, deadline: parsed.deadline || '23:59', visionId: parsed.visionId || prev.visionId }));
@@ -254,23 +257,23 @@ function App() {
     const generateVisionDetailsWithAI = async () => {
         if (!visionForm.title.trim() || isGeneratingVision) return;
         setIsGeneratingVision(true); Utils.haptic('light');
-        const systemPrompt = `Ты — безжалостный ИИ-трекер. Создай Видение и 3 тактических шага на 3 дня (dayOffset 0, 1, 2). 
-ГЛАВНАЯ ЦЕЛЬ: Сдвинуть юзера с мертвой точки, снять паралич первого шага, а не обучить навыку за 3 дня.
-ПРАВИЛА:
-1. Шаги должны быть ПРОСТЫМИ и БЕСПЛАТНЫМИ. Никаких "купить машинку/инструменты" на старте.
-2. Шаг 1: Должен быть элементарным (найти обучающее видео, собрать референсы, подготовить старые материалы для тренировки).
-3. Микро-действия (поиск, чтение плана) -> "method": "check", "focusTime": 0.
-4. Работа в потоке -> "method": "timer", "focusTime": 15-60.
-5. Эмодзи: Подбери СТРОГО 1 тематический эмодзи по смыслу запроса (например: 🚗, 🧵, 🇬🇧, 🎸).
+        const systemPrompt = `Ты — безжалостный ИИ-трекер. Создай Видение и 3 тактических шага на 3 дня (dayOffset 0, 1, 2).
+ПРАВИЛА ИЗБЕЖАНИЯ БРЕДА:
+1. ЗАПРЕТ НА "ИССЛЕДОВАНИЯ": Строго запрещено давать шаги вроде "посмотреть видео о пользе", "почитать статьи", "составить список плюсов". Если юзер написал цель (например, вставать в 6 утра), он УЖЕ знает зачем. Давай только ФИЗИЧЕСКИЕ ДЕЙСТВИЯ.
+2. ИНЖЕНЕРНЫЙ ШАГ 1: Если цель — бытовая привычка (ранний подъем, бег), Шаг 1 (dayOffset 0) должен быть подготовкой среды (например: "Отнести зарядку для телефона в ванную", "Положить форму у кровати").
+3. ПАРСИНГ ВРЕМЕНИ: Если цель привязана ко времени (в 6:00), установи "deadline" для этого шага ровно на это время + 5 минут ("06:05"). Если времени нет, ставь "23:59".
+4. ФИЗИЧЕСКИЕ ТРИГГЕРЫ: Пробуждение, звонок, прием таблеток — это МОМЕНТАЛЬНЫЕ действия -> "method": "check", "focusTime": 0.
+5. РАБОТА: Писать код, читать -> "method": "timer", "focusTime": 15-60.
+6. Эмодзи: Подбери СТРОГО 1 тематический.
 Тон: ${motivationTone === 'toxic' ? 'токсичный, уничижительный сержант' : 'сухой, безэмоциональный констататор'}.
-Верни JSON: {"visionTitle":"", "visionEmoji":"🧵", "visionDesc":"", "steps":[{"title":"", "desc":"", "type":"once", "method":"timer/check", "focusTime":25, "dayOffset":0}]}`;
+Верни JSON: {"visionTitle":"", "visionEmoji":"🧵", "visionDesc":"", "steps":[{"title":"", "desc":"", "type":"once", "method":"timer/check", "focusTime":25, "deadline":"23:59", "dayOffset":0}]}`;
         try {
             const parsed = await Utils.ai.fetchJSON(`Мечта: "${visionForm.title}"`, systemPrompt, 0.3);
             const newVisionId = Date.now().toString();
             setVisions(prev => [{ id: newVisionId, title: parsed.visionTitle, emoji: parsed.visionEmoji, description: parsed.visionDesc }, ...prev]);
             const newGoals = (parsed.steps || []).map((step, idx) => {
                 const targetDate = new Date(); if (step.dayOffset) targetDate.setDate(targetDate.getDate() + step.dayOffset);
-                return { id: Date.now() + idx + 100, title: step.title, description: step.desc, type: step.type, deadline: '23:59', duration: 1, ignoreHoliday: false, notifications: true, startDate: targetDate.toISOString(), visionId: newVisionId, weekDays: [0,1,2,3,4,5,6], controlMethod: step.method || 'timer', focusTime: step.focusTime || 25, history: {}, streak: 0, createdAt: new Date().toDateString() };
+                return { id: Date.now() + idx + 100, title: step.title, description: step.desc, type: step.type, deadline: step.deadline || '23:59', duration: 1, ignoreHoliday: false, notifications: true, startDate: targetDate.toISOString(), visionId: newVisionId, weekDays: [0,1,2,3,4,5,6], controlMethod: step.method || 'timer', focusTime: step.focusTime || 25, history: {}, streak: 0, createdAt: new Date().toDateString() };
             });
             if (newGoals.length > 0) setGoals(prev => [...newGoals, ...prev]);
             setIsModalOpen(false); Utils.haptic('heavy');
@@ -280,26 +283,24 @@ function App() {
     const handleAiSubmit = async () => {
         if (!aiQuery.trim()) { Utils.haptic('error'); return; }
         setIsAiScanning(true); setAiResult(null); Utils.haptic('light');
-        const systemPrompt = `Ты — безжалостный ИИ-трекер. Пользователь саботирует задачу. 
-Твоя цель — разбить её на 3 шага на сегодня, завтра и послезавтра (dayOffset 0, 1, 2). 
-ГЛАВНАЯ ЦЕЛЬ: Снять паралич первого шага и дать импульс.
+        const systemPrompt = `Ты — безжалостный ИИ-трекер. Разбей задачу на 3 шага на сегодня, завтра и послезавтра (dayOffset 0, 1, 2). 
 
-ПРАВИЛА:
-1. ПРОСТОТА: Шаги должны быть бесплатными и легкими для старта. Никаких покупок оборудования или сложных задач в первые дни.
-2. Шаг 1 (dayOffset 0): Элементарное микро-действие (найти 10-мин видеоурок, подготовить рабочее место, найти старые материалы).
-3. Микро-действия -> "method": "check", "focusTime": 0.
-4. Действия в потоке (смотреть урок, пробовать сделать) -> "method": "timer", "focusTime": 15-60.
-5. ЗАПРЕЩЕНО: Давать таймер на действия < 5 минут (вдеть нитку).
-6. ЭМОДЗИ: Строго 1 тематический эмодзи (например: 🇬🇧, 🧵, 🚗).
+ПРАВИЛА ИЗБЕЖАНИЯ БРЕДА:
+1. ЗАПРЕТ НА "ИССЛЕДОВАНИЯ": Строго запрещено давать шаги вроде "посмотреть мотивационное видео", "почитать статьи", "настроиться морально". Давай только ФИЗИЧЕСКИЕ ДЕЙСТВИЯ.
+2. ИНЖЕНЕРНЫЙ ШАГ 1: Если цель — рутина (подъем в 6 утра, вода, бег), Шаг 1 (на сегодня) — это изменение среды (например: "Унести будильник в другую комнату", "Налить стакан воды", "Достать кроссовки").
+3. ПАРСИНГ ВРЕМЕНИ: Если в запросе есть время (например, "в 6:00"), установи "deadline" для этого шага ровно на это время + 5 минут ("06:05"). Для обычных задач ставь "23:59".
+4. ФИЗИЧЕСКИЕ ТРИГГЕРЫ: Пробуждение, чистка зубов, выпить воды — это моментальные действия -> "method": "check", "focusTime": 0.
+5. РАБОТА: Кодинг, уборка, чтение -> "method": "timer", "focusTime": 15-60.
+6. Эмодзи: Строго 1 тематический.
 
 Тон системы: ${motivationTone === 'toxic' 
-    ? 'уничижительный, жесткий сержант, высмеивающий слабость и лень.' 
-    : 'холодный, стоический, безэмоциональный констататор фактов.'}
+    ? 'уничижительный, жесткий сержант, высмеивающий слабость.' 
+    : 'холодный, стоический, констататор фактов.'}
 
 Формат ответа СТРОГО валидный JSON:
 {
   "title": "Хлесткое название плана",
-  "emoji": "🧵",
+  "emoji": "⏰",
   "steps": [
     {
       "title": "Действие (глагол)",
@@ -307,6 +308,7 @@ function App() {
       "type": "once",
       "method": "timer/check",
       "focusTime": 25,
+      "deadline": "23:59",
       "dayOffset": 0
     }
   ]
@@ -324,7 +326,7 @@ function App() {
         setVisions(prev => [{ id: newVisionId, title: aiResult.title, emoji: aiResult.emoji, description: `Сгенерировано ИИ по запросу: "${aiQuery}"` }, ...prev]);
         const newGoals = aiResult.steps.map((step, idx) => {
             const targetDate = new Date(); if (step.dayOffset) targetDate.setDate(targetDate.getDate() + step.dayOffset);
-            return { id: Date.now() + idx + 100, title: step.title, description: step.desc, type: step.type, deadline: '23:59', duration: 1, startDate: targetDate.toISOString(), visionId: newVisionId, weekDays: [0,1,2,3,4,5,6], controlMethod: step.method || 'timer', focusTime: step.focusTime || 25, history: {}, streak: 0 };
+            return { id: Date.now() + idx + 100, title: step.title, description: step.desc, type: step.type, deadline: step.deadline || '23:59', duration: 1, startDate: targetDate.toISOString(), visionId: newVisionId, weekDays: [0,1,2,3,4,5,6], controlMethod: step.method || 'timer', focusTime: step.focusTime || 25, history: {}, streak: 0 };
         });
         setGoals(prev => [...newGoals, ...prev]);
         setAiQuery(''); setAiResult(null); Utils.haptic('heavy');
@@ -389,7 +391,7 @@ function App() {
                         <React.Fragment>
                             <div className="ai-contract-box">
                                 <div className="ai-contract-header">{aiResult.emoji} {aiResult.title}</div>
-                                {(aiResult.steps || []).map((s, i) => ( <div key={i} className="ai-contract-step">{s.title} <span>({s.focusTime===0?'Мгновенно':`${s.focusTime} мин`} • {s.dayOffset===1?'Завтра':(s.dayOffset===2?'Послезавтра':'Сегодня')})</span>{s.desc && <div style={{color:'var(--text-muted)', fontSize:'12px', marginTop:'4px'}}>{s.desc}</div>}</div> ))}
+                                {(aiResult.steps || []).map((s, i) => ( <div key={i} className="ai-contract-step">{s.title} <span>({s.focusTime===0?'Мгновенно':`${s.focusTime} мин`} • {s.deadline && s.deadline !== '23:59' ? `Дедлайн ${s.deadline}` : (s.dayOffset===1?'Завтра':(s.dayOffset===2?'Послезавтра':'Сегодня'))})</span>{s.desc && <div style={{color:'var(--text-muted)', fontSize:'12px', marginTop:'4px'}}>{s.desc}</div>}</div> ))}
                             </div>
                             <button className="btn-ai-submit" style={{ marginTop: '15px' }} onClick={acceptAiContract}>Принять контракт</button><button className="btn-return-task" style={{ width: '100%', marginTop: '5px' }} onClick={() => setAiResult(null)}>Сброс</button>
                         </React.Fragment>

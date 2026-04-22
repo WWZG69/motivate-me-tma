@@ -413,7 +413,6 @@ select.custom-select.dark-input option { color: #000; }
 
 body {
     min-height: 100vh;
-    /* Фикс для iOS/Safari */
     min-height: -webkit-fill-available;
     background-attachment: fixed !important;
 }

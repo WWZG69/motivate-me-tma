@@ -5,7 +5,7 @@
 const { Icons, Onboarding, RulesModal, TimeWheel, Utils } = window;
 const { useState, useEffect, useRef, useMemo } = React;
 
-const PENALTY_PHRASE = "Я сдаюсь и сжигаю свой рейтинг";
+const PENALTY_PHRASE = "Я выбираю легкий путь и возвращаюсь к рефлексам";
 
 function App() {
     // === СОСТОЯНИЯ ===
@@ -239,34 +239,35 @@ function App() {
         if (!form.title.trim() || isGeneratingGoal) return;
         setIsGeneratingGoal(true); Utils.haptic('light');
         const visionsContext = visions.length > 0 ? `Глобальные цели юзера:\n${visions.map(v => `- ID: ${v.id}, Название: ${v.title}`).join('\n')}` : `Глобальных целей нет.`;
-        const systemPrompt = `Ты ИИ-трекер. Твоя суть — холодная машина, зеркало реальности. Напоминай, что жизнь — это преодоление, а легкий путь ведет к рефлексам животного.
-Преврати запрос в задачу. 
+        const systemPrompt = `Ты ИИ-трекер. Холодное зеркало реальности. Напоминай, что жизнь — это преодоление, а легкий путь ведет к инстинктам.
 ПРАВИЛА:
-1. ВРЕМЯ (СУПЕР ВАЖНО): Если указано время ("в 6 утра"), установи "deadline" на это время + 5-10 минут (например, "06:10").
-2. ФИЗИЧЕСКИЕ ТРИГГЕРЫ: Проснуться, встать, выпить — МОМЕНТАЛЬНЫЕ действия -> "controlMethod": "check", "focusTime": 0.
-3. РАБОТА В ПОТОКЕ -> "controlMethod": "timer", "focusTime": 15-60.
-4. В описании (desc) жестко констатируй факт, почему это важно для созидания и победы над слабостью.
+1. ВРЕМЯ: Если указано время ("в 6 утра"), "deadline" = время + 5-10 минут. Иначе "23:59".
+2. МЕТОД: Моментальные действия (встать, выпить) -> "controlMethod": "check", "focusTime": 0. В потоке -> "controlMethod": "timer", "focusTime": 15-60.
+3. В описании (desc) жестко констатируй факт, почему это важно для созидания.
+4. ВАЖНО: ВЫВЕДИ ТОЛЬКО JSON. Без слов "Конечно", без markdown.
 Связь с глобальной целью: ${visionsContext}. 
-Верни JSON: {"title": "", "description": "", "type": "once/habit/sprint", "controlMethod": "timer/check", "focusTime": 25, "deadline": "23:59", "visionId": "id или пусто"}`;
+Пример ответа: {"title": "Название", "description": "Факт", "type": "once", "controlMethod": "check", "focusTime": 0, "deadline": "23:59", "visionId": ""}`;
         try {
             const parsed = await Utils.ai.fetchJSON(`Запрос: "${form.title}"`, systemPrompt, 0.2);
             setForm(prev => ({ ...prev, title: parsed.title || prev.title, description: parsed.description || prev.description, type: parsed.type || 'once', controlMethod: parsed.controlMethod || 'check', focusTime: parsed.focusTime || 0, deadline: parsed.deadline || '23:59', visionId: parsed.visionId || prev.visionId }));
             Utils.haptic('success');
-        } catch (error) { Utils.haptic('error'); } finally { setIsGeneratingGoal(false); }
+        } catch (error) { 
+            console.error("AI Goal Generation Error:", error); 
+            Utils.haptic('error'); 
+        } finally { setIsGeneratingGoal(false); }
     };
 
     const generateVisionDetailsWithAI = async () => {
         if (!visionForm.title.trim() || isGeneratingVision) return;
         setIsGeneratingVision(true); Utils.haptic('light');
-        const systemPrompt = `Ты ИИ-трекер. Холодная машина. Напоминай, что человек создан творить через сопротивление, а рефлексы и лень — путь животного.
+        const systemPrompt = `Ты ИИ-трекер. Холодная машина. Человек создан творить через сопротивление.
 Создай Видение и 3 тактических шага на 3 дня (dayOffset 0, 1, 2).
 ПРАВИЛА:
-1. ИНЖЕНЕРНЫЙ ШАГ 1: Шаг 1 (dayOffset 0) должен вырывать из зоны комфорта. Создать физическую среду или сломать преграду.
-2. ПАРСИНГ ВРЕМЕНИ: Если цель привязана ко времени, "deadline" = время + 5 минут. Иначе "23:59".
-3. РАБОТА: Писать, читать, созидать -> "method": "timer", "focusTime": 15-60.
-4. ОПИСАНИЯ (desc): Формулируй сухо, как факт. Почему отказ от этого шага — это выбор инстинктов и слабости.
-5. Эмодзи: Подбери СТРОГО 1 тематический.
-Верни JSON: {"visionTitle":"", "visionEmoji":"🧵", "visionDesc":"", "steps":[{"title":"", "desc":"", "type":"once", "method":"timer/check", "focusTime":25, "deadline":"23:59", "dayOffset":0}]}`;
+1. ИНЖЕНЕРНЫЙ ШАГ 1: Вырывает из зоны комфорта (изменение среды).
+2. ПАРСИНГ ВРЕМЕНИ: Привязка ко времени -> "deadline" = время + 5 минут. Иначе "23:59".
+3. РАБОТА: Писать, читать -> "method": "timer", "focusTime": 15-60. Моментальные -> "method": "check", "focusTime": 0.
+4. ВАЖНО: ВЫВЕДИ ТОЛЬКО JSON. Никакого текста до и после, никакого форматирования.
+Пример ответа: {"visionTitle":"Название", "visionEmoji":"⚡", "visionDesc":"Факт", "steps":[{"title":"Шаг", "desc":"Факт", "type":"once", "method":"check", "focusTime":0, "deadline":"23:59", "dayOffset":0}]}`;
         try {
             const parsed = await Utils.ai.fetchJSON(`Мечта: "${visionForm.title}"`, systemPrompt, 0.3);
             const newVisionId = Date.now().toString();
@@ -277,34 +278,35 @@ function App() {
             });
             if (newGoals.length > 0) setGoals(prev => [...newGoals, ...prev]);
             setIsModalOpen(false); Utils.haptic('heavy');
-        } catch (error) { Utils.haptic('error'); } finally { setIsGeneratingVision(false); }
+        } catch (error) { 
+            console.error("AI Vision Generation Error:", error); 
+            Utils.haptic('error'); 
+        } finally { setIsGeneratingVision(false); }
     };
 
     const handleAiSubmit = async () => {
         if (!aiQuery.trim()) { Utils.haptic('error'); return; }
         setIsAiScanning(true); setAiResult(null); Utils.haptic('light');
-        const systemPrompt = `Ты ИИ-трекер. Холодная машина, зеркало реальности. Философия: человек создан творить, преодолевать сопротивление и ветер. Легкий путь и отговорки — это выбор примата, живущего на рефлексах.
+        const systemPrompt = `Ты ИИ-трекер. Холодная машина, зеркало реальности. Человек создан творить, преодолевать сопротивление.
 Разбей задачу на 3 шага на сегодня, завтра и послезавтра (dayOffset 0, 1, 2). Сними паралич первого шага.
-
 ПРАВИЛА:
-1. ЗАПРЕТ НА "ИССЛЕДОВАНИЯ": Никаких видео о мотивации. Только физические действия, ломающие комфорт.
-2. ИНЖЕНЕРНЫЙ ШАГ 1: На сегодня дай изменение среды или простейшее созидательное действие, которое выбьет почву у лени.
-3. ПАРСИНГ ВРЕМЕНИ: Есть время -> "deadline" = время + 5 минут. Нет времени -> "23:59".
-4. РАБОТА: Созидание, фокус -> "method": "timer", "focusTime": 15-60.
-5. Эмодзи: Строго 1 тематический.
-6. ОПИСАНИЯ (desc): Жесткая констатация факта. Напомни, что преодоление этого шага отличает творца от животного.
-
-Формат ответа СТРОГО валидный JSON:
+1. ЗАПРЕТ НА ИССЛЕДОВАНИЯ: Только физические действия, ломающие комфорт.
+2. ИНЖЕНЕРНЫЙ ШАГ 1: На сегодня дай изменение среды.
+3. ПАРСИНГ ВРЕМЕНИ: Есть время -> "deadline" = время + 5 минут. Иначе "23:59".
+4. РАБОТА: Фокус -> "method": "timer", "focusTime": 15-60. Моментальные -> "method": "check", "focusTime": 0.
+5. ОПИСАНИЯ: Напомни, что преодоление отличает творца от животного.
+6. ВАЖНО: ВЫВЕДИ ТОЛЬКО JSON. Без приветствий, без лишних символов.
+Пример:
 {
-  "title": "Хлесткое название плана",
+  "title": "Хлесткое название",
   "emoji": "⚡",
   "steps": [
     {
-      "title": "Действие (глагол)",
-      "desc": "Холодное объяснение через преодоление",
+      "title": "Действие",
+      "desc": "Объяснение",
       "type": "once",
-      "method": "timer/check",
-      "focusTime": 25,
+      "method": "check",
+      "focusTime": 0,
       "deadline": "23:59",
       "dayOffset": 0
     }
@@ -314,7 +316,11 @@ function App() {
             const parsed = await Utils.ai.fetchJSON(`Задача: "${aiQuery}"`, systemPrompt, 0.2);
             setAiResult(parsed);
             Utils.haptic('success');
-        } catch (error) { setAiResult({ title: "Ошибка", emoji: "⚠️", steps: [] }); Utils.haptic('error'); } finally { setIsAiScanning(false); }
+        } catch (error) { 
+            console.error("AI Submit Error:", error); 
+            setAiResult({ title: "Ошибка", emoji: "⚠️", steps: [] }); 
+            Utils.haptic('error'); 
+        } finally { setIsAiScanning(false); }
     };
 
     const acceptAiContract = () => {
@@ -614,8 +620,8 @@ function App() {
                 {showGiveUpModal && (
                     <div className="glass-overlay-centered" style={{ zIndex: 9999 }}>
                         <div className="give-up-modal">
-                            <h2 className="give-up-title">Решил сдаться?</h2>
-                            <p className="give-up-text">Цели сами себя не достигнут.</p>
+                            <h2 className="give-up-title">Поддаешься инстинктам?</h2>
+                            <p className="give-up-text">Движение против ветра требует воли. Сбежать — значит выбрать пропасть. Решай, кто сейчас у руля.</p>
                             <div className="give-up-actions">
                                 <button className="btn-continue-pulsing" onClick={() => { setShowGiveUpModal(false); setIsTimerRunning(true); Utils.haptic('success'); }}>Продолжить</button>
                                 <button className="btn-give-up-weak" onClick={() => { setShowGiveUpModal(false); setPenaltyInput(''); setShowPenaltyModal(true); Utils.haptic('light'); }}>Сдаюсь (-5%)</button>
@@ -629,7 +635,7 @@ function App() {
                         <div className="penalty-modal">
                             <h2 className="penalty-title">Цена слабости</h2>
                             <p className="penalty-text">Введи фразу вручную (копипаст отключен).</p>
-                            <div className="penalty-phrase-box">{PENALTY_PHRASE}</div>
+                            <div className="penalty-phrase-box" style={{ fontSize: '14px', fontStyle: 'italic' }}>{PENALTY_PHRASE}</div>
                             <textarea className="dark-input penalty-textarea custom-scrollbar" value={penaltyInput} onChange={(e) => setPenaltyInput(e.target.value)} onPaste={(e) => { e.preventDefault(); Utils.haptic('error'); }} placeholder="Писать тут..." autoComplete="off" spellCheck="false" />
                             <div className="penalty-actions">
                                 <button className={`btn-confirm-penalty ${penaltyInput === PENALTY_PHRASE ? 'active' : 'disabled'}`} onClick={() => { 
